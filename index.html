@@ -272,6 +272,8 @@ td.mono { white-space: nowrap; }
   .empty { grid-column: 1 / -1; }
 }
 @media (max-width: 420px) {
+  .nav a { font-size: 11px; padding: 8px 2px; }
+  .li { flex-wrap: wrap; }
   h1 { font-size: 24px; }
   tbody tr { grid-template-columns: minmax(0, 1fr); }
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -483,6 +485,19 @@ td.mono { white-space: nowrap; }
 .listbar input { flex: 1 1 220px; min-width: 0; }
 .listbar .lb-l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 .listsave { margin-bottom: 12px; }
+.btn.saved { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.bulkbar input { flex: 1 1 160px; min-width: 0; max-width: 240px; }
+.folders { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.fcard { text-align: left; font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; cursor: pointer; display: block; width: 100%; }
+.fcard:hover { border-color: var(--accent); }
+.fcard .fn { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+.fcard .fc { font-size: 28px; font-weight: 600; margin: 6px 0 2px; }
+.fcard .ft { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.fbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.fbar input { flex: 1 1 200px; min-width: 0; }
+.cathead { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; margin: 18px 0 4px; padding-bottom: 6px; border-bottom: 2px solid var(--line); font-weight: 600; }
+.cathead span { color: var(--muted); font-weight: 400; font-size: 13px; }
+.li .btns { display: flex; gap: 6px; flex-wrap: wrap; }
 .listsave input { width: 100%; }
 </style>
 
@@ -678,6 +693,10 @@ td.mono { white-space: nowrap; }
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
         <span>Leads</span><span class="badge" id="b-leads"></span>
       </a>
+      <a href="#saved" data-view="saved">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1z"/></svg>
+        <span>Saved</span><span class="badge" id="b-saved"></span>
+      </a>
       <a href="#drafts" data-view="drafts">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="4.5" rx="1"/><path d="M5 8.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5"/><path d="M10 13h4"/></svg>
         <span>Drafts</span><span class="badge" id="b-drafts"></span>
@@ -704,6 +723,10 @@ td.mono { white-space: nowrap; }
       <div class="grid-2">
         <section class="panel"><h2>Pipeline</h2><div class="bars" id="pipe"></div></section>
         <section class="panel"><h2>Sources</h2><div class="bars" id="srcBars"></div></section>
+      </div>
+      <div class="grid-2">
+        <section class="panel"><h2>By industry</h2><div class="bars" id="catBars"></div></section>
+        <section class="panel"><h2>Saved folders</h2><div class="bars" id="folBars"></div></section>
       </div>
       <div class="grid-2">
         <section class="panel"><h2>Best leads to contact first</h2><div class="list" id="topLeads"></div></section>
@@ -905,6 +928,7 @@ td.mono { white-space: nowrap; }
           <div class="f"><label for="sort">Sort</label>
             <select id="sort"><option value="score">Highest score</option><option value="new">Newest</option><option value="name">Name</option></select>
           </div>
+          <div class="f"><label for="catSel">Industry</label><select id="catSel"><option value="all">All industries</option></select></div>
           <div class="f"><label for="listSel">List</label><select id="listSel"><option value="all">All lists</option></select></div>
           <div class="f"><label for="filter">Show</label>
             <select id="filter">
@@ -912,6 +936,7 @@ td.mono { white-space: nowrap; }
               <option value="tier:hot">Hot only</option><option value="tier:warm">Warm only</option><option value="tier:cold">Cold only</option>
               <option value="st:New">Status: New</option><option value="st:Messaged">Status: Messaged</option>
               <option value="st:Replied">Status: Replied</option><option value="st:Won">Status: Won</option>
+              <option value="fo:saved">Saved only</option><option value="fo:none">Not saved yet</option>
               <option value="wa:yes">WhatsApp: has it</option><option value="wa:untested">WhatsApp: not tested</option><option value="wa:no">WhatsApp: no</option>
             </select>
           </div>
@@ -930,8 +955,12 @@ td.mono { white-space: nowrap; }
           <button class="btn small ghost" id="listDel" type="button">Move list to Drafts</button>
         </div>
         <datalist id="listOpts"></datalist>
+        <datalist id="folderOpts"></datalist>
         <div class="bulkbar" id="bulkbar" hidden>
           <b id="bulkCount"></b>
+          <input id="bulkFolder" list="folderOpts" maxlength="60" placeholder="Folder name" aria-label="Folder name" autocomplete="off">
+          <button class="btn small" id="bulkSave" type="button">Save to folder</button>
+          <button class="btn small ghost" id="bulkUnsave" type="button">Remove from folder</button>
           <button class="btn small" id="bulkDel" type="button">Move to Drafts</button>
           <button class="btn small ghost" id="bulkClear" type="button">Clear selection</button>
         </div>
@@ -1005,6 +1034,26 @@ td.mono { white-space: nowrap; }
           <div><button class="btn ghost" data-out="1" type="button">Sign out</button></div>
         </section>
       </div>
+    </section>
+
+    <section id="view-saved" hidden>
+      <header class="page-head">
+        <div>
+          <h1>Saved</h1>
+          <p class="lede">Your best leads, kept in folders and grouped by industry. Mark a lead with Save on the Leads page.</p>
+        </div>
+      </header>
+      <div class="folders" id="folderGrid"></div>
+      <section class="panel" id="folderOpen" hidden>
+        <div class="fbar">
+          <button class="btn small ghost" id="fBack" type="button">&larr; All folders</button>
+          <input id="fName" maxlength="60" aria-label="Rename this folder" autocomplete="off">
+          <button class="btn small ghost" id="fCsv" type="button">Download .csv</button>
+          <button class="btn small ghost" id="fJson" type="button">Download backup</button>
+          <button class="btn small ghost" id="fClear" type="button">Empty folder</button>
+        </div>
+        <div id="fList"></div>
+      </section>
     </section>
 
     <section id="view-drafts" hidden>
@@ -1165,6 +1214,14 @@ window.HD_CONFIG = window.HD_CONFIG || {
   }
   function listOf(l) { return String(l.list || '').trim() || 'Unsorted'; }
   var curList = 'all';
+  /* industry categories + saved folders */
+  function catOf(l) {
+    var c = firstCat(l.niche).replace(/\s+/g, ' ');
+    if (!c) return 'Uncategorized';
+    return c.toLowerCase().replace(/(^|[\s\/-])([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); });
+  }
+  function folderOf(l) { return String(l.folder || '').trim(); }
+  var curCat = 'all', curFolder = '', lastFolder = 'Shortlist', confirmClear = false;
 
   function push() {
     if (!sb || !user) return Promise.resolve();
@@ -1857,7 +1914,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     try {
       var d = JSON.parse(t);
       if (!d || d.app !== 'hunting-desk' || !Array.isArray(d.leads)) return null;
-      var keep = ['name','niche','city','state','rating','reviews','phone','website','webStatus','problem','channel','status','followUp','source','owner','address','zip','price','claimed','years','hours','email','wa','waStatus','fb','ig','social','services','notes'];
+      var keep = ['name','niche','city','state','rating','reviews','phone','website','webStatus','problem','channel','status','followUp','source','owner','address','zip','price','claimed','years','hours','email','wa','waStatus','fb','ig','social','services','notes','folder'];
       var items = d.leads.filter(function (x) { return x && x.name; }).map(function (x) { var o = {}; keep.forEach(function (k) { if (x[k] !== undefined && x[k] !== '') o[k] = x[k]; }); return o; });
       return { items: items, list: String(d.list || '').slice(0, 80) };
     } catch (e) { return null; }
@@ -1976,9 +2033,12 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var list = leads.filter(function (l) {
       if (ledgerSrc !== 'all' && (l.source || 'yelp') !== ledgerSrc) return false;
       if (curList !== 'all' && listOf(l) !== curList) return false;
+      if (curCat !== 'all' && catOf(l) !== curCat) return false;
       var q = ($('q').value || '').trim().toLowerCase();
       if (q && [l.name, l.niche, l.city, l.state, l.phone, l.website].join(' ').toLowerCase().indexOf(q) === -1) return false;
       if (f === 'all') return true;
+      if (f === 'fo:saved') return !!folderOf(l);
+      if (f === 'fo:none') return !folderOf(l);
       if (f.indexOf('tier:') === 0) return tier(score(l))[0] === f.slice(5);
       if (f.indexOf('wa:') === 0) { var w = f.slice(3); return w === 'yes' ? l.waStatus === 'yes' : w === 'no' ? l.waStatus === 'no' : (!l.waStatus && !!waNumber(l)); }
       return l.status === f.slice(3);
@@ -2093,7 +2153,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       '<td class="mono">' + esc(l.phone || '–') + '</td>' +
       '<td>' + web + '</td>' +
       '<td><select data-f="status" aria-label="Status of ' + esc(l.name) + '">' + opts(STAT, l.status) + '</select>' + (l.followUp ? '<div class="sub">Follow up ' + esc(fmtDate(l.followUp)) + '</div>' : '') + '</td>' +
-      '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button><button class="btn small ghost" type="button" data-act="details">Details</button><button class="btn small ghost" type="button" data-act="del" aria-label="Move ' + esc(l.name) + ' to Drafts">Delete</button></div></td></tr>';
+      '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button>' + (folderOf(l) ? '<button class="btn small saved" type="button" data-act="save" title="Saved in ' + esc(folderOf(l)) + ' - click to remove">Saved &#10003;</button>' : '<button class="btn small ghost" type="button" data-act="save">Save</button>') + '<button class="btn small ghost" type="button" data-act="details">Details</button><button class="btn small ghost" type="button" data-act="del" aria-label="Move ' + esc(l.name) + ' to Drafts">Delete</button></div></td></tr>';
   }
 
   /* ---------- overview ---------- */
@@ -2119,6 +2179,10 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('kpis').innerHTML = kp.map(function (k) { return '<div class="kpi ' + k[2] + '"><div class="l">' + k[0] + '</div><div class="n">' + k[1] + '</div></div>'; }).join('');
     $('pipe').innerHTML = bars(STAT.map(function (s) { return [s[1], st[s[0]] || 0]; }), '');
     $('srcBars').innerHTML = bars(Object.keys(SRC_NAMES).map(function (k) { return [SRC_NAMES[k], srcN[k] || 0]; }), 'n');
+    var cb = groupCount(leads, catOf), cn = Object.keys(cb).sort(function (a, b) { return cb[b] - cb[a]; }).slice(0, 6);
+    $('catBars').innerHTML = cn.length ? bars(cn.map(function (c) { return [c, cb[c]]; }), 'n') : '<div class="empty">Import leads to see them grouped by industry.</div>';
+    var fb = groupCount(leads, folderOf), fn = Object.keys(fb).sort(function (a, b) { return fb[b] - fb[a]; }).slice(0, 6);
+    $('folBars').innerHTML = fn.length ? bars(fn.map(function (c) { return [c, fb[c]]; }), '') + '<p class="sub" style="margin-top:10px"><a href="#saved">Open saved folders</a></p>' : '<div class="empty">Nothing saved yet. Press Save on the good leads in <a href="#leads">Leads</a>.</div>';
     var top = leads.filter(function (l) { return l.status === 'New'; }).sort(function (a, b) { return score(b) - score(a); }).slice(0, 5);
     $('topLeads').innerHTML = top.length ? top.map(function (l) { return leadLi(l, ''); }).join('') : '<div class="empty">No new leads. <a href="#import">Import some</a> to see the best ones here.</div>';
     var td = todayIso();
@@ -2183,6 +2247,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
         '<div><label for="d-web">Website status</label><select id="d-web" data-f="webStatus">' + opts(WEB, l.webStatus) + '</select></div>' +
         '<div><label for="d-chan">Reach via</label><select id="d-chan" data-f="channel">' + opts(CHAN, l.channel) + '</select></div>' +
         '<div class="span"><label for="d-list">List</label><input id="d-list" data-f="list" list="listOpts" maxlength="80" value="' + esc(listOf(l) === 'Unsorted' ? '' : listOf(l)) + '" placeholder="Unsorted"></div>' +
+        '<div class="span"><label for="d-folder">Saved folder (empty = not saved)</label><input id="d-folder" data-f="folder" list="folderOpts" maxlength="60" value="' + esc(folderOf(l)) + '" placeholder="e.g. Shortlist"></div>' +
         '<div class="span"><label for="d-site">Website address</label><input id="d-site" data-f="website" placeholder="paste the website here" value="' + esc(validSite(l.website) ? l.website : '') + '"></div>' +
       '</div>' +
       '<div class="dinfo">' + info.map(function (b) { return '<div class="sub">' + esc(b) + '</div>'; }).join('') + '</div>' +
@@ -2220,9 +2285,54 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('listBar').hidden = curList === 'all';
     if (curList !== 'all' && document.activeElement !== $('listName')) $('listName').value = curList;
   }
+  function groupCount(arr, fn) { var by = {}; arr.forEach(function (l) { var k = fn(l); if (k) by[k] = (by[k] || 0) + 1; }); return by; }
+  function renderCats() {
+    var inList = leads.filter(function (l) { return (curList === 'all' || listOf(l) === curList) && (ledgerSrc === 'all' || (l.source || 'yelp') === ledgerSrc); });
+    var by = groupCount(inList, catOf);
+    var names = Object.keys(by).sort(function (a, b) { return by[b] - by[a] || a.localeCompare(b); });
+    if (curCat !== 'all' && !by[curCat]) curCat = 'all';
+    $('catSel').innerHTML = '<option value="all">All industries (' + inList.length + ')</option>' + names.map(function (n) {
+      return '<option value="' + esc(n) + '"' + (n === curCat ? ' selected' : '') + '>' + esc(n) + ' (' + by[n] + ')</option>';
+    }).join('');
+    var fn = Object.keys(groupCount(leads, folderOf)).sort();
+    $('folderOpts').innerHTML = fn.map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('');
+  }
+  function renderSaved() {
+    var saved = leads.filter(folderOf);
+    $('b-saved').textContent = saved.length ? String(saved.length) : '';
+    var by = groupCount(saved, folderOf);
+    if (curFolder && !by[curFolder]) { curFolder = ''; confirmClear = false; }
+    $('folderGrid').hidden = !!curFolder;
+    $('folderOpen').hidden = !curFolder;
+    if (!curFolder) {
+      var names = Object.keys(by).sort(function (a, b) { return a.localeCompare(b); });
+      $('folderGrid').innerHTML = names.length ? names.map(function (n) {
+        var inF = saved.filter(function (l) { return folderOf(l) === n; });
+        var cats = groupCount(inF, catOf);
+        var top = Object.keys(cats).sort(function (a, b) { return cats[b] - cats[a]; }).slice(0, 3).map(function (c) { return c + ' (' + cats[c] + ')'; }).join(', ');
+        return '<button class="fcard" type="button" data-fo="' + esc(n) + '"><div class="fn">' + esc(n) + '</div><div class="fc">' + by[n] + '</div><div class="ft">' + (by[n] === 1 ? 'lead' : 'leads') + ' &middot; ' + esc(top) + '</div></button>';
+      }).join('') : '<div class="panel empty" style="grid-column: 1 / -1">No saved leads yet. On the <a href="#leads">Leads</a> page, press <b>Save</b> on the good ones (or tick several and use Save to folder). They will show up here, grouped by industry.</div>';
+      return;
+    }
+    var arr = saved.filter(function (l) { return folderOf(l) === curFolder; });
+    if (document.activeElement !== $('fName')) $('fName').value = curFolder;
+    $('fClear').textContent = confirmClear ? 'Tap again to confirm' : 'Empty folder';
+    var cats = groupCount(arr, catOf);
+    var cn = Object.keys(cats).sort(function (a, b) { return cats[b] - cats[a] || a.localeCompare(b); });
+    $('fList').innerHTML = cn.map(function (c) {
+      var items = arr.filter(function (l) { return catOf(l) === c; }).sort(function (a, b) { return score(b) - score(a); });
+      return '<div class="cathead">' + esc(c) + '<span>' + items.length + (items.length === 1 ? ' lead' : ' leads') + '</span></div>' +
+        items.map(function (l) {
+          var t = tier(score(l));
+          var meta = [[l.city, l.state].filter(Boolean).join(', '), l.phone].filter(Boolean).join(' \u00b7 ');
+          return '<div class="li" data-id="' + l.id + '"><span class="score ' + t[0] + '">' + score(l) + '</span><div class="grow"><strong>' + esc(l.name) + '</strong><div class="sub">' + esc(meta) + '</div></div>' +
+            '<div class="btns"><button class="btn small" type="button" data-sact="message">Message</button><button class="btn small ghost" type="button" data-sact="details">Details</button><button class="btn small ghost" type="button" data-sact="remove">Remove</button></div></div>';
+        }).join('');
+    }).join('');
+  }
   function render() {
-    renderLists();
-    var inList = leads.filter(function (l) { return curList === 'all' || listOf(l) === curList; });
+    renderLists(); renderCats();
+    var inList = leads.filter(function (l) { return (curList === 'all' || listOf(l) === curList) && (curCat === 'all' || catOf(l) === curCat); });
     var counts = { all: inList.length };
     inList.forEach(function (l) { var s = l.source || 'yelp'; counts[s] = (counts[s] || 0) + 1; });
     if (ledgerSrc !== 'all' && !counts[ledgerSrc]) ledgerSrc = 'all';
@@ -2247,6 +2357,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('b-leads').textContent = leads.length ? String(leads.length) : '';
     $('b-drafts').textContent = trash.length ? String(trash.length) : '';
     renderOverview();
+    renderSaved();
     renderDrafts();
     if (!$('drawer').hidden) renderDrawer();
   }
@@ -2339,11 +2450,11 @@ window.HD_CONFIG = window.HD_CONFIG || {
     } catch (e) {}
     manual();
   }
-  var COLS = ['Business', 'Source', 'Owner', 'Category', 'Address', 'City', 'State', 'ZIP', 'Rating', 'Reviews', 'Price', 'Yelp page', 'Years in business', 'Hours', 'Phone', 'WhatsApp', 'WhatsApp status', 'Email', 'Facebook', 'Instagram', 'Other social', 'Website', 'Website status', 'Problem note', 'Services', 'Notes', 'Reach via', 'Status', 'Follow-up', 'Score'];
+  var COLS = ['Business', 'Source', 'Owner', 'Category', 'Address', 'City', 'State', 'ZIP', 'Rating', 'Reviews', 'Price', 'Yelp page', 'Years in business', 'Hours', 'Phone', 'WhatsApp', 'WhatsApp status', 'Email', 'Facebook', 'Instagram', 'Other social', 'Website', 'Website status', 'Problem note', 'Services', 'Notes', 'Reach via', 'Status', 'Follow-up', 'Score', 'Folder'];
   function rowsData(arr) {
     var wl = { none: 'No website', old: 'Old or slow', ok: 'Looks fine', unknown: 'Not checked' };
     return (arr || visible()).filter(function (l) { return !l.example; }).map(function (l) {
-      return [l.name, SRC_NAMES[l.source] || 'Other', l.owner, l.niche, l.address, l.city, l.state, l.zip, l.rating, l.reviews, l.price, l.claimed, l.years, l.hours, l.phone, l.wa, ({ yes: 'Has WhatsApp', no: 'No WhatsApp' })[l.waStatus] || 'Not tested', l.email, l.fb, l.ig, otherSocial(l), l.website, wl[l.webStatus] || '', l.problem, l.services, l.notes, l.channel, l.status, l.followUp, score(l)];
+      return [l.name, SRC_NAMES[l.source] || 'Other', l.owner, l.niche, l.address, l.city, l.state, l.zip, l.rating, l.reviews, l.price, l.claimed, l.years, l.hours, l.phone, l.wa, ({ yes: 'Has WhatsApp', no: 'No WhatsApp' })[l.waStatus] || 'Not tested', l.email, l.fb, l.ig, otherSocial(l), l.website, wl[l.webStatus] || '', l.problem, l.services, l.notes, l.channel, l.status, l.followUp, score(l), l.folder || ''];
     });
   }
   function exportText(sep, arr) {
@@ -2386,6 +2497,11 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var l = leadById(id);
     if (!l) return;
     if (act === 'del') { moveToDrafts([id]); return; }
+    if (act === 'save') {
+      if (folderOf(l)) { l.folder = ''; save(); render(); toast('Removed from folder'); }
+      else { l.folder = lastFolder; save(); render(); toast('Saved to ' + lastFolder); }
+      return;
+    }
     if (act === 'draft') { openDrawer(id, 'message'); return; }
     if (act === 'details') { openDrawer(id, 'details'); return; }
     if (act === 'view') { openDrawer(id, 'website'); return; }
@@ -2404,6 +2520,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     if (!l) return;
     var f = el.getAttribute('data-f');
     l[f] = el.value;
+    if (f === 'folder') { l.folder = el.value.trim().slice(0, 60); if (l.folder) lastFolder = l.folder; }
     if (f === 'website') {
       l.website = el.value.trim(); l.scanAt = 0; l.scanMsg = ''; l.scanFail = '';
       if (validSite(l.website) && l.webStatus === 'none') l.webStatus = 'unknown';
@@ -2493,7 +2610,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     trash = []; save(); render(); toast('Drafts emptied');
   });
 
-  var VIEWS = ['overview', 'import', 'leads', 'drafts', 'settings'];
+  var VIEWS = ['overview', 'import', 'leads', 'saved', 'drafts', 'settings'];
   function showView() {
     var v = (location.hash || '').replace('#', '');
     if (VIEWS.indexOf(v) < 0) v = 'overview';
@@ -2516,6 +2633,55 @@ window.HD_CONFIG = window.HD_CONFIG || {
     } catch (e) { copyText(text); }
   }
   function listLeads() { return leads.filter(function (l) { return !l.example && listOf(l) === curList; }); }
+  $('catSel').addEventListener('change', function () { curCat = this.value; picked = {}; render(); });
+  function folderLeads() { return leads.filter(function (l) { return !l.example && folderOf(l) === curFolder; }); }
+  $('bulkSave').addEventListener('click', function () {
+    var nm = $('bulkFolder').value.trim().slice(0, 60) || lastFolder, ids = Object.keys(picked);
+    if (!ids.length) return;
+    lastFolder = nm;
+    ids.forEach(function (id) { var l = leadById(id); if (l) l.folder = nm; });
+    picked = {}; $('bulkFolder').value = ''; save(); render();
+    toast('Saved ' + ids.length + (ids.length === 1 ? ' lead' : ' leads') + ' to ' + nm);
+  });
+  $('bulkUnsave').addEventListener('click', function () {
+    var ids = Object.keys(picked);
+    ids.forEach(function (id) { var l = leadById(id); if (l) l.folder = ''; });
+    picked = {}; save(); render(); toast('Removed from folders');
+  });
+  $('folderGrid').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-fo]'); if (!b) return;
+    curFolder = b.getAttribute('data-fo'); confirmClear = false; renderSaved(); window.scrollTo(0, 0);
+  });
+  $('fBack').addEventListener('click', function () { curFolder = ''; confirmClear = false; renderSaved(); });
+  $('fList').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-sact]'); if (!b) return;
+    var id = b.closest('[data-id]').getAttribute('data-id'), a = b.getAttribute('data-sact');
+    if (a === 'message') openDrawer(id, 'message');
+    else if (a === 'details') openDrawer(id, 'details');
+    else { var l = leadById(id); if (l) { l.folder = ''; save(); render(); toast('Removed from folder'); } }
+  });
+  $('fName').addEventListener('change', function () {
+    var nn = this.value.trim().slice(0, 60), old = curFolder;
+    if (!nn || nn === old) { this.value = old; return; }
+    leads.forEach(function (l) { if (folderOf(l) === old) l.folder = nn; });
+    curFolder = nn; save(); render(); toast('Folder renamed');
+  });
+  $('fCsv').addEventListener('click', function () {
+    var t = exportText(',', folderLeads());
+    if (!t) { toast('This folder is empty'); return; }
+    saveFile(slug(curFolder) + '.csv', t, 'text/csv;charset=utf-8');
+  });
+  $('fJson').addEventListener('click', function () {
+    var arr = folderLeads();
+    if (!arr.length) { toast('This folder is empty'); return; }
+    saveFile(slug(curFolder) + '.hunting-desk.json', JSON.stringify({ app: 'hunting-desk', version: 1, list: curFolder, exported: new Date().toISOString(), leads: arr }, null, 1), 'application/json');
+  });
+  $('fClear').addEventListener('click', function () {
+    if (!confirmClear) { confirmClear = true; renderSaved(); return; }
+    leads.forEach(function (l) { if (folderOf(l) === curFolder) l.folder = ''; });
+    confirmClear = false; save(); render(); toast('Folder emptied (leads are still in Leads)');
+  });
+  window.addEventListener('hashchange', function () { if ((location.hash || '') !== '#saved') { curFolder = ''; confirmClear = false; } renderSaved(); });
   $('listSel').addEventListener('change', function () { curList = this.value; ledgerSrc = 'all'; picked = {}; render(); });
   $('listName').addEventListener('change', function () {
     var nn = this.value.trim().slice(0, 80), old = curList;
