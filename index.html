@@ -8,177 +8,264 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: a two-pane workbench (capture | message) above a full-width lead ledger. */
+/* Layout: sidebar + dashboard views (overview, import, leads, drafts) with a slide-over lead drawer.
+   Two colors only: slate ink for structure, one orange accent for what needs attention. */
 :root {
-  --bg: #EEF1F3;
-  --surface: #FFFFFF;
-  --surface-2: #F5F7F8;
-  --ink: #12202B;
-  --muted: #586977;
-  --line: #D3DAE0;
-  --accent: #0B6E8A;
+  --bg: #F2F4F7;
+  --panel: #FFFFFF;
+  --panel-2: #F6F8FA;
+  --line: #E1E6EC;
+  --ink: #101B26;
+  --muted: #5A6A7A;
+  --bar: #A9B5C1;
+  --accent: #D9480F;
+  --accent-soft: #FCEADD;
   --on-accent: #FFFFFF;
-  --hot-bg: #FDE6DA;
-  --hot-ink: #9A3412;
-  --warm-bg: #FBF0CC;
-  --warm-ink: #7A5B00;
-  --cold-bg: #E4E9ED;
-  --cold-ink: #4A5A67;
-  --missing: #B45309; --ok-bg: #DDF3E4; --ok-ink: #17623A;
+  --missing: #D9480F;
+  --shadow: 0 1px 2px rgba(16, 27, 38, 0.06), 0 10px 28px rgba(16, 27, 38, 0.08);
   --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0E161C; --surface: #15212A; --surface-2: #1B2933; --ink: #E6EDF2; --muted: #8FA2B1; --line: #263642;
-    --accent: #4CB8D6; --on-accent: #06222C;
-    --hot-bg: #3A1D10; --hot-ink: #FDBA8C; --warm-bg: #3A2F0A; --warm-ink: #F2D36B; --cold-bg: #1E2B34; --cold-ink: #9FB1BE;
-    --missing: #F59E0B; --ok-bg: #12301F; --ok-ink: #7FD6A0;
+    --bg: #0B1218; --panel: #121C25; --panel-2: #172430; --line: #22313E; --ink: #E8EEF3; --muted: #8EA0B0; --bar: #3D4F5F;
+    --accent: #FF8A4C; --accent-soft: #3A2314; --on-accent: #1A0B02; --missing: #FF8A4C;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 32px rgba(0, 0, 0, 0.45);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0E161C; --surface: #15212A; --surface-2: #1B2933; --ink: #E6EDF2; --muted: #8FA2B1; --line: #263642;
-  --accent: #4CB8D6; --on-accent: #06222C;
-  --hot-bg: #3A1D10; --hot-ink: #FDBA8C; --warm-bg: #3A2F0A; --warm-ink: #F2D36B; --cold-bg: #1E2B34; --cold-ink: #9FB1BE;
-  --missing: #F59E0B; --ok-bg: #12301F; --ok-ink: #7FD6A0;
+  --bg: #0B1218; --panel: #121C25; --panel-2: #172430; --line: #22313E; --ink: #E8EEF3; --muted: #8EA0B0; --bar: #3D4F5F;
+  --accent: #FF8A4C; --accent-soft: #3A2314; --on-accent: #1A0B02; --missing: #FF8A4C;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 32px rgba(0, 0, 0, 0.45);
   color-scheme: dark;
 }
+[hidden] { display: none !important; }
 * { box-sizing: border-box; }
-body {
-  background: var(--bg); color: var(--ink);
-  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
-  padding-block: 28px 56px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+body.lock { overflow: hidden; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.015em; }
+h1 { font-size: 30px; line-height: 1.1; }
+h2 { font-size: 18px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* shell */
+.app { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; }
+.side {
+  position: sticky; top: 0; height: 100vh; align-self: start; display: flex; flex-direction: column; gap: 26px;
+  background: var(--panel); border-right: 1px solid var(--line);
+  padding-block: 22px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: 16px;
 }
-.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
-h1 { font-size: 32px; line-height: 1.1; }
-h2 { font-size: 20px; }
-.top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 19px; letter-spacing: -0.01em; }
+.mark { width: 28px; height: 28px; border-radius: 9px; background: var(--accent); position: relative; flex: none; }
+.mark::after { content: ""; position: absolute; left: 8px; top: 7px; width: 6px; height: 14px; border-radius: 2px; background: var(--on-accent); box-shadow: 6px 6px 0 -1px var(--on-accent); }
+.nav { display: flex; flex-direction: column; gap: 4px; }
+.nav a {
+  display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 10px; color: var(--muted);
+  text-decoration: none; font-weight: 500; position: relative;
+}
+.nav a:hover { background: var(--panel-2); color: var(--ink); }
+.nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+.nav svg { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.badge { margin-left: auto; font-family: var(--font-mono); font-size: 12px; min-width: 22px; text-align: center; padding: 0 7px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); color: var(--muted); }
+.badge:empty { display: none; }
+.side-foot { margin-top: auto; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.main {
+  min-width: 0; padding-block: 28px 64px;
+  padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px));
+  max-width: 1280px; width: 100%;
+}
+.page-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 20px; }
 .lede { margin: 6px 0 0; color: var(--muted); max-width: 60ch; }
-.counts { display: flex; gap: 8px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
-.counts b { color: var(--ink); font-weight: 500; }
-.panes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
-@media (max-width: 860px) { .panes { grid-template-columns: minmax(0, 1fr); } }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+/* panels */
+.card, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel.flush { padding: 0; gap: 0; overflow: hidden; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.panes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .hint { margin: 0; color: var(--muted); font-size: 13.5px; }
+.note { margin: 0; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; }
+.status { margin: 0; min-height: 1.4em; font-size: 13.5px; color: var(--muted); }
+.status a, .note a, td a, .sub a { color: var(--accent); }
+.sect { margin: 4px 0 -4px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; border-top: 1px solid var(--line); padding-top: 12px; }
+.srcpane { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+/* overview */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.kpi .l { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; }
+.kpi .n { font-family: var(--font-display); font-size: 38px; font-weight: 700; line-height: 1.1; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.kpi.hot { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.kpi.hot .l { color: inherit; opacity: 0.85; }
+.bars { display: flex; flex-direction: column; gap: 10px; }
+.bar { display: grid; grid-template-columns: 112px minmax(0, 1fr) 34px; align-items: center; gap: 10px; font-size: 13.5px; }
+.track { height: 10px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
+.fill { height: 100%; background: var(--accent); border-radius: 999px; min-width: 2px; }
+.fill.n { background: var(--bar); }
+.bar .v { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.list { display: flex; flex-direction: column; }
+.li { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.li:last-child { border-bottom: 0; }
+.li .grow { flex: 1; min-width: 0; }
+.li strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty { padding: 22px 8px; text-align: center; color: var(--muted); }
+
+/* controls */
 label { display: block; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
 input, select, textarea {
-  width: 100%; font: inherit; color: var(--ink); background: var(--surface-2);
-  border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-width: 0;
+  width: 100%; font: inherit; color: var(--ink); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0;
 }
 textarea { resize: vertical; }
+input[type="checkbox"] { width: 18px; height: 18px; min-height: 0; padding: 0; accent-color: var(--accent); }
 input.missing { border-color: var(--missing); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.sect { margin: 4px 0 -4px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; border-top: 1px solid var(--line); padding-top: 12px; }
-.found { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 6px; max-height: 320px; overflow: auto; }
-.found label { display: flex; gap: 10px; align-items: flex-start; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); padding: 8px 10px; margin: 0; border-bottom: 1px solid var(--line); font-weight: 400; cursor: pointer; }
-.found label:last-child { border-bottom: 0; }
-.found input { width: auto; margin-top: 4px; }
-[hidden] { display: none !important; }
-.srcpane { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.check { display: flex; gap: 8px; align-items: center; text-transform: none; letter-spacing: 0; font-size: 13.5px; color: var(--ink); font-weight: 400; margin: 0; }
-.check input { width: auto; }
-.watest { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
-.pill { align-self: flex-start; font-size: 12px; border-radius: 999px; padding: 2px 8px; font-weight: 500; }
-.pill.ok { background: var(--ok-bg); color: var(--ok-ink); }
-.pill.no { background: var(--cold-bg); color: var(--cold-ink); }
-a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: var(--ink); }
-.siteIn { margin-top: 6px; padding: 4px 6px; font-size: 13px; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn {
-  font: inherit; font-weight: 500; cursor: pointer; border-radius: 6px; padding: 8px 14px;
+  font: inherit; font-weight: 500; cursor: pointer; border-radius: 8px; padding: 8px 14px; min-height: 38px;
   background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent);
 }
 .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
-.btn.small { padding: 4px 10px; font-size: 13px; }
-.btn:hover { filter: brightness(1.06); }
-.status { margin: 0; min-height: 1.4em; font-size: 13.5px; color: var(--muted); }
-.status a, .note a, td a { color: var(--accent); }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-.seg button { font: inherit; font-size: 13.5px; background: transparent; color: var(--ink); border: 0; padding: 6px 12px; cursor: pointer; }
+.btn.ghost:hover { background: var(--panel-2); }
+.btn.small { padding: 4px 10px; font-size: 13px; min-height: 32px; }
+.btn:hover { filter: brightness(1.05); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+a.btn:not(.ghost) { color: var(--on-accent); }
+a.btn.ghost { color: var(--ink); }
+.linkbtn { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-align: left; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.seg button { font: inherit; font-size: 13.5px; background: transparent; color: var(--ink); border: 0; padding: 7px 12px; cursor: pointer; }
 .seg button + button { border-left: 1px solid var(--line); }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.check { display: flex; gap: 8px; align-items: center; text-transform: none; letter-spacing: 0; font-size: 13.5px; color: var(--ink); font-weight: 400; margin: 0; }
+.check input { width: 18px; }
+.found { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 8px; max-height: 320px; overflow: auto; }
+.found label { display: flex; gap: 10px; align-items: flex-start; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); padding: 8px 10px; margin: 0; border-bottom: 1px solid var(--line); font-weight: 400; cursor: pointer; }
+.found label:last-child { border-bottom: 0; }
+.found input { margin-top: 3px; flex: none; }
 #draft { min-height: 210px; line-height: 1.55; font-size: 14.5px; }
-.note { margin: 0; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; }
-.ledger-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; justify-content: space-between; }
-.ledger-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
-.ledger-tools .f { min-width: 140px; }
+
+/* leads */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.toolbar .f { min-width: 140px; }
+.toolbar .grow { flex: 1 1 220px; min-width: 180px; }
+.subbar { padding: 12px 18px; border-bottom: 1px solid var(--line); }
+.bulkbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 18px; background: var(--accent-soft); border-bottom: 1px solid var(--line); }
+.bulkbar b { color: var(--accent); }
 .scroll { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; min-width: 900px; font-size: 13.5px; }
-th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-tr.sel td { background: var(--surface-2); }
+table { border-collapse: collapse; width: 100%; min-width: 880px; font-size: 14px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--panel-2); white-space: nowrap; }
+td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; overflow-wrap: anywhere; }
+tbody tr:hover td { background: var(--panel-2); }
+tr.sel td { background: var(--accent-soft); }
 td select { padding: 4px 6px; font-size: 13px; }
 .mono { font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .sub { color: var(--muted); font-size: 12.5px; }
+td.mono { white-space: nowrap; }
 .tag { margin-left: 6px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
-.score { display: inline-block; min-width: 46px; text-align: center; font-family: var(--font-mono); font-weight: 500; border-radius: 6px; padding: 3px 8px; font-variant-numeric: tabular-nums; }
-.score.hot { background: var(--hot-bg); color: var(--hot-ink); }
-.score.warm { background: var(--warm-bg); color: var(--warm-ink); }
-.score.cold { background: var(--cold-bg); color: var(--cold-ink); }
-.empty { padding: 28px 8px; text-align: center; color: var(--muted); }
+.chip { display: inline-block; font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; color: var(--muted); background: var(--panel-2); }
+.chip.accent { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.score { display: inline-block; min-width: 46px; text-align: center; font-family: var(--font-mono); font-weight: 500; border-radius: 8px; padding: 3px 8px; font-variant-numeric: tabular-nums; }
+.score.hot { background: var(--accent); color: var(--on-accent); }
+.score.warm { background: var(--accent-soft); color: var(--accent); }
+.score.cold { background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
+.pill { align-self: flex-start; font-size: 12px; border-radius: 999px; padding: 2px 8px; font-weight: 500; }
+.pill.ok { background: var(--accent-soft); color: var(--accent); }
+.pill.no { background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
+.watest { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.siteIn { margin-top: 6px; padding: 4px 6px; font-size: 13px; }
+.panel .hint, .panel .note { padding-inline: 0; }
+.panel.flush > .hint { padding: 12px 18px; border-top: 1px solid var(--line); }
+
+/* drawer */
+.scrim { position: fixed; inset: 0; background: rgba(8, 14, 20, 0.5); z-index: 40; }
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100vw); z-index: 50; display: flex; flex-direction: column;
+  background: var(--panel); border-left: 1px solid var(--line); box-shadow: var(--shadow); overflow: hidden;
+  padding-top: env(safe-area-inset-top, 0px); padding-right: env(safe-area-inset-right, 0px);
+}
+.drawer-head { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; padding: 18px 18px 12px; }
+.drawer-head h2 { font-size: 20px; }
+.dtabs { padding: 0 18px 12px; }
+.dbody { flex: 1; overflow: auto; padding: 0 18px calc(18px + env(safe-area-inset-bottom, 0px)); }
+.dpane { display: flex; flex-direction: column; gap: 12px; }
+#siteFrame { width: 100%; height: 58vh; min-height: 320px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.dgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.dgrid .span { grid-column: 1 / -1; }
+.dinfo { display: flex; flex-direction: column; gap: 2px; }
+
 .toast {
-  position: fixed; left: 50%; transform: translateX(-50%);
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 60; max-width: calc(100vw - 32px); text-align: center;
   bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; font-size: 13.5px;
-  opacity: 0; pointer-events: none; transition: opacity .2s;
+  background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 8px; font-size: 13.5px;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
 }
 .toast.on { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
-/* ---------- device friendly ---------- */
-html { -webkit-text-size-adjust: 100%; }
-.btn { min-height: 38px; }
-.toast { max-width: calc(100vw - 32px); text-align: center; }
-td { overflow-wrap: anywhere; }
-@media (min-width: 1400px) { .wrap { max-width: 1280px; } }
-@media (max-width: 760px) {
-  body { padding-block: 18px 40px; font-size: 15px; }
+
+/* tablet and phone */
+@media (max-width: 900px) {
+  .app { display: block; }
+  .side {
+    position: fixed; top: auto; left: 0; right: 0; bottom: 0; height: auto; z-index: 30; flex-direction: row; gap: 0;
+    border-right: 0; border-top: 1px solid var(--line);
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px));
+  }
+  .brand, .side-foot { display: none; }
+  .nav { flex-direction: row; width: 100%; gap: 2px; }
+  .nav a { flex: 1 1 0; flex-direction: column; gap: 2px; font-size: 12px; padding: 8px 4px; justify-content: center; text-align: center; }
+  .nav .badge { position: absolute; top: 2px; right: 10px; margin: 0; font-size: 10.5px; min-width: 18px; padding: 0 5px; }
+  .main { padding-block: 20px 100px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .grid-2 { grid-template-columns: minmax(0, 1fr); }
   h1 { font-size: 26px; }
-  h2 { font-size: 18px; }
-  .wrap { gap: 14px; }
-  .card { padding: 14px; border-radius: 10px; }
+  .toast { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 760px) {
+  .card, .panel { padding: 14px; }
   .grid2 { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
   input, select, textarea { font-size: 16px; min-height: 44px; }
+  input[type="checkbox"] { width: 22px; height: 22px; min-height: 0; }
   textarea { min-height: 0; }
   .btn { min-height: 44px; padding: 10px 16px; }
   .btn.small { min-height: 40px; padding: 8px 12px; }
-  .row { gap: 8px; }
   .row > .btn { flex: 1 1 auto; }
   .row > input[type="file"] { width: 100%; flex: 1 1 100%; }
-  .seg { display: flex; flex-wrap: wrap; gap: 6px; border: 0; overflow: visible; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; border: 0; overflow: visible; background: transparent; }
   .seg button { flex: 1 1 auto; min-height: 44px; border: 1px solid var(--line) !important; border-radius: 8px; padding: 8px 12px; }
-  .ledger-tools { width: 100%; }
-  .ledger-tools .f { flex: 1 1 140px; min-width: 0; }
-  .ledger-tools > .btn { flex: 1 1 auto; }
-  #draft { min-height: 240px; }
+  .toolbar { padding: 12px; }
+  .toolbar .f { flex: 1 1 140px; }
+  .toolbar > .btn { flex: 1 1 auto; }
+  .subbar, .bulkbar { padding-inline: 12px; }
+  .bar { grid-template-columns: 92px minmax(0, 1fr) 30px; }
   .found { max-height: 50vh; }
   .found label { padding: 12px; }
-  .found input { width: 22px; height: 22px; min-height: 0; margin-top: 2px; flex: none; }
+  .found input { width: 22px; height: 22px; min-height: 0; }
   .check input { width: 22px; height: 22px; min-height: 0; }
+  #draft { min-height: 240px; }
+  .drawer { width: 100vw; border-left: 0; }
+  #siteFrame { height: 62vh; }
+  .dgrid { grid-template-columns: minmax(0, 1fr); }
 
-  /* ledger table becomes one card per lead */
-  .scroll { overflow: visible; }
+  .scroll { overflow: visible; padding: 12px 12px 2px; }
   table, tbody { display: block; min-width: 0; width: 100%; }
   thead { display: none; }
   tbody tr {
-    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px;
-    padding: 12px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; position: relative;
+    padding: 14px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel);
   }
-  tbody tr.sel { border-color: var(--accent); }
-  tbody tr.sel td { background: transparent; }
+  tbody tr.sel { border-color: var(--accent); background: var(--accent-soft); }
+  tbody tr.sel td, tbody tr:hover td { background: transparent; }
   tbody td { display: block; border: 0; padding: 0; min-width: 0; }
-  tbody td[data-label]::before {
-    content: attr(data-label); display: block; margin-bottom: 3px; font-size: 11px; text-transform: uppercase;
-    letter-spacing: 0.06em; color: var(--muted); font-weight: 500;
-  }
-  tbody td:nth-child(1), tbody td:nth-child(2), tbody td:nth-child(8) { grid-column: 1 / -1; }
-  tbody td:nth-child(1)::before, tbody td:nth-child(2)::before, tbody td:nth-child(8)::before { display: none; }
+  tbody td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 3px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; }
+  tbody td:nth-child(1) { position: absolute; top: 14px; right: 14px; }
+  tbody td:nth-child(2), tbody td:nth-child(3), tbody td:nth-child(8) { grid-column: 1 / -1; }
+  tbody td:nth-child(2)::before, tbody td:nth-child(3)::before { display: none; }
+  td.mono { white-space: normal; }
   tbody td select { width: 100%; }
   tbody td:nth-child(8) .row > .btn { flex: 1 1 0; }
   .empty { grid-column: 1 / -1; }
@@ -186,20 +273,65 @@ td { overflow-wrap: anywhere; }
 @media (max-width: 420px) {
   h1 { font-size: 24px; }
   tbody tr { grid-template-columns: minmax(0, 1fr); }
-  .counts { font-size: 12px; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi .n { font-size: 32px; }
 }
 @media (hover: none) { .btn:hover { filter: none; } }
+@media (min-width: 1400px) { .main { max-width: 1320px; } }
 </style>
 
-<div class="wrap">
-  <header class="top">
-    <div>
-      <h1>Yelp Lead Desk</h1>
-      <p class="lede">Paste a Yelp business page, get a scored lead and a ready-to-send message.</p>
-    </div>
-    <div class="counts" id="counts" aria-live="polite"></div>
-  </header>
+<div class="app">
+  <aside class="side" aria-label="Main">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><span>Lead Desk</span></div>
+    <nav class="nav" id="nav" aria-label="Sections">
+      <a href="#overview" data-view="overview">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
+        <span>Overview</span>
+      </a>
+      <a href="#import" data-view="import">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4 19h16"/></svg>
+        <span>Import</span>
+      </a>
+      <a href="#leads" data-view="leads">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>
+        <span>Leads</span><span class="badge" id="b-leads"></span>
+      </a>
+      <a href="#drafts" data-view="drafts">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="4.5" rx="1"/><path d="M5 8.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5"/><path d="M10 13h4"/></svg>
+        <span>Drafts</span><span class="badge" id="b-drafts"></span>
+      </a>
+    </nav>
+    <p class="side-foot">Leads are saved in this browser only. Use Copy for Google Sheets on the Leads page to keep a backup.</p>
+  </aside>
 
+  <main class="main">
+    <section id="view-overview">
+      <header class="page-head">
+        <div>
+          <h1>Overview</h1>
+          <p class="lede">Where your outreach stands today.</p>
+        </div>
+        <a class="btn" href="#import">Import leads</a>
+      </header>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid-2">
+        <section class="panel"><h2>Pipeline</h2><div class="bars" id="pipe"></div></section>
+        <section class="panel"><h2>Sources</h2><div class="bars" id="srcBars"></div></section>
+      </div>
+      <div class="grid-2">
+        <section class="panel"><h2>Best leads to contact first</h2><div class="list" id="topLeads"></div></section>
+        <section class="panel"><h2>Follow-ups due</h2><div class="list" id="dueList"></div></section>
+      </div>
+    </section>
+
+    <section id="view-import" hidden>
+      <header class="page-head">
+        <div>
+          <h1>Import</h1>
+          <p class="lede">Bring in businesses from Yelp, Google, OpenStreetMap or any spreadsheet.</p>
+        </div>
+      </header>
+      <div class="stack">
   <section class="card" aria-labelledby="h-import">
     <h2 id="h-import">Import leads</h2>
     <p class="hint">Choose where the data comes from. Every source fills the same preview list, and you add the businesses you want to the ledger.</p>
@@ -284,8 +416,6 @@ td { overflow-wrap: anywhere; }
       </div>
     </div>
   </section>
-
-  <div class="panes">
     <section class="card" aria-labelledby="h-capture">
       <h2 id="h-capture">Add a lead</h2>
       <p class="hint">Open the business page on yelp.com, press Ctrl+A then Ctrl+C (Cmd on Mac), and paste it here.</p>
@@ -367,9 +497,94 @@ td { overflow-wrap: anywhere; }
         <option value="Cleaning Service"><option value="Roofing"><option value="Landscaping"><option value="Real Estate">
       </datalist>
     </section>
+      </div>
+    </section>
 
-    <section class="card" aria-labelledby="h-draft">
-      <h2 id="h-draft">Message</h2>
+    <section id="view-leads" hidden>
+      <header class="page-head">
+        <div>
+          <h1>Leads</h1>
+          <p class="lede">Score = website gap (35) + rating (15) + review count (20) + a known contact route (15) + claimed Yelp page (10) + years in business (5).</p>
+        </div>
+      </header>
+      <section class="panel flush" aria-label="Lead list">
+        <div class="toolbar">
+          <div class="grow"><label for="q">Search</label><input id="q" type="search" autocomplete="off" placeholder="Name, city, category or phone"></div>
+          <div class="f"><label for="sort">Sort</label>
+            <select id="sort"><option value="score">Highest score</option><option value="new">Newest</option><option value="name">Name</option></select>
+          </div>
+          <div class="f"><label for="filter">Show</label>
+            <select id="filter">
+              <option value="all">All leads</option>
+              <option value="tier:hot">Hot only</option><option value="tier:warm">Warm only</option><option value="tier:cold">Cold only</option>
+              <option value="st:New">Status: New</option><option value="st:Messaged">Status: Messaged</option>
+              <option value="st:Replied">Status: Replied</option><option value="st:Won">Status: Won</option>
+              <option value="wa:yes">WhatsApp: has it</option><option value="wa:untested">WhatsApp: not tested</option><option value="wa:no">WhatsApp: no</option>
+            </select>
+          </div>
+          <div class="f" style="min-width: 90px; flex: 0 0 90px"><label for="cc">Country code</label><input id="cc" inputmode="numeric" maxlength="3" autocomplete="off"></div>
+          <button class="btn ghost" id="scanAll" type="button">Check all sites</button>
+          <button class="btn ghost" id="copySheets" type="button">Copy for Google Sheets</button>
+          <button class="btn ghost" id="copyCsv" type="button">Copy CSV</button>
+          <button class="btn ghost" id="clearEx" type="button" hidden>Remove examples</button>
+        </div>
+        <div class="subbar"><div class="seg" id="srcFilter" role="group" aria-label="Lead source"></div></div>
+        <div class="bulkbar" id="bulkbar" hidden>
+          <b id="bulkCount"></b>
+          <button class="btn small" id="bulkDel" type="button">Move to Drafts</button>
+          <button class="btn small ghost" id="bulkClear" type="button">Clear selection</button>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead><tr>
+              <th><input type="checkbox" id="pickAll" aria-label="Select all leads in this list"></th>
+              <th>Score</th><th>Business</th><th>Rating</th><th>Phone</th><th>Website</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div id="manualWrap" hidden style="padding: 12px 18px">
+          <label for="manual">Copy blocked here. Select all and copy by hand</label>
+          <textarea id="manual" rows="5" readonly></textarea>
+        </div>
+        <p class="hint">Click a website to preview it. Details has the website check, WhatsApp test and contact links. Deleted leads go to Drafts, where you can restore them.</p>
+      </section>
+    </section>
+
+    <section id="view-drafts" hidden>
+      <header class="page-head">
+        <div>
+          <h1>Drafts</h1>
+          <p class="lede">Deleted leads wait here. Restore one, or delete it for good.</p>
+        </div>
+        <div class="row">
+          <button class="btn ghost" id="restoreAll" type="button">Restore all</button>
+          <button class="btn ghost" id="emptyDrafts" type="button">Delete all forever</button>
+        </div>
+      </header>
+      <section class="panel"><div class="list" id="draftList"></div></section>
+    </section>
+  </main>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="dName">
+  <div class="drawer-head">
+    <div>
+      <h2 id="dName"></h2>
+      <div class="sub" id="dSub"></div>
+    </div>
+    <button class="btn ghost small" id="dClose" type="button">Close</button>
+  </div>
+  <div class="dtabs">
+    <div class="seg" id="dTabs" role="group" aria-label="Lead view">
+      <button type="button" data-tab="message" aria-pressed="true">Message</button>
+      <button type="button" data-tab="website" aria-pressed="false">Website</button>
+      <button type="button" data-tab="details" aria-pressed="false">Details</button>
+    </div>
+  </div>
+  <div class="dbody">
+    <div class="dpane" id="dp-message">
       <p class="hint" id="draftFor">Pick a lead from the ledger.</p>
       <div>
         <label for="me">Your name</label>
@@ -392,60 +607,25 @@ td { overflow-wrap: anywhere; }
       </div>
       <div class="row"><button class="btn" id="copyDraft" type="button">Copy message</button></div>
       <p class="note">Yelp does not show whether a number has WhatsApp. Look for a WhatsApp number on the business's own site or Google profile first. If there is none, use Facebook, Instagram or email. Emails need your real address in the footer.</p>
-    </section>
+    </div>
+    <div class="dpane" id="dp-website" hidden>
+      <div id="siteWrap">
+        <div class="row" style="margin-bottom: 10px"><a class="btn small ghost" id="siteOpen" href="#" target="_blank" rel="noopener">Open in new tab</a></div>
+        <iframe id="siteFrame" title="Website preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" referrerpolicy="no-referrer"></iframe>
+        <p class="hint" style="margin-top: 10px">If the preview is blank, this website does not allow being shown inside other pages. Use Open in new tab.</p>
+      </div>
+      <p class="empty" id="siteEmpty" hidden>No website saved for this lead. Add one in Details.</p>
+    </div>
+    <div class="dpane" id="dp-details" hidden><div id="dDetails"></div></div>
   </div>
-
-  <section class="card" aria-labelledby="h-ledger">
-    <div class="ledger-head">
-      <div>
-        <h2 id="h-ledger">Lead ledger</h2>
-        <p class="hint">Score = website gap (35) + rating (15) + review count (20) + a known contact route (15) + claimed Yelp page (10) + years in business (5).</p>
-      </div>
-      <div class="ledger-tools">
-        <div class="f"><label for="sort">Sort</label>
-          <select id="sort"><option value="score">Highest score</option><option value="new">Newest</option><option value="name">Name</option></select>
-        </div>
-        <div class="f"><label for="filter">Show</label>
-          <select id="filter">
-            <option value="all">All leads</option>
-            <option value="tier:hot">Hot only</option><option value="tier:warm">Warm only</option><option value="tier:cold">Cold only</option>
-            <option value="st:New">Status: New</option><option value="st:Messaged">Status: Messaged</option>
-            <option value="st:Replied">Status: Replied</option><option value="st:Won">Status: Won</option>
-            <option value="wa:yes">WhatsApp: has it</option><option value="wa:untested">WhatsApp: not tested</option><option value="wa:no">WhatsApp: no</option>
-          </select>
-        </div>
-        <button class="btn ghost" id="scanAll" type="button">Check all sites</button>
-        <div class="f" style="min-width: 90px; flex: 0 0 90px"><label for="cc">Country code</label><input id="cc" inputmode="numeric" maxlength="3" autocomplete="off"></div>
-        <button class="btn ghost" id="copySheets" type="button">Copy for Google Sheets</button>
-        <button class="btn ghost" id="copyCsv" type="button">Copy CSV</button>
-        <button class="btn ghost" id="clearEx" type="button" hidden>Remove examples</button>
-      </div>
-    </div>
-    <div class="seg" id="srcFilter" role="group" aria-label="Lead source"></div>
-    <div class="scroll">
-      <table>
-        <thead><tr>
-          <th>Score</th><th>Business</th><th>Rating</th><th>Phone</th><th>Website</th><th>Reach via</th><th>Status</th><th></th>
-        </tr></thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
-    <div id="manualWrap" hidden>
-      <label for="manual">Copy blocked here. Select all and copy by hand</label>
-      <textarea id="manual" rows="5" readonly></textarea>
-    </div>
-    <p class="hint">Check site reads the business's own website and lists the social links, email and WhatsApp number it publishes, so you can see which social media a business has without opening anything. It works on the deployed site only, and only for leads that have a website.</p>
-    <p class="hint">Test on WhatsApp opens WhatsApp for that number without sending anything. If WhatsApp says the number is not on WhatsApp, press No. Landline numbers usually are not on WhatsApp. Country code 1 is added to 10-digit US numbers.</p>
-    <p class="hint">Leads are saved in this browser only. Use the copy buttons to keep a backup in a Google Sheet.</p>
-  </section>
-</div>
+</aside>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
 (function () {
   var KEY = 'yelp-lead-desk-v1';
   var $ = function (id) { return document.getElementById(id); };
-  var leads = [], me = '', cc = '1', selected = null, kind = 'first', chan = 'dm', ledgerSrc = 'all', curSrc = 'yelp';
+  var leads = [], me = '', cc = '1', selected = null, kind = 'first', chan = 'dm', ledgerSrc = 'all', curSrc = 'yelp', trash = [], picked = {};
   var SRC_NAMES = { yelp: 'Yelp', google: 'Google', osm: 'OpenStreetMap', file: 'CSV / other' };
 
   var WEB = [['unknown', 'Not checked'], ['none', 'No website'], ['old', 'Old or slow'], ['ok', 'Looks fine']];
@@ -458,11 +638,11 @@ td { overflow-wrap: anywhere; }
   function load() {
     try {
       var r = localStorage.getItem(KEY);
-      if (r) { var d = JSON.parse(r); leads = d.leads || []; me = d.me || ''; cc = d.cc || '1'; return true; }
+      if (r) { var d = JSON.parse(r); leads = d.leads || []; me = d.me || ''; cc = d.cc || '1'; trash = d.trash || []; return true; }
     } catch (e) {}
     return false;
   }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify({ leads: leads, me: me, cc: cc })); } catch (e) {} }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ leads: leads, me: me, cc: cc, trash: trash })); } catch (e) {} }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
   function seed() {
@@ -1117,6 +1297,8 @@ td { overflow-wrap: anywhere; }
     var f = $('filter').value, s = $('sort').value;
     var list = leads.filter(function (l) {
       if (ledgerSrc !== 'all' && (l.source || 'yelp') !== ledgerSrc) return false;
+      var q = ($('q').value || '').trim().toLowerCase();
+      if (q && [l.name, l.niche, l.city, l.state, l.phone, l.website].join(' ').toLowerCase().indexOf(q) === -1) return false;
       if (f === 'all') return true;
       if (f.indexOf('tier:') === 0) return tier(score(l))[0] === f.slice(5);
       if (f.indexOf('wa:') === 0) { var w = f.slice(3); return w === 'yes' ? l.waStatus === 'yes' : w === 'no' ? l.waStatus === 'no' : (!l.waStatus && !!waNumber(l)); }
@@ -1217,21 +1399,135 @@ td { overflow-wrap: anywhere; }
     if (l.scanMsg) out.push('<span>' + esc(l.scanMsg) + '</span>');
     return out.map(function (b) { return '<div class="sub">' + b + '</div>'; }).join('');
   }
+  function domain(u) { return String(u || '').replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/[\/?#].*$/, ''); }
   function row(l) {
     var sc = score(l), t = tier(sc);
     var place = [l.niche, [l.city, l.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
-    var site = l.website ? '<div class="sub"><a href="' + esc(normUrl(l.website)) + '" target="_blank" rel="noopener">' + esc(l.website.replace(/^https?:\/\//i, '').slice(0, 28)) + '</a></div>' : '';
-    site = (validSite(l.website) ? site : (l.website ? '<div class="sub">' + esc(l.website) + '</div>' : '')) + '<input class="siteIn" data-f="website" aria-label="Website address" placeholder="paste website" value="' + esc(validSite(l.website) ? l.website : '') + '">';
-    return '<tr data-id="' + l.id + '"' + (l.id === selected ? ' class="sel"' : '') + '>' +
+    var web = validSite(l.website)
+      ? '<button class="linkbtn" type="button" data-act="view" title="Preview this website">' + esc(domain(l.website).slice(0, 26)) + '</button>'
+      : (l.webStatus === 'none' ? '<span class="chip accent">No website</span>' : '<span class="chip">Not added</span>');
+    return '<tr data-id="' + l.id + '"' + (picked[l.id] ? ' class="sel"' : '') + '>' +
+      '<td><input type="checkbox" data-pick aria-label="Select ' + esc(l.name) + '"' + (picked[l.id] ? ' checked' : '') + '></td>' +
       '<td><span class="score ' + t[0] + '" title="' + t[1] + ' lead">' + sc + '</span></td>' +
-      '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + '<div class="sub">' + esc(place) + '</div>' + details(l) + '</td>' +
+      '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + '<div class="sub">' + esc(place) + '</div></td>' +
       '<td class="mono">' + (l.rating ? esc(l.rating) + '★' : '–') + (l.reviews ? ' · ' + esc(l.reviews) : '') + '</td>' +
       '<td class="mono">' + esc(l.phone || '–') + '</td>' +
-      '<td><select data-f="webStatus" aria-label="Website status">' + opts(WEB, l.webStatus) + '</select>' + site + '</td>' +
-      '<td><select data-f="channel" aria-label="Reach via">' + opts(CHAN, l.channel) + '</select>' + contacts(l) + waTools(l) + '</td>' +
-      '<td><select data-f="status" aria-label="Status">' + opts(STAT, l.status) + '</select>' + (l.followUp ? '<div class="sub">Follow up ' + esc(fmtDate(l.followUp)) + '</div>' : '') + '</td>' +
-      '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button>' + (validSite(l.website) ? '<button class="btn small ghost" type="button" data-act="scan">' + (l.scanAt ? 'Recheck site' : 'Check site') + '</button>' : '') + '<button class="btn small ghost" type="button" data-act="del" aria-label="Delete ' + esc(l.name) + '">Delete</button></div></td></tr>';
+      '<td>' + web + '</td>' +
+      '<td><select data-f="status" aria-label="Status of ' + esc(l.name) + '">' + opts(STAT, l.status) + '</select>' + (l.followUp ? '<div class="sub">Follow up ' + esc(fmtDate(l.followUp)) + '</div>' : '') + '</td>' +
+      '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button><button class="btn small ghost" type="button" data-act="details">Details</button><button class="btn small ghost" type="button" data-act="del" aria-label="Move ' + esc(l.name) + ' to Drafts">Delete</button></div></td></tr>';
   }
+
+  /* ---------- overview ---------- */
+  function todayIso() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function bars(items, cls) {
+    var max = Math.max.apply(null, items.map(function (i) { return i[1]; }).concat([1]));
+    return items.map(function (i) {
+      return '<div class="bar"><span>' + esc(i[0]) + '</span><div class="track"><div class="fill ' + cls + '" style="width:' + Math.round(i[1] / max * 100) + '%"></div></div><span class="v">' + i[1] + '</span></div>';
+    }).join('');
+  }
+  function leadLi(l, extra) {
+    var sc = score(l), t = tier(sc);
+    var meta = [l.niche, [l.city, l.state].filter(Boolean).join(', '), extra].filter(Boolean).join(' · ');
+    return '<div class="li"><span class="score ' + t[0] + '">' + sc + '</span><div class="grow"><strong>' + esc(l.name) + '</strong><div class="sub">' + esc(meta) + '</div></div>' +
+      '<button class="btn small" type="button" data-open="' + l.id + '">Message</button></div>';
+  }
+  function renderOverview() {
+    var st = {}, srcN = {};
+    leads.forEach(function (l) { st[l.status] = (st[l.status] || 0) + 1; var s = l.source || 'yelp'; srcN[s] = (srcN[s] || 0) + 1; });
+    var hot = leads.filter(function (l) { return tier(score(l))[0] === 'hot'; }).length;
+    var noSite = leads.filter(function (l) { return l.webStatus === 'none'; }).length;
+    var kp = [['Total leads', leads.length, ''], ['Hot leads', hot, 'hot'], ['No website', noSite, ''], ['Messaged', st.Messaged || 0, ''], ['Replied', st.Replied || 0, ''], ['Won', st.Won || 0, '']];
+    $('kpis').innerHTML = kp.map(function (k) { return '<div class="kpi ' + k[2] + '"><div class="l">' + k[0] + '</div><div class="n">' + k[1] + '</div></div>'; }).join('');
+    $('pipe').innerHTML = bars(STAT.map(function (s) { return [s[1], st[s[0]] || 0]; }), '');
+    $('srcBars').innerHTML = bars(Object.keys(SRC_NAMES).map(function (k) { return [SRC_NAMES[k], srcN[k] || 0]; }), 'n');
+    var top = leads.filter(function (l) { return l.status === 'New'; }).sort(function (a, b) { return score(b) - score(a); }).slice(0, 5);
+    $('topLeads').innerHTML = top.length ? top.map(function (l) { return leadLi(l, ''); }).join('') : '<div class="empty">No new leads. <a href="#import">Import some</a> to see the best ones here.</div>';
+    var td = todayIso();
+    var due = leads.filter(function (l) { return l.status === 'Messaged' && l.followUp && l.followUp <= td; }).slice(0, 5);
+    $('dueList').innerHTML = due.length ? due.map(function (l) { return leadLi(l, 'due ' + fmtDate(l.followUp)); }).join('') : '<div class="empty">Nothing due. When you set a lead to Messaged, a follow-up date is added 3 days later.</div>';
+  }
+
+  /* ---------- drafts (deleted leads) ---------- */
+  function renderDrafts() {
+    $('draftList').innerHTML = trash.length ? trash.map(function (l) {
+      var meta = [l.niche, [l.city, l.state].filter(Boolean).join(', '), 'deleted ' + new Date(l.deletedAt || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })].filter(Boolean).join(' · ');
+      return '<div class="li" data-id="' + l.id + '"><div class="grow"><strong>' + esc(l.name) + '</strong><div class="sub">' + esc(meta) + '</div></div>' +
+        '<button class="btn small" type="button" data-dact="restore">Restore</button><button class="btn small ghost" type="button" data-dact="purge">Delete forever</button></div>';
+    }).join('') : '<div class="empty">Nothing here. Leads you delete are kept in Drafts so you can restore them.</div>';
+    $('restoreAll').disabled = !trash.length;
+    $('emptyDrafts').disabled = !trash.length;
+  }
+  function moveToDrafts(ids) {
+    if (!ids.length) return;
+    var set = {};
+    ids.forEach(function (id) { set[id] = true; });
+    var moved = leads.filter(function (l) { return set[l.id]; });
+    leads = leads.filter(function (l) { return !set[l.id]; });
+    moved.forEach(function (l) { l.deletedAt = Date.now(); trash.unshift(l); });
+    ids.forEach(function (id) { delete picked[id]; });
+    if (selected && set[selected]) { selected = null; closeDrawer(); }
+    save(); render(); renderDraft();
+    toast('Moved ' + moved.length + (moved.length === 1 ? ' lead' : ' leads') + ' to Drafts');
+  }
+
+  /* ---------- lead drawer ---------- */
+  var dTab = 'message', frameSrc = '';
+  function leadById(id) { for (var i = 0; i < leads.length; i++) if (leads[i].id === id) return leads[i]; return null; }
+  function openDrawer(id, tab) {
+    selected = id; dTab = tab || 'message';
+    $('drawer').hidden = false; $('scrim').hidden = false;
+    document.body.classList.add('lock');
+    renderDrawer(); renderDraft();
+    $('dClose').focus();
+  }
+  function closeDrawer() {
+    $('drawer').hidden = true; $('scrim').hidden = true;
+    document.body.classList.remove('lock');
+    $('siteFrame').src = 'about:blank'; frameSrc = '';
+  }
+  function renderDetails(l) {
+    var addr = [l.address, l.zip].filter(Boolean).join(' ');
+    var info = [];
+    if (addr) info.push(addr);
+    var meta = [];
+    if (l.price) meta.push(l.price);
+    if (l.claimed === 'claimed') meta.push('Claimed on Yelp'); else if (l.claimed === 'unclaimed') meta.push('Unclaimed on Yelp');
+    if (l.years) meta.push(l.years + ' yrs in business');
+    if (l.hours) meta.push(l.hours);
+    if (meta.length) info.push(meta.join(' · '));
+    if (l.owner) info.push('Owner: ' + l.owner);
+    if (l.services) info.push(l.services);
+    if (l.notes) info.push('Note: ' + l.notes);
+    var scanBtn = validSite(l.website) ? '<button class="btn small ghost" type="button" data-act="scan">' + (l.scanAt ? 'Recheck site' : 'Check site') + '</button>' : '';
+    $('dDetails').innerHTML =
+      '<div class="dgrid">' +
+        '<div><label for="d-web">Website status</label><select id="d-web" data-f="webStatus">' + opts(WEB, l.webStatus) + '</select></div>' +
+        '<div><label for="d-chan">Reach via</label><select id="d-chan" data-f="channel">' + opts(CHAN, l.channel) + '</select></div>' +
+        '<div class="span"><label for="d-site">Website address</label><input id="d-site" data-f="website" placeholder="paste the website here" value="' + esc(validSite(l.website) ? l.website : '') + '"></div>' +
+      '</div>' +
+      '<div class="dinfo">' + info.map(function (b) { return '<div class="sub">' + esc(b) + '</div>'; }).join('') + '</div>' +
+      '<div class="dinfo">' + contacts(l) + '</div>' +
+      waTools(l) +
+      '<div class="row">' + scanBtn + '<button class="btn small ghost" type="button" data-act="del">Move to Drafts</button></div>';
+  }
+  function renderDrawer() {
+    var l = current();
+    if (!l) { closeDrawer(); return; }
+    var sc = score(l), t = tier(sc);
+    $('dName').textContent = l.name;
+    $('dSub').textContent = [l.niche, [l.city, l.state].filter(Boolean).join(', '), t[1] + ' lead · ' + sc].filter(Boolean).join(' · ');
+    [].forEach.call($('dTabs').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-tab') === dTab)); });
+    ['message', 'website', 'details'].forEach(function (x) { $('dp-' + x).hidden = x !== dTab; });
+    var ok = validSite(l.website);
+    var url = ok ? normUrl(l.website).replace(/^http:\/\//i, 'https://') : '';
+    $('siteEmpty').hidden = ok; $('siteWrap').hidden = !ok;
+    if (ok) {
+      $('siteOpen').href = url;
+      if (dTab === 'website' && frameSrc !== url) { $('siteFrame').src = url; frameSrc = url; }
+    }
+    if (!(document.activeElement && $('dDetails').contains(document.activeElement))) renderDetails(l);
+  }
+
   function render() {
     var counts = { all: leads.length };
     leads.forEach(function (l) { var s = l.source || 'yelp'; counts[s] = (counts[s] || 0) + 1; });
@@ -1240,16 +1536,25 @@ td { overflow-wrap: anywhere; }
     $('srcFilter').innerHTML = tabs.map(function (p) {
       return '<button type="button" data-s="' + p[0] + '" aria-pressed="' + (ledgerSrc === p[0]) + '">' + esc(p[1]) + ' (' + (counts[p[0]] || 0) + ')</button>';
     }).join('');
+    Object.keys(picked).forEach(function (id) { if (!leadById(id)) delete picked[id]; });
     var list = visible();
-    $('rows').innerHTML = list.length ? list.map(row).join('') : '<tr><td colspan="8" class="empty">No leads match. Paste a Yelp page above to add one.</td></tr>';
+    $('rows').innerHTML = list.length ? list.map(row).join('') : '<tr><td colspan="8" class="empty">No leads match. Import leads or change the search and filters.</td></tr>';
     var heads = [].map.call(document.querySelectorAll('thead th'), function (th) { return th.textContent; });
     [].forEach.call($('rows').querySelectorAll('tr[data-id]'), function (tr) {
       [].forEach.call(tr.children, function (td, i) { if (heads[i]) td.setAttribute('data-label', heads[i]); });
     });
-    var hot = leads.filter(function (l) { return tier(score(l))[0] === 'hot'; }).length;
-    var msgd = leads.filter(function (l) { return l.status === 'Messaged'; }).length;
-    $('counts').innerHTML = '<span><b>' + leads.length + '</b> leads</span><span><b>' + hot + '</b> hot</span><span><b>' + msgd + '</b> messaged</span>';
+    var n = Object.keys(picked).length;
+    $('bulkbar').hidden = !n;
+    $('bulkCount').textContent = n + ' selected';
+    var allPicked = list.length > 0 && list.every(function (l) { return picked[l.id]; });
+    $('pickAll').checked = allPicked;
+    $('pickAll').indeterminate = n > 0 && !allPicked;
     $('clearEx').hidden = !leads.some(function (l) { return l.example; });
+    $('b-leads').textContent = leads.length ? String(leads.length) : '';
+    $('b-drafts').textContent = trash.length ? String(trash.length) : '';
+    renderOverview();
+    renderDrafts();
+    if (!$('drawer').hidden) renderDrawer();
   }
 
   /* ---------- message drafts ---------- */
@@ -1376,50 +1681,128 @@ td { overflow-wrap: anywhere; }
   });
   $('copyDraft').addEventListener('click', function () { copyText($('draft').value, $('draft')); });
 
-  $('rows').addEventListener('click', function (e) {
-    var tr = e.target.closest('tr[data-id]'); if (!tr) return;
-    var id = tr.getAttribute('data-id');
-    var btn = e.target.closest('button[data-act]');
-    if (btn && btn.getAttribute('data-act') === 'del') {
-      leads = leads.filter(function (l) { return l.id !== id; });
-      if (selected === id) selected = leads.length ? leads[0].id : null;
-      save(); render(); renderDraft(); return;
-    }
-    if (btn && btn.getAttribute('data-act') === 'scan') {
-      var sl = leads.filter(function (x) { return x.id === id; })[0];
-      if (sl) { btn.disabled = true; btn.textContent = 'Checking...'; scanLead(sl).then(function () { selected = id; save(); render(); renderDraft(); }); }
+  function doAct(id, act, btn) {
+    var l = leadById(id);
+    if (!l) return;
+    if (act === 'del') { moveToDrafts([id]); return; }
+    if (act === 'draft') { openDrawer(id, 'message'); return; }
+    if (act === 'details') { openDrawer(id, 'details'); return; }
+    if (act === 'view') { openDrawer(id, 'website'); return; }
+    if (act === 'scan') {
+      btn.disabled = true; btn.textContent = 'Checking...';
+      scanLead(l).then(function () { selected = id; save(); render(); renderDraft(); });
       return;
     }
-    if (btn && /^wa-/.test(btn.getAttribute('data-act'))) {
-      var lead = leads.filter(function (x) { return x.id === id; })[0];
-      if (lead) {
-        if (btn.getAttribute('data-act') === 'wa-yes') { lead.waStatus = 'yes'; if (!lead.wa) lead.wa = '+' + waNumber(lead); lead.channel = 'WhatsApp'; }
-        else { lead.waStatus = 'no'; if (lead.channel === 'WhatsApp') lead.channel = ''; }
-        selected = id; save(); render(); renderDraft();
-      }
-      return;
-    }
-    if (e.target.closest('select, a')) return;
-    selected = id; render(); renderDraft();
-  });
-  $('rows').addEventListener('change', function (e) {
-    var sel = e.target.closest('select[data-f], input[data-f]'); if (!sel) return;
-    var tr = sel.closest('tr'); var id = tr.getAttribute('data-id');
-    var l = leads.filter(function (x) { return x.id === id; })[0]; if (!l) return;
-    var f = sel.getAttribute('data-f');
-    l[f] = sel.value;
+    if (act === 'wa-yes') { l.waStatus = 'yes'; if (!l.wa) l.wa = '+' + waNumber(l); l.channel = 'WhatsApp'; }
+    else if (act === 'wa-no') { l.waStatus = 'no'; if (l.channel === 'WhatsApp') l.channel = ''; }
+    else return;
+    selected = id; save(); render(); renderDraft();
+  }
+  function doChange(id, el) {
+    var l = leadById(id);
+    if (!l) return;
+    var f = el.getAttribute('data-f');
+    l[f] = el.value;
     if (f === 'website') {
-      l.website = sel.value.trim(); l.scanAt = 0; l.scanMsg = ''; l.scanFail = '';
+      l.website = el.value.trim(); l.scanAt = 0; l.scanMsg = ''; l.scanFail = '';
       if (validSite(l.website) && l.webStatus === 'none') l.webStatus = 'unknown';
+      frameSrc = '';
     }
     if (f === 'status') {
-      if (sel.value === 'Messaged') {
+      if (el.value === 'Messaged') {
         var d = new Date(); d.setDate(d.getDate() + 3);
         l.followUp = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
       } else { l.followUp = ''; }
     }
-    selected = id; save(); render(); renderDraft();
+    save(); render(); renderDraft();
+  }
+
+  $('rows').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr[data-id]'); if (!tr) return;
+    var btn = e.target.closest('button[data-act]');
+    if (btn) doAct(tr.getAttribute('data-id'), btn.getAttribute('data-act'), btn);
   });
+  $('rows').addEventListener('change', function (e) {
+    var tr = e.target.closest('tr[data-id]'); if (!tr) return;
+    var id = tr.getAttribute('data-id');
+    if (e.target.matches('input[data-pick]')) {
+      if (e.target.checked) picked[id] = true; else delete picked[id];
+      render(); return;
+    }
+    var el = e.target.closest('select[data-f], input[data-f]');
+    if (el) doChange(id, el);
+  });
+  $('pickAll').addEventListener('change', function () {
+    var on = this.checked;
+    visible().forEach(function (l) { if (on) picked[l.id] = true; else delete picked[l.id]; });
+    render();
+  });
+  $('bulkDel').addEventListener('click', function () { moveToDrafts(Object.keys(picked)); });
+  $('bulkClear').addEventListener('click', function () { picked = {}; render(); });
+  $('q').addEventListener('input', render);
+
+  $('dDetails').addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-act]');
+    if (btn && selected) doAct(selected, btn.getAttribute('data-act'), btn);
+  });
+  $('dDetails').addEventListener('change', function (e) {
+    var el = e.target.closest('select[data-f], input[data-f]');
+    if (el && selected) doChange(selected, el);
+  });
+  $('dTabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-tab]'); if (!b) return;
+    dTab = b.getAttribute('data-tab'); renderDrawer();
+  });
+  $('dClose').addEventListener('click', closeDrawer);
+  $('scrim').addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('drawer').hidden) closeDrawer(); });
+  function openFromList(e) {
+    var b = e.target.closest('button[data-open]'); if (!b) return;
+    openDrawer(b.getAttribute('data-open'), 'message');
+  }
+  $('topLeads').addEventListener('click', openFromList);
+  $('dueList').addEventListener('click', openFromList);
+
+  $('draftList').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-dact]'); if (!b) return;
+    var id = b.closest('[data-id]').getAttribute('data-id');
+    var i = -1;
+    trash.forEach(function (l, k) { if (l.id === id) i = k; });
+    if (i < 0) return;
+    var l = trash.splice(i, 1)[0];
+    if (b.getAttribute('data-dact') === 'restore') { delete l.deletedAt; leads.push(l); toast('Restored ' + l.name); }
+    else toast('Deleted ' + l.name + ' for good');
+    save(); render();
+  });
+  $('restoreAll').addEventListener('click', function () {
+    var n = trash.length;
+    trash.forEach(function (l) { delete l.deletedAt; leads.push(l); });
+    trash = []; save(); render(); toast('Restored ' + n + (n === 1 ? ' lead' : ' leads'));
+  });
+  var purgeTimer = null;
+  $('emptyDrafts').addEventListener('click', function () {
+    var b = this;
+    if (b.getAttribute('data-sure') !== '1') {
+      b.setAttribute('data-sure', '1'); b.textContent = 'Click again to confirm';
+      clearTimeout(purgeTimer);
+      purgeTimer = setTimeout(function () { b.removeAttribute('data-sure'); b.textContent = 'Delete all forever'; }, 3000);
+      return;
+    }
+    clearTimeout(purgeTimer); b.removeAttribute('data-sure'); b.textContent = 'Delete all forever';
+    trash = []; save(); render(); toast('Drafts emptied');
+  });
+
+  var VIEWS = ['overview', 'import', 'leads', 'drafts'];
+  function showView() {
+    var v = (location.hash || '').replace('#', '');
+    if (VIEWS.indexOf(v) < 0) v = 'overview';
+    VIEWS.forEach(function (x) { $('view-' + x).hidden = x !== v; });
+    [].forEach.call($('nav').querySelectorAll('a'), function (a) {
+      if (a.getAttribute('data-view') === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', showView);
 
   $('cc').addEventListener('input', function () { cc = this.value.replace(/\D/g, '') || '1'; save(); render(); });
   $('srcFilter').addEventListener('click', function (e) {
@@ -1465,8 +1848,9 @@ td { overflow-wrap: anywhere; }
   leads.forEach(function (l) { if (!l.source) l.source = 'yelp'; });
   $('me').value = me;
   $('cc').value = cc;
-  selected = leads.length ? visible()[0].id : null;
-  render(); renderDraft();
+  var v0 = visible()[0];
+  selected = v0 ? v0.id : null;
+  render(); renderDraft(); showView();
 })();
 </script>
 
