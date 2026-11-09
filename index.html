@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>html{color-scheme:light}body{margin:0}</style>
+<style>html{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
 <title>Yelp Lead Desk</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -80,6 +80,10 @@ input.missing { border-color: var(--missing); }
 .found label { display: flex; gap: 10px; align-items: flex-start; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); padding: 8px 10px; margin: 0; border-bottom: 1px solid var(--line); font-weight: 400; cursor: pointer; }
 .found label:last-child { border-bottom: 0; }
 .found input { width: auto; margin-top: 4px; }
+[hidden] { display: none !important; }
+.srcpane { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.check { display: flex; gap: 8px; align-items: center; text-transform: none; letter-spacing: 0; font-size: 13.5px; color: var(--ink); font-weight: 400; margin: 0; }
+.check input { width: auto; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn {
   font: inherit; font-weight: 500; cursor: pointer; border-radius: 6px; padding: 8px 14px;
@@ -121,6 +125,64 @@ td select { padding: 4px 6px; font-size: 13px; }
 }
 .toast.on { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+/* ---------- device friendly ---------- */
+html { -webkit-text-size-adjust: 100%; }
+.btn { min-height: 38px; }
+.toast { max-width: calc(100vw - 32px); text-align: center; }
+td { overflow-wrap: anywhere; }
+@media (min-width: 1400px) { .wrap { max-width: 1280px; } }
+@media (max-width: 760px) {
+  body { padding-block: 18px 40px; font-size: 15px; }
+  h1 { font-size: 26px; }
+  h2 { font-size: 18px; }
+  .wrap { gap: 14px; }
+  .card { padding: 14px; border-radius: 10px; }
+  .grid2 { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+  input, select, textarea { font-size: 16px; min-height: 44px; }
+  textarea { min-height: 0; }
+  .btn { min-height: 44px; padding: 10px 16px; }
+  .btn.small { min-height: 40px; padding: 8px 12px; }
+  .row { gap: 8px; }
+  .row > .btn { flex: 1 1 auto; }
+  .row > input[type="file"] { width: 100%; flex: 1 1 100%; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; border: 0; overflow: visible; }
+  .seg button { flex: 1 1 auto; min-height: 44px; border: 1px solid var(--line) !important; border-radius: 8px; padding: 8px 12px; }
+  .ledger-tools { width: 100%; }
+  .ledger-tools .f { flex: 1 1 140px; min-width: 0; }
+  .ledger-tools > .btn { flex: 1 1 auto; }
+  #draft { min-height: 240px; }
+  .found { max-height: 50vh; }
+  .found label { padding: 12px; }
+  .found input { width: 22px; height: 22px; min-height: 0; margin-top: 2px; flex: none; }
+  .check input { width: 22px; height: 22px; min-height: 0; }
+
+  /* ledger table becomes one card per lead */
+  .scroll { overflow: visible; }
+  table, tbody { display: block; min-width: 0; width: 100%; }
+  thead { display: none; }
+  tbody tr {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px;
+    padding: 12px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+  }
+  tbody tr.sel { border-color: var(--accent); }
+  tbody tr.sel td { background: transparent; }
+  tbody td { display: block; border: 0; padding: 0; min-width: 0; }
+  tbody td[data-label]::before {
+    content: attr(data-label); display: block; margin-bottom: 3px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); font-weight: 500;
+  }
+  tbody td:nth-child(1), tbody td:nth-child(2), tbody td:nth-child(8) { grid-column: 1 / -1; }
+  tbody td:nth-child(1)::before, tbody td:nth-child(2)::before, tbody td:nth-child(8)::before { display: none; }
+  tbody td select { width: 100%; }
+  tbody td:nth-child(8) .row > .btn { flex: 1 1 0; }
+  .empty { grid-column: 1 / -1; }
+}
+@media (max-width: 420px) {
+  h1 { font-size: 24px; }
+  tbody tr { grid-template-columns: minmax(0, 1fr); }
+  .counts { font-size: 12px; }
+}
+@media (hover: none) { .btn:hover { filter: none; } }
 </style>
 
 <div class="wrap">
@@ -132,23 +194,81 @@ td select { padding: 4px 6px; font-size: 13px; }
     <div class="counts" id="counts" aria-live="polite"></div>
   </header>
 
-  <section class="card" aria-labelledby="h-search">
-    <h2 id="h-search">Import a Yelp search</h2>
-    <p class="hint">Search Yelp for the businesses you want to sell websites to (plumbers, barbers, dentists), not for web designers. Paste the search link, then copy the results page text and paste it below. Each Yelp page lists about 10 businesses.</p>
-    <div>
-      <label for="s-url">Yelp search link</label>
-      <input id="s-url" autocomplete="off" placeholder="https://www.yelp.com/search?find_desc=Plumbers&find_loc=Houston%2C+TX">
+  <section class="card" aria-labelledby="h-import">
+    <h2 id="h-import">Import leads</h2>
+    <p class="hint">Choose where the data comes from. Every source fills the same preview list, and you add the businesses you want to the ledger.</p>
+    <div class="seg" id="srcTabs" role="group" aria-label="Data source">
+      <button type="button" data-src="yelp" aria-pressed="true">Yelp</button>
+      <button type="button" data-src="google" aria-pressed="false">Google</button>
+      <button type="button" data-src="osm" aria-pressed="false">OpenStreetMap</button>
+      <button type="button" data-src="file" aria-pressed="false">CSV or any source</button>
     </div>
-    <p class="status" id="sUrlMsg"></p>
-    <div>
-      <label for="s-paste">Search results page text</label>
-      <textarea id="s-paste" rows="5" placeholder="On the Yelp results page press Ctrl+A then Ctrl+C, and paste here"></textarea>
+
+    <div id="src-yelp" class="srcpane">
+      <p class="hint">Search Yelp for the businesses you want to sell websites to (plumbers, barbers, dentists), not for web designers. Paste the search link, open it, copy the results page text, and paste that text below. Each Yelp page lists about 10 businesses.</p>
+      <div>
+        <label for="s-url">Yelp search link</label>
+        <input id="s-url" autocomplete="off" placeholder="https://www.yelp.com/search?find_desc=Plumbers&find_loc=Houston%2C+TX">
+      </div>
+      <p class="status" id="sUrlMsg"></p>
+      <div>
+        <label for="s-paste">Search results page text</label>
+        <textarea id="s-paste" rows="5" placeholder="On the Yelp results page press Ctrl+A then Ctrl+C, and paste the text here"></textarea>
+      </div>
+      <div class="row">
+        <button class="btn" id="s-find" type="button">Find businesses</button>
+        <button class="btn ghost" id="s-sample" type="button">Try a sample</button>
+      </div>
     </div>
-    <div class="row">
-      <button class="btn" id="s-find" type="button">Find businesses</button>
-      <button class="btn ghost" id="s-sample" type="button">Try a sample</button>
-      <span class="status" id="sMsg" role="status"></span>
+
+    <div id="src-google" class="srcpane" hidden>
+      <div class="grid2">
+        <div><label for="g-query">Search, as you would type in Google Maps</label><input id="g-query" autocomplete="off" placeholder="plumber in Houston, TX"></div>
+      </div>
+      <div class="sect">Option 1 · Google Places API</div>
+      <p class="hint">Returns name, phone, website, rating and reviews directly. You need an API key with Places API (New) enabled and a billing account in Google Cloud. Restrict the key to your site's address. This option works on the deployed site, not in the Claude preview.</p>
+      <div class="grid2">
+        <div><label for="g-key">API key</label><input id="g-key" type="password" autocomplete="off"></div>
+        <div>
+          <label for="g-pages">Pages (20 businesses each)</label>
+          <select id="g-pages"><option>1</option><option>2</option><option selected>3</option></select>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="g-remember"> Remember the key in this browser</label>
+      <div class="row"><button class="btn" id="g-search" type="button">Search Google</button></div>
+      <div class="sect">Option 2 · Paste from Google Maps, no key</div>
+      <p class="hint">Search on Google Maps, press Ctrl+A and Ctrl+C on the results list, and paste it here. Fill the search box above with the same search so the city and category are set.</p>
+      <textarea id="g-paste" rows="4" placeholder="Paste the Google Maps results text here"></textarea>
+      <div class="row">
+        <button class="btn" id="g-find" type="button">Find businesses</button>
+        <button class="btn ghost" id="g-sample" type="button">Try a sample</button>
+      </div>
     </div>
+
+    <div id="src-osm" class="srcpane" hidden>
+      <p class="hint">Free, no key and no card. OpenStreetMap lists many businesses with phone and website, but coverage is patchy and there are no ratings. If a business shows no website here, check Google before you assume it has none. This works on the deployed site, not in the Claude preview.</p>
+      <div class="grid2">
+        <div><label for="o-cat">Category</label><input id="o-cat" list="niches" autocomplete="off" placeholder="Plumbing, HVAC, Barber, or craft=plumber"></div>
+        <div><label for="o-city">City</label><input id="o-city" autocomplete="off" placeholder="Houston, TX"></div>
+        <div>
+          <label for="o-limit">Max results</label>
+          <select id="o-limit"><option>50</option><option selected>100</option><option>200</option></select>
+        </div>
+      </div>
+      <div class="row"><button class="btn" id="o-search" type="button">Search OpenStreetMap</button></div>
+    </div>
+
+    <div id="src-file" class="srcpane" hidden>
+      <p class="hint">Use data from anywhere: Google Sheets, Excel, Outscraper, Apollo, or any CSV export. Paste the rows (first row is the column names) or load a .csv file. Columns like Name, Category, Phone, Website, Rating, Reviews, Address, City, State, Email are recognised automatically.</p>
+      <textarea id="c-paste" rows="5" placeholder="Name,Category,Phone,Website,Rating,Reviews,Address"></textarea>
+      <div class="row">
+        <input type="file" id="c-file" accept=".csv,.tsv,.txt" aria-label="Load a CSV file" style="width: auto">
+        <button class="btn" id="c-read" type="button">Read rows</button>
+        <button class="btn ghost" id="c-sample" type="button">Try a sample</button>
+      </div>
+    </div>
+
+    <p class="status" id="sMsg" role="status"></p>
     <div id="sFoundWrap" hidden>
       <div class="found" id="sFound"></div>
       <div class="row" style="margin-top: 12px">
@@ -522,7 +642,7 @@ td select { padding: 4px 6px; font-size: 13px; }
     render(); renderDraft();
   }
 
-  /* ---------- search import ---------- */
+  /* ---------- import leads ---------- */
   //SEARCH-START
   function parseSearchUrl(u) {
     var res = { ok: false, niche: '', city: '', state: '', page: 1, url: '' };
@@ -580,20 +700,274 @@ td select { padding: 4px 6px; font-size: 13px; }
   }
   //SEARCH-END
 
+  //IMPORT-START
+  function splitAddress(a) {
+    var out = { address: '', city: '', state: '', zip: '' };
+    a = (a || '').replace(/,\s*(USA|United States)$/i, '').trim();
+    var m = a.match(/^(.*?),\s*([^,]+),\s*([A-Z]{2})\s*(\d{5})?(?:-\d{4})?$/);
+    if (m) { out.address = m[1].trim(); out.city = m[2].trim(); out.state = m[3]; out.zip = m[4] || ''; }
+    else out.address = a;
+    return out;
+  }
+  function parseCsv(text, d) {
+    var rows = [], row = [], cur = '', q = false;
+    function endRow() { row.push(cur); cur = ''; if (row.some(function (c) { return c.trim(); })) rows.push(row); row = []; }
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (q) {
+        if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+        else cur += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === d) { row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; endRow(); }
+      else cur += ch;
+    }
+    endRow();
+    return rows;
+  }
+  var HEAD = {
+    name: ['name', 'business name', 'business', 'title', 'company', 'company name', 'display name'],
+    niche: ['category', 'categories', 'main category', 'type', 'niche', 'primary type'],
+    phone: ['phone', 'phone number', 'telephone', 'tel', 'national phone number', 'phone 1'],
+    website: ['website', 'web site', 'site', 'url', 'web', 'domain', 'website uri', 'website url'],
+    rating: ['rating', 'stars', 'review rating', 'average rating'],
+    reviews: ['reviews', 'review count', 'reviews count', 'user ratings total', 'user rating count', 'number of reviews', 'total reviews'],
+    address: ['address', 'street', 'street address', 'full address', 'formatted address'],
+    city: ['city', 'town'], state: ['state', 'region', 'province', 'st'],
+    zip: ['zip', 'zip code', 'zipcode', 'postal code', 'postcode'],
+    email: ['email', 'email address', 'e mail'], owner: ['owner', 'owner name', 'contact', 'contact name'],
+    fb: ['facebook', 'facebook url', 'facebook link'], ig: ['instagram', 'instagram url', 'instagram link'],
+    wa: ['whatsapp', 'whatsapp number'], notes: ['notes', 'note', 'description']
+  };
+  function normHead(h) { return String(h).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+  function parseTable(raw) {
+    var first = raw.split(/\r?\n/)[0] || '';
+    var d = first.indexOf('\t') !== -1 ? '\t' : (first.split(';').length > first.split(',').length ? ';' : ',');
+    var rows = parseCsv(raw, d);
+    if (rows.length < 2) return { items: [], mapped: [], noName: rows.length < 1 };
+    var map = {}, mapped = [];
+    rows[0].forEach(function (h, i) {
+      var n = normHead(h);
+      for (var k in HEAD) { if (!(k in map) && HEAD[k].indexOf(n) !== -1) { map[k] = i; mapped.push(h.trim()); break; } }
+    });
+    if (!('name' in map)) return { items: [], mapped: mapped, noName: true };
+    var items = rows.slice(1).map(function (r) {
+      var o = {};
+      for (var k in map) o[k] = (r[map[k]] || '').trim();
+      if (o.reviews) o.reviews = parseCount(o.reviews);
+      if (o.address && (!o.city || !o.zip)) {
+        var a = splitAddress(o.address);
+        if (!o.city) o.city = a.city;
+        if (!o.state) o.state = a.state;
+        if (!o.zip) o.zip = a.zip;
+        if (a.city) o.address = a.address;
+      }
+      o.webStatus = ('website' in map) ? (o.website ? 'unknown' : 'none') : 'unknown';
+      return o;
+    }).filter(function (o) { return o.name; });
+    return { items: items, mapped: mapped };
+  }
+  function parseGooglePaste(raw) {
+    var lines = raw.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+    var ratingRe = /^([1-5]\.\d)(?:\s*\(?([\d.,]+[kK]?)\)?)?$/;
+    var idx = [];
+    for (var i = 1; i < lines.length; i++) { if (ratingRe.test(lines[i])) idx.push(i); }
+    var out = [], seen = {};
+    idx.forEach(function (i, k) {
+      var name = lines[i - 1];
+      if (/^(sponsored|ad|results|rating|hours|website|directions)$/i.test(name) || name.length > 90) return;
+      var end = Math.min(k + 1 < idx.length ? idx[k + 1] - 1 : lines.length, i + 9);
+      var block = lines.slice(i, end);
+      var rm = block[0].match(ratingRe);
+      var rating = rm[1], reviews = rm[2] ? parseCount(rm[2]) : '';
+      var j = 1;
+      if (!reviews && block[1] && /^\(?[\d.,]+[kK]?\)?$/.test(block[1])) { reviews = parseCount(block[1].replace(/[()]/g, '')); j = 2; }
+      var rest = block.slice(j);
+      var text = rest.join('\n');
+      var niche = '', address = '';
+      for (var r = 0; r < rest.length; r++) {
+        if (/[·⋅]/.test(rest[r])) {
+          var parts = rest[r].split(/\s*[·⋅]\s*/).filter(function (p) { return p && !/^\${1,4}$/.test(p); });
+          if (parts.length) { niche = parts[0]; var last = parts[parts.length - 1]; if (parts.length > 1 && /\d/.test(last) && !/^(open|closed)/i.test(last)) address = last; }
+          break;
+        }
+      }
+      var ph = text.match(/\(?\d{3}\)?[\s.\-]*\d{3}[\s.\-]\d{4}/);
+      var hasSite = rest.some(function (l) { return /^website$/i.test(l); });
+      var hasDir = rest.some(function (l) { return /^directions$/i.test(l); });
+      var key = name.toLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push({ name: name, rating: rating, reviews: reviews, niche: niche, address: address, phone: ph ? ph[0] : '', webStatus: hasSite ? 'unknown' : hasDir ? 'none' : 'unknown', website: hasSite ? 'listed on Google' : '' });
+    });
+    return out;
+  }
+  function fromPlace(p) {
+    var a = splitAddress(p.formattedAddress || '');
+    return {
+      name: (p.displayName && p.displayName.text) || '',
+      niche: (p.primaryTypeDisplayName && p.primaryTypeDisplayName.text) || '',
+      rating: p.rating != null ? String(p.rating) : '',
+      reviews: p.userRatingCount != null ? String(p.userRatingCount) : '',
+      phone: p.nationalPhoneNumber || '', website: p.websiteUri || '', webStatus: p.websiteUri ? 'unknown' : 'none',
+      address: a.address, city: a.city, state: a.state, zip: a.zip
+    };
+  }
+  function fromOsm(el) {
+    var t = el.tags || {};
+    var site = t.website || t['contact:website'] || t.url || '';
+    return {
+      name: t.name || '', phone: t.phone || t['contact:phone'] || '', website: site, webStatus: 'unknown',
+      address: [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' '),
+      zip: t['addr:postcode'] || '', city: t['addr:city'] || '', state: t['addr:state'] || '',
+      email: t.email || t['contact:email'] || '', fb: t['contact:facebook'] || t.facebook || '',
+      ig: t['contact:instagram'] || t.instagram || '', hours: t.opening_hours || '',
+      notes: site ? '' : 'No website in OpenStreetMap, check Google'
+    };
+  }
+  var OSM = [['plumb', ['craft', 'plumber']], ['hvac', ['craft', 'hvac']], ['heating', ['craft', 'hvac']], ['electric', ['craft', 'electrician']],
+    ['restaurant', ['amenity', 'restaurant']], ['cafe', ['amenity', 'cafe']], ['barber', ['shop', 'hairdresser']], ['hair', ['shop', 'hairdresser']],
+    ['salon', ['shop', 'hairdresser']], ['beauty', ['shop', 'beauty']], ['dent', ['amenity', 'dentist']], ['clinic', ['amenity', 'clinic']],
+    ['auto', ['shop', 'car_repair']], ['car repair', ['shop', 'car_repair']], ['roof', ['craft', 'roofer']], ['landscap', ['craft', 'gardener']],
+    ['garden', ['craft', 'gardener']], ['clean', ['office', 'cleaning']], ['real estate', ['office', 'estate_agent']], ['lawyer', ['office', 'lawyer']],
+    ['gym', ['leisure', 'fitness_centre']]];
+  function osmTag(cat) {
+    var c = (cat || '').trim().toLowerCase();
+    var raw = c.match(/^([a-z_:]+)=([a-z_]+)$/);
+    if (raw) return [raw[1], raw[2]];
+    for (var i = 0; i < OSM.length; i++) { if (c.indexOf(OSM[i][0]) !== -1) return OSM[i][1]; }
+    return null;
+  }
+  function ctxFromQuery(q) {
+    var m = (q || '').match(/^(.*?)\s+(?:in|near)\s+(.+)$/i);
+    var niche = m ? m[1].trim() : (q || '').trim(), loc = m ? m[2].trim() : '';
+    var lm = loc.match(/^(.*?),\s*([A-Za-z]{2})\b/);
+    return { niche: niche, city: lm ? lm[1].trim() : loc, state: lm ? lm[2].toUpperCase() : '' };
+  }
+  //IMPORT-END
+
   var searchCtx = { niche: '', city: '', state: '' };
   var sList = [];
+  var GKEY = 'yelp-lead-desk-gkey';
   var S_URL = 'https://www.yelp.com/search?find_desc=Plumbers&find_loc=Houston%2C+TX';
   var S_SAMPLE = 'Top 10 Best Plumbers near Houston, TX\n1. Bayou City Plumbing\n4.5\n(128 reviews)\nPlumbing, Water Heater Installation\nOpen until 6:00 PM\n2. Gulf Coast Drain Pros\n4.8\n(64 reviews)\nPlumbing, Drain Cleaning\nOffers virtual consultations\n3. Montrose Rooter & Repair\n4.2\n(31 reviews)\nPlumbing\nClosed until 8:00 AM\n4. Lone Star Water Heaters\n3.9\n(1.2k reviews)\nWater Heater Installation & Repair\nFast responder\nPage 1 of 10';
+  var G_SAMPLE = 'Results\nBayou City Plumbing\n4.5(128)\nPlumber · 2150 Westheimer Rd\nOpen ⋅ Closes 6 PM · (713) 555-0142\nWebsite\nDirections\nGulf Coast Drain Pros\n4.8(64)\nPlumber · 410 Main St\nOpen ⋅ Closes 5 PM · (713) 555-0188\nDirections\nLone Star Water Heaters\n3.9(1.2K)\nWater heater installation service · 77 Bell St\nClosed ⋅ Opens 8 AM · (713) 555-0166\nWebsite\nDirections';
+  var C_SAMPLE = 'Name,Category,Phone,Website,Rating,Reviews,Address\nBayou City Plumbing,Plumbing,(713) 555-0142,,4.5,128,"2150 Westheimer Rd, Houston, TX 77098"\nGulf Coast Drain Pros,Plumbing,(713) 555-0188,gulfcoastdrain.example,4.8,64,"410 Main St, Houston, TX 77002"\nLone Star Water Heaters,Water Heaters,(713) 555-0166,,3.9,1200,"77 Bell St, Houston, TX 77003"';
+
+  function showFound(items, label) {
+    sList = items.filter(function (f) { return f && f.name; });
+    $('sMsg').textContent = sList.length
+      ? 'Found ' + sList.length + ' businesses from ' + label + '. Untick any you do not want.'
+      : 'No businesses found in ' + label + '. Check the data and try again.';
+    renderFound();
+  }
+  function netFail(e, what) {
+    if (e && e.name !== 'TypeError' && e.message) { $('sMsg').textContent = what + ' said: ' + e.message; return; }
+    $('sMsg').textContent = 'Could not reach ' + what + '. This works on the deployed site (Vercel), not inside the Claude preview, because the preview blocks requests to other sites.';
+  }
 
   function onSearchUrl() {
     var v = $('s-url').value;
-    if (!v.trim()) { $('sUrlMsg').textContent = ''; return; }
+    if (!v.trim()) { $('sUrlMsg').textContent = ''; return null; }
     var r = parseSearchUrl(v);
-    if (!r.ok) { $('sUrlMsg').textContent = 'That does not look like a Yelp search link.'; return; }
-    searchCtx = { niche: r.niche, city: r.city, state: r.state };
+    if (!r.ok) { $('sUrlMsg').textContent = 'That does not look like a Yelp search link.'; return null; }
     var info = [r.niche, [r.city, r.state].filter(Boolean).join(', '), 'page ' + r.page].filter(Boolean).join(' · ');
     $('sUrlMsg').innerHTML = esc(info) + '. <a href="' + esc(r.url) + '" target="_blank" rel="noopener">Open this search on Yelp</a>, then copy the results page text.';
+    return r;
   }
+  function yelpFind() {
+    var raw = $('s-paste').value;
+    if (!raw.trim()) { $('sMsg').textContent = 'Paste the search results text first.'; return; }
+    if (/^https?:\/\/\S+$/i.test(raw.trim())) {
+      $('sMsg').textContent = 'That is a link. Put links in the box above. Open the link on Yelp, press Ctrl+A and Ctrl+C on that page, then paste the page text here.';
+      return;
+    }
+    var r = onSearchUrl();
+    searchCtx = r ? { niche: r.niche, city: r.city, state: r.state } : { niche: '', city: '', state: '' };
+    var items = parseSearch(raw);
+    showFound(items, 'the Yelp text');
+    if (!items.length) $('sMsg').textContent = 'No numbered results found. If the Yelp text looks different, send a few lines of it to Claude so the reader can be matched to it.';
+  }
+  function googleSearch() {
+    var key = $('g-key').value.trim(), q = $('g-query').value.trim();
+    if (!key || !q) { $('sMsg').textContent = 'Enter your API key and a search such as "plumber in Houston, TX".'; return; }
+    try { if ($('g-remember').checked) localStorage.setItem(GKEY, key); else localStorage.removeItem(GKEY); } catch (e) {}
+    searchCtx = ctxFromQuery(q);
+    var pages = parseInt($('g-pages').value, 10) || 1, all = [], token = '';
+    $('sMsg').textContent = 'Searching Google...';
+    function next(n) {
+      var body = { textQuery: q, pageSize: 20 };
+      if (token) body.pageToken = token;
+      return fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json', 'X-Goog-Api-Key': key,
+          'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.primaryTypeDisplayName,places.businessStatus,nextPageToken'
+        },
+        body: JSON.stringify(body)
+      }).then(function (r) {
+        return r.json().then(function (j) {
+          if (!r.ok) throw new Error((j.error && j.error.message) || ('HTTP ' + r.status));
+          return j;
+        });
+      }).then(function (j) {
+        all = all.concat(j.places || []);
+        token = j.nextPageToken || '';
+        if (token && n + 1 < pages) return next(n + 1);
+      });
+    }
+    next(0).then(function () {
+      showFound(all.filter(function (p) { return p.businessStatus !== 'CLOSED_PERMANENTLY'; }).map(fromPlace), 'Google');
+    }).catch(function (e) { netFail(e, 'Google'); });
+  }
+  function googleFind() {
+    var raw = $('g-paste').value;
+    if (!raw.trim()) { $('sMsg').textContent = 'Paste the Google Maps results text first.'; return; }
+    searchCtx = ctxFromQuery($('g-query').value);
+    var items = parseGooglePaste(raw);
+    showFound(items, 'the Google Maps text');
+    if (!items.length) $('sMsg').textContent = 'No businesses found. If the Google Maps text looks different, send a few lines of it to Claude so the reader can be matched to it.';
+  }
+  function osmSearch() {
+    var cat = $('o-cat').value.trim(), city = $('o-city').value.trim(), lim = parseInt($('o-limit').value, 10) || 100;
+    var tag = osmTag(cat);
+    if (!tag) { $('sMsg').textContent = 'Use a category such as Plumbing, HVAC, Barber, Dentist, Restaurant, or type an OpenStreetMap tag like craft=plumber.'; return; }
+    if (!city) { $('sMsg').textContent = 'Enter a city, such as Houston, TX.'; return; }
+    var lm = city.match(/^(.*?),\s*([A-Za-z]{2})\b/);
+    var nice = /=/.test(cat) ? tag[1] : cat;
+    searchCtx = { niche: nice, city: lm ? lm[1].trim() : city, state: lm ? lm[2].toUpperCase() : '' };
+    $('sMsg').textContent = 'Searching OpenStreetMap...';
+    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(city))
+      .then(function (r) { return r.json(); })
+      .then(function (g) {
+        if (!g.length) throw new Error('could not find that city');
+        var b = g[0].boundingbox;
+        var q = '[out:json][timeout:30];nwr["' + tag[0] + '"="' + tag[1] + '"]["name"](' + b[0] + ',' + b[2] + ',' + b[1] + ',' + b[3] + ');out center tags ' + lim + ';';
+        return fetch('https://overpass-api.de/api/interpreter', {
+          method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q)
+        });
+      })
+      .then(function (r) { if (!r.ok) throw new Error('the server was busy, try a smaller area or try again (HTTP ' + r.status + ')'); return r.json(); })
+      .then(function (j) {
+        showFound((j.elements || []).map(fromOsm).map(function (o) { o.niche = nice; return o; }), 'OpenStreetMap');
+        if (!sList.length) $('sMsg').textContent = 'No businesses found. Try another category or a smaller area. OpenStreetMap coverage varies by city.';
+      })
+      .catch(function (e) { netFail(e, 'OpenStreetMap'); });
+  }
+  function readTable() {
+    var raw = $('c-paste').value;
+    if (!raw.trim()) { $('sMsg').textContent = 'Paste your rows or load a file first.'; return; }
+    searchCtx = { niche: '', city: '', state: '' };
+    var r = parseTable(raw);
+    if (r.noName) {
+      sList = []; renderFound();
+      $('sMsg').textContent = 'The first row needs a Name (or Business Name) column. Add column names in the first row and try again.';
+      return;
+    }
+    showFound(r.items, 'your data');
+    if (r.items.length) $('sMsg').textContent += ' Recognised columns: ' + r.mapped.join(', ') + '.';
+  }
+
   function updateAddCount() {
     var n = $('sFound').querySelectorAll('input:checked').length;
     $('sAdd').textContent = 'Add selected (' + n + ')';
@@ -602,60 +976,74 @@ td select { padding: 4px 6px; font-size: 13px; }
   function renderFound() {
     $('sFoundWrap').hidden = !sList.length;
     $('sFound').innerHTML = sList.map(function (f, i) {
-      var meta = [f.rating ? f.rating + '★' : '', f.reviews ? f.reviews + ' reviews' : '', f.niche || searchCtx.niche].filter(Boolean).join(' · ');
-      return '<label><input type="checkbox" data-i="' + i + '" checked><span><strong>' + esc(f.name) + '</strong><div class="sub">' + esc(meta) + '</div></span></label>';
+      var web = f.webStatus === 'none' ? 'No website listed' : f.website ? 'Has website' : '';
+      var meta = [f.rating ? f.rating + '★' : '', f.reviews ? f.reviews + ' reviews' : '', f.niche || searchCtx.niche, web].filter(Boolean).join(' · ');
+      var line2 = [f.phone, f.address].filter(Boolean).join(' · ');
+      return '<label><input type="checkbox" data-i="' + i + '" checked><span><strong>' + esc(f.name) + '</strong><div class="sub">' + esc(meta) + '</div>' +
+        (line2 ? '<div class="sub">' + esc(line2) + '</div>' : '') + '</span></label>';
     }).join('');
     updateAddCount();
   }
-  function findBusinesses() {
-    var raw = $('s-paste').value;
-    if (!raw.trim()) { $('sMsg').textContent = 'Paste the search results text first.'; return; }
-    if (/^https?:\/\/\S+$/i.test(raw.trim())) {
-      $('sMsg').textContent = 'That is a link. Put links in the box above. Open the link on Yelp, press Ctrl+A and Ctrl+C on that page, then paste the page text here.';
-      return;
-    }
-    onSearchUrl();
-    sList = parseSearch(raw);
-    $('sMsg').textContent = sList.length
-      ? 'Found ' + sList.length + ' businesses. Untick any you do not want.'
-      : 'No numbered results found. Copy the whole results page (Ctrl+A, Ctrl+C) and try again.';
-    renderFound();
-  }
+  function digits(s) { return String(s || '').replace(/\D/g, ''); }
   function addFound() {
     var boxes = $('sFound').querySelectorAll('input[type=checkbox]');
+    var base = { niche: '', city: '', state: '', rating: '', reviews: '', phone: '', website: '', webStatus: 'unknown', problem: '', channel: '', status: 'New', followUp: '', example: false, owner: '', address: '', zip: '', price: '', claimed: 'unknown', years: '', hours: '', email: '', wa: '', fb: '', ig: '', services: '', notes: '' };
     var added = 0, dup = 0, first = null;
     [].forEach.call(boxes, function (b) {
       if (!b.checked) return;
       var f = sList[+b.getAttribute('data-i')];
-      var exists = leads.some(function (l) {
-        return !l.example && l.name.toLowerCase() === f.name.toLowerCase() && (l.city || '').toLowerCase() === (searchCtx.city || '').toLowerCase();
+      var l = {};
+      for (var k in base) l[k] = base[k];
+      for (var k2 in f) { if (f[k2] !== '' && f[k2] != null) l[k2] = f[k2]; }
+      if (!l.niche) l.niche = searchCtx.niche;
+      if (!l.city) l.city = searchCtx.city;
+      if (!l.state) l.state = searchCtx.state;
+      var exists = leads.some(function (x) {
+        if (x.example) return false;
+        var samePhone = digits(l.phone).length >= 7 && digits(x.phone) === digits(l.phone);
+        return samePhone || (x.name.toLowerCase() === l.name.toLowerCase() && (x.city || '').toLowerCase() === (l.city || '').toLowerCase());
       });
       if (exists) { dup++; return; }
-      var l = {
-        id: uid(), added: Date.now() + added, name: f.name, niche: f.niche || searchCtx.niche,
-        city: searchCtx.city, state: searchCtx.state, rating: f.rating, reviews: f.reviews, phone: f.phone,
-        website: '', webStatus: 'unknown', problem: '', channel: '', status: 'New', followUp: '', example: false,
-        owner: '', address: '', zip: '', price: '', claimed: 'unknown', years: '', hours: '', email: '', wa: '',
-        fb: '', ig: '', services: '', notes: f.notes
-      };
+      if (!l.channel) l.channel = l.wa ? 'WhatsApp' : l.email ? 'Email' : l.ig ? 'Instagram' : l.fb ? 'Facebook' : '';
+      l.id = uid(); l.added = Date.now() + added;
       leads.push(l); if (!first) first = l.id; added++;
     });
     if (first) selected = first;
     save(); render(); renderDraft();
-    $('sMsg').textContent = 'Added ' + added + (dup ? ', skipped ' + dup + ' already in the ledger' : '') + '. Open each business page on Yelp and paste it in Add a lead to fill in the website and contact details.';
-    sList = []; renderFound(); $('s-paste').value = '';
+    $('sMsg').textContent = 'Added ' + added + (dup ? ', skipped ' + dup + ' already in the ledger' : '') + '. Open a business page to fill in its website and contact details with Add a lead.';
+    sList = []; renderFound();
   }
   function setAll(v) {
     [].forEach.call($('sFound').querySelectorAll('input[type=checkbox]'), function (b) { b.checked = v; });
     updateAddCount();
   }
+  function showSource(src) {
+    [].forEach.call($('srcTabs').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-src') === src)); });
+    ['yelp', 'google', 'osm', 'file'].forEach(function (s) { $('src-' + s).hidden = s !== src; });
+    $('sMsg').textContent = ''; sList = []; renderFound();
+  }
+
+  $('srcTabs').addEventListener('click', function (e) { var b = e.target.closest('button[data-src]'); if (b) showSource(b.getAttribute('data-src')); });
   $('s-url').addEventListener('input', onSearchUrl);
-  $('s-find').addEventListener('click', findBusinesses);
-  $('s-sample').addEventListener('click', function () { $('s-url').value = S_URL; $('s-paste').value = S_SAMPLE; findBusinesses(); });
+  $('s-find').addEventListener('click', yelpFind);
+  $('s-sample').addEventListener('click', function () { $('s-url').value = S_URL; $('s-paste').value = S_SAMPLE; yelpFind(); });
+  $('g-search').addEventListener('click', googleSearch);
+  $('g-find').addEventListener('click', googleFind);
+  $('g-sample').addEventListener('click', function () { $('g-query').value = 'plumber in Houston, TX'; $('g-paste').value = G_SAMPLE; googleFind(); });
+  $('o-search').addEventListener('click', osmSearch);
+  $('c-read').addEventListener('click', readTable);
+  $('c-sample').addEventListener('click', function () { $('c-paste').value = C_SAMPLE; readTable(); });
+  $('c-file').addEventListener('change', function () {
+    var f = this.files && this.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () { $('c-paste').value = String(rd.result || ''); readTable(); };
+    rd.readAsText(f);
+  });
   $('sAdd').addEventListener('click', addFound);
   $('sAll').addEventListener('click', function () { setAll(true); });
   $('sNone').addEventListener('click', function () { setAll(false); });
   $('sFound').addEventListener('change', updateAddCount);
+  try { var gk = localStorage.getItem(GKEY); if (gk) { $('g-key').value = gk; $('g-remember').checked = true; } } catch (e) {}
 
   /* ---------- ledger ---------- */
   function opts(list, val) {
@@ -730,6 +1118,10 @@ td select { padding: 4px 6px; font-size: 13px; }
   function render() {
     var list = visible();
     $('rows').innerHTML = list.length ? list.map(row).join('') : '<tr><td colspan="8" class="empty">No leads match. Paste a Yelp page above to add one.</td></tr>';
+    var heads = [].map.call(document.querySelectorAll('thead th'), function (th) { return th.textContent; });
+    [].forEach.call($('rows').querySelectorAll('tr[data-id]'), function (tr) {
+      [].forEach.call(tr.children, function (td, i) { if (heads[i]) td.setAttribute('data-label', heads[i]); });
+    });
     var hot = leads.filter(function (l) { return tier(score(l))[0] === 'hot'; }).length;
     var msgd = leads.filter(function (l) { return l.status === 'Messaged'; }).length;
     $('counts').innerHTML = '<span><b>' + leads.length + '</b> leads</span><span><b>' + hot + '</b> hot</span><span><b>' + msgd + '</b> messaged</span>';
