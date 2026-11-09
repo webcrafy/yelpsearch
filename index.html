@@ -324,9 +324,215 @@ td.mono { white-space: nowrap; }
 .sw { display: flex; gap: 10px; flex-wrap: wrap; }
 .sw button { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: 0 0 0 1px var(--line); }
 .sw button[aria-pressed="true"] { border-color: var(--panel); box-shadow: 0 0 0 2px var(--ink); }
+
+/* home page */
+.home { position: fixed; inset: 0; z-index: 80; overflow-y: auto; background: var(--bg); color: var(--ink); scroll-behavior: smooth; }
+.home::before { content: ""; position: absolute; inset: 0 0 auto; height: 620px; pointer-events: none; background-image: radial-gradient(var(--line) 1.2px, transparent 1.2px); background-size: 22px 22px; -webkit-mask-image: linear-gradient(#000, transparent); mask-image: linear-gradient(#000, transparent); opacity: .9; }
+.hw { position: relative; width: 100%; max-width: 1140px; margin-inline: auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+.home-nav { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 82%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid transparent; }
+.home-nav .hw { display: flex; align-items: center; gap: 8px; padding-block: 14px; }
+.home-nav .brand, .auth-card .brand { display: flex; }
+.home-nav .brand { margin-right: 18px; }
+.nl { display: flex; gap: 2px; margin-right: auto; }
+.nl button { background: none; border: 0; font: inherit; font-size: 14.5px; color: var(--muted); padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+.nl button:hover { color: var(--ink); background: var(--panel-2); }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: center; padding-block: 64px 40px; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 12px 5px 8px; }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
+.hero h1 { font-size: clamp(38px, 5.6vw, 64px); line-height: 1.02; letter-spacing: -0.03em; margin-top: 18px; max-width: 13ch; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p.sub { font-size: 18px; color: var(--muted); max-width: 44ch; margin: 20px 0 0; }
+.cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
+.cta .btn { padding: 13px 22px; font-size: 16px; }
+.facts { display: flex; gap: 8px 20px; flex-wrap: wrap; margin: 22px 0 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--muted); }
+.facts li { display: flex; gap: 7px; align-items: center; }
+.facts svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.stage { position: relative; min-width: 0; padding-bottom: 106px; }
+.pv { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+.pv-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 13px 16px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 14px; }
+.pv-tag { font-family: var(--font-mono); font-size: 11px; font-weight: 400; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.pv-row { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.pv-row:last-child { border-bottom: 0; }
+.pv-score { font-family: var(--font-mono); text-align: center; border-radius: 9px; padding: 5px 0; background: var(--panel-2); font-size: 14px; }
+.pv-score.hot { background: var(--accent); color: var(--on-accent); }
+.pv-name { font-weight: 600; font-size: 14.5px; }
+.pv-sub { color: var(--muted); font-size: 12.5px; }
+.pv-gap { font-size: 12.5px; color: var(--muted); text-align: right; }
+.pv-gap b { color: var(--accent); font-weight: 600; }
+.msg { position: absolute; left: -22px; right: 26px; bottom: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 14px 16px; }
+.msg .t { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+.msg p { margin: 0; font-size: 14px; line-height: 1.5; }
+.strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); background: var(--panel); border-radius: 16px; margin-top: 36px; }
+.strip > div { padding: 18px 20px; border-left: 1px solid var(--line); min-width: 0; }
+.strip > div:first-child { border-left: 0; }
+.strip b { display: block; font-family: var(--font-display); font-size: 28px; line-height: 1.1; letter-spacing: -0.02em; }
+.strip span { color: var(--muted); font-size: 13.5px; }
+.sec { margin-top: 84px; scroll-margin-top: 70px; }
+.sec .kick { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.sec h2 { font-size: clamp(26px, 3.4vw, 38px); letter-spacing: -0.025em; margin-top: 8px; max-width: 20ch; line-height: 1.08; }
+.bento { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+.bx { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.bx.s3 { grid-column: span 3; } .bx.s2 { grid-column: span 2; } .bx.s6 { grid-column: span 6; }
+.ic { width: 38px; height: 38px; border-radius: 11px; background: var(--accent-soft); display: grid; place-items: center; margin-bottom: 6px; }
+.ic svg { width: 20px; height: 20px; stroke: var(--accent); fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.bx h3 { font-size: 18px; letter-spacing: -0.01em; }
+.bx p { margin: 0; color: var(--muted); font-size: 14.5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.chips span { border: 1px solid var(--line); background: var(--panel-2); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+.fac { display: grid; gap: 7px; margin-top: 10px; }
+.fac div { display: grid; grid-template-columns: 112px minmax(0, 1fr) 26px; gap: 10px; align-items: center; font-size: 13px; color: var(--muted); }
+.fac i { height: 8px; border-radius: 99px; background: var(--accent); display: block; }
+.fac em { font-style: normal; font-family: var(--font-mono); color: var(--ink); text-align: right; }
+.bx.s6 { flex-direction: row; align-items: center; gap: 18px; }
+.bx.s6 .ic { margin: 0; flex: none; }
+.flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 28px 0 0; padding: 0; list-style: none; counter-reset: s; position: relative; }
+.flow li { counter-increment: s; min-width: 0; }
+.flow li::before { content: counter(s); display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-family: var(--font-mono); font-size: 14px; margin-bottom: 12px; }
+.flow b { display: block; font-family: var(--font-display); font-size: 19px; margin-bottom: 4px; }
+.flow span { color: var(--muted); font-size: 14.5px; }
+.faq { margin-top: 24px; display: grid; gap: 10px; max-width: 780px; }
+.faq details { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 4px 18px; }
+.faq summary { cursor: pointer; font-weight: 600; padding: 14px 0; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--accent); font-size: 20px; line-height: 1; }
+.faq details[open] summary::after { content: "\2212"; }
+.faq p { margin: 0 0 16px; color: var(--muted); max-width: 64ch; }
+.band { margin-top: 84px; background: var(--accent); color: var(--on-accent); border-radius: 22px; padding: 40px clamp(22px, 5vw, 48px); display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; }
+.band h2 { font-size: clamp(26px, 3.4vw, 36px); letter-spacing: -0.025em; max-width: 18ch; line-height: 1.08; }
+.band p { margin: 8px 0 0; opacity: .9; }
+.band .btn { background: var(--panel); color: var(--ink); border-color: transparent; }
+.band .btn.ghost { background: transparent; color: var(--on-accent); border-color: color-mix(in srgb, var(--on-accent) 55%, transparent); }
+.hfoot { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; padding-block: 28px 44px; margin-top: 56px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.home-back { position: absolute; top: 16px; left: 16px; }
+@media (max-width: 900px) {
+  .hero { grid-template-columns: minmax(0, 1fr); gap: 34px; padding-block: 36px 24px; }
+  .hero h1 { max-width: 15ch; }
+  .nl, .home-nav .hide-sm { display: none; }
+  .home-nav .brand { margin-right: auto; }
+  .bx.s3, .bx.s2 { grid-column: span 6; }
+  .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .strip > div:nth-child(3) { border-left: 0; }
+  .strip > div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sec, .band { margin-top: 60px; }
+}
+@media (max-width: 480px) {
+  .pv-gap { display: none; } .pv-row { grid-template-columns: 46px minmax(0, 1fr); }
+  .msg { left: 0; right: 0; position: relative; margin-top: 12px; } .stage { padding-bottom: 0; }
+  .flow { grid-template-columns: minmax(0, 1fr); }
+  .fac div { grid-template-columns: 96px minmax(0, 1fr) 26px; }
+  .bx.s6 { flex-direction: column; align-items: flex-start; }
+}
 </style>
 
+<div class="home" id="home" hidden>
+  <header class="home-nav">
+    <div class="hw">
+      <div class="brand"><span class="mark" aria-hidden="true"></span><span>Hunting Desk</span></div>
+      <nav class="nl" aria-label="Page"><button type="button" data-scroll="h-features">Features</button><button type="button" data-scroll="h-how">How it works</button><button type="button" data-scroll="h-faq">FAQ</button></nav>
+      <button class="btn small ghost hide-sm" data-prefs="1" type="button">Appearance</button>
+      <button class="btn small ghost" data-go="in" type="button">Log in</button>
+      <button class="btn small" data-go="up" type="button">Sign up</button>
+    </div>
+  </header>
+  <div class="hw">
+    <section class="hero">
+      <div>
+        <span class="pill"><i></i>For freelancers and agencies selling websites</span>
+        <h1>Find the businesses that need a website. <em>Reach them first.</em></h1>
+        <p class="sub">Hunting Desk turns the lists you collect into a scored, private lead book, with a message ready to send on WhatsApp, email or DM.</p>
+        <div class="cta">
+          <button class="btn" data-go="up" type="button">Create account</button>
+          <button class="btn ghost" data-go="in" type="button">Log in</button>
+        </div>
+        <ul class="facts">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Private to your account</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Phone and desktop</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>You stay in control</li>
+        </ul>
+      </div>
+      <div class="stage" aria-label="Example lead book">
+        <div class="pv">
+          <div class="pv-head"><span>Lead book</span><span class="pv-tag">Example data</span></div>
+          <div class="pv-row"><span class="pv-score hot">100</span><div><div class="pv-name">Bayou City Plumbing</div><div class="pv-sub">Plumbing, Houston TX &middot; 4.5 stars, 128 reviews</div></div><div class="pv-gap"><b>No website</b><br>Facebook found</div></div>
+          <div class="pv-row"><span class="pv-score hot">75</span><div><div class="pv-name">Westheimer Barber Co.</div><div class="pv-sub">Barber, Houston TX &middot; 4.8 stars, 64 reviews</div></div><div class="pv-gap"><b>Old website</b><br>Instagram found</div></div>
+          <div class="pv-row"><span class="pv-score">16</span><div><div class="pv-name">Sunrise Auto Repair</div><div class="pv-sub">Auto repair, Austin TX &middot; 3.9 stars, 22 reviews</div></div><div class="pv-gap">Site looks fine</div></div>
+        </div>
+        <div class="msg">
+          <div class="t"><b>Drafted message</b><span>WhatsApp, example</span></div>
+          <p>Hi, I came across Bayou City Plumbing on Yelp. 128 reviews and a 4.5 rating, but I could not find a website. I build simple sites for local businesses. Want me to send a quick mockup?</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="strip">
+      <div><b>100</b><span>point lead score</span></div>
+      <div><b>5</b><span>ways to import</span></div>
+      <div><b>3</b><span>message channels</span></div>
+      <div><b>3 days</b><span>to follow-up reminder</span></div>
+    </div>
+
+    <section class="sec" id="h-features">
+      <div class="kick">Features</div>
+      <h2>Everything between a list and a reply</h2>
+      <div class="bento">
+        <div class="bx s3"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4 19h16"/></svg></span><h3>Import from anywhere</h3><p>Paste a Yelp page or search results, paste from Google Maps, search OpenStreetMap, use your own Google Places key, or load a CSV.</p>
+          <div class="chips"><span>Yelp</span><span>Google Maps</span><span>OpenStreetMap</span><span>Places API</span><span>CSV</span></div></div>
+        <div class="bx s3"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9"/><path d="M12 19V5"/><path d="M19 19v-7"/></svg></span><h3>Scored for you</h3><p>Every lead gets a score out of 100. Hot leads rise to the top.</p>
+          <div class="fac">
+            <div><span>Website gap</span><i style="width:100%"></i><em>35</em></div>
+            <div><span>Review count</span><i style="width:57%"></i><em>20</em></div>
+            <div><span>Rating</span><i style="width:43%"></i><em>15</em></div>
+            <div><span>Contact route</span><i style="width:43%"></i><em>15</em></div>
+            <div><span>Claimed page</span><i style="width:29%"></i><em>10</em></div>
+            <div><span>Years in business</span><i style="width:14%"></i><em>5</em></div>
+          </div></div>
+        <div class="bx s2"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5c-2.4-2.4-3.6-5.2-3.6-8.5S9.6 5.9 12 3.5z"/></svg></span><h3>Website and social check</h3><p>Look for Facebook, Instagram, WhatsApp links and an email on a business's own site, and preview the site beside the lead.</p></div>
+        <div class="bx s2"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7l-4 3v-3H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/></svg></span><h3>Messages that fit</h3><p>First message or follow up, for WhatsApp, email or DM. The wording follows the lead's source and what its website is missing.</p></div>
+        <div class="bx s2"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16"/><path d="M9 3v4"/><path d="M15 3v4"/></svg></span><h3>Follow-ups and drafts</h3><p>Mark a lead Messaged and a follow-up date is set for three days later. Deleted leads wait in Drafts until you remove them for good.</p></div>
+        <div class="bx s6"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><div><h3>Your own private account</h3><p>Sign up with your email. Your leads are saved to your account, open on any device, and nobody else can see them.</p></div></div>
+      </div>
+    </section>
+
+    <section class="sec" id="h-how">
+      <div class="kick">How it works</div>
+      <h2>From a list to a conversation</h2>
+      <ol class="flow">
+        <li><b>Import</b><span>Bring in businesses from any of the five sources.</span></li>
+        <li><b>Score</b><span>Sort by score and open the best ones first.</span></li>
+        <li><b>Message</b><span>Copy a drafted message and send it yourself.</span></li>
+        <li><b>Follow up</b><span>Track replies and see what is due today.</span></li>
+      </ol>
+    </section>
+
+    <section class="sec" id="h-faq">
+      <div class="kick">Questions</div>
+      <h2>Before you sign up</h2>
+      <div class="faq">
+        <details><summary>Does it scrape Yelp or Google for me?</summary><p>No. You bring the list by pasting page text, running a map search or loading a file. Hunting Desk organizes, scores and drafts from there.</p></details>
+        <details><summary>Can it tell if a number is on WhatsApp?</summary><p>Not from a number alone. It looks for WhatsApp links on a business's own website, and you can mark a lead after you test it yourself.</p></details>
+        <details><summary>Who can see my leads?</summary><p>Only you. Every account is separate, and a new account starts empty.</p></details>
+        <details><summary>Does it work on my phone?</summary><p>Yes. The layout adapts to phone and desktop, and you can pick a light or dark look and an accent color under Appearance.</p></details>
+      </div>
+    </section>
+
+    <section class="band">
+      <div><h2>Start your lead book today</h2><p>Create an account, import a list, and send your first message.</p></div>
+      <div class="cta" style="margin:0">
+        <button class="btn" data-go="up" type="button">Sign up</button>
+        <button class="btn ghost" data-go="in" type="button">Log in</button>
+      </div>
+    </section>
+
+    <footer class="hfoot">
+      <span>Hunting Desk</span>
+      <span>Map search uses OpenStreetMap data, &copy; OpenStreetMap contributors, under the ODbL.</span>
+      <button class="btn small ghost" data-prefs="1" type="button">Appearance</button>
+    </footer>
+  </div>
+</div>
 <div class="auth" id="auth" hidden>
+  <button class="btn small ghost home-back" id="toHome" type="button">Back to home</button>
   <button class="btn small ghost prefs-open" data-prefs="1" type="button">Appearance</button>
   <form class="auth-card" id="authForm" novalidate>
     <div class="brand"><span class="mark" aria-hidden="true"></span><span>Hunting Desk</span></div>
@@ -837,7 +1043,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function signOut() {
     var go = function () {
       try { localStorage.removeItem(ckey); } catch (e) {}
-      sb.auth.signOut().then(function () { user = null; leads = []; trash = []; me = ''; selected = null; showAuth('in', ''); });
+      sb.auth.signOut().then(function () { user = null; leads = []; trash = []; me = ''; selected = null; showHome(); });
     };
     push().then(function (r) {
       if (r && r.error) { if (!confirm('Your latest changes could not be synced. Sign out anyway?')) return; }
@@ -847,7 +1053,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
 
   var authMode = 'in';
   function showAuth(mode, msg) {
-    $('auth').hidden = false; document.body.classList.add('lock');
+    $('auth').hidden = false; $('home').hidden = true; document.body.classList.add('lock');
     $('authForm').hidden = false; $('resetForm').hidden = true; $('forgot').hidden = mode !== 'in';
     authMode = mode;
     $('authTitle').textContent = mode === 'in' ? 'Sign in' : 'Create your account';
@@ -857,7 +1063,16 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('authMsg').textContent = msg || '';
     $('aPass').value = '';
   }
-  function hideAuth() { $('auth').hidden = true; document.body.classList.remove('lock'); }
+  function hideAuth() { $('auth').hidden = true; $('home').hidden = true; document.body.classList.remove('lock'); }
+  document.addEventListener('click', function (e) {
+    var s = e.target.closest('[data-scroll]'); if (!s) return;
+    var el = document.getElementById(s.getAttribute('data-scroll')); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  function showHome() { $('auth').hidden = true; $('home').hidden = false; document.body.classList.add('lock'); $('home').scrollTop = 0; }
+  document.addEventListener('click', function (e) {
+    var g = e.target.closest('[data-go]'); if (g) { showAuth(g.getAttribute('data-go'), ''); return; }
+    if (e.target.closest('#toHome')) showHome();
+  });
   $('authTabs').addEventListener('click', function (e) { var b = e.target.closest('button[data-mode]'); if (b) showAuth(b.getAttribute('data-mode'), ''); });
   $('authForm').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -2168,6 +2383,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     selected = v0 ? v0.id : null;
     render(); renderDraft(); showView(); renderAccount();
   }
+  $('toHome').hidden = !sb;
   var setupMode = /^#(setup|connect)$/.test(location.hash);
   if (setupMode) {
     document.body.classList.add('lock'); $('auth').hidden = false; $('authForm').hidden = true; $('setupForm').hidden = false;
@@ -2183,7 +2399,11 @@ window.HD_CONFIG = window.HD_CONFIG || {
         else showAuth('in', 'This reset link is invalid or has expired. Click Forgot password to get a new one.');
         return;
       }
-      if (s) enter(s.user); else showAuth('in', hashErr ? decodeURIComponent(hashErr.replace(/\+/g, ' ')) : '');
+      if (s) enter(s.user);
+      else if (hashErr) showAuth('in', decodeURIComponent(hashErr.replace(/\+/g, ' ')));
+      else if (location.hash === '#signup') showAuth('up', '');
+      else if (location.hash === '#login') showAuth('in', '');
+      else showHome();
     }, function () { showAuth('in', 'Could not reach the server.'); });
   } else {
     document.body.classList.add('lock'); $('auth').hidden = false;
