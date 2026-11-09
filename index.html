@@ -965,6 +965,21 @@ td { overflow-wrap: anywhere; }
     }
     return tryNext();
   }
+  function quickOsm(term, city) {
+    return fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=40&addressdetails=1&extratags=1&q=' + encodeURIComponent(term + ' in ' + city), {}, 20000)
+      .then(function (r) { if (!r.ok) throw new Error('quick search failed (HTTP ' + r.status + ')'); return r.json(); })
+      .then(function (arr) {
+        return { quick: true, elements: arr.filter(function (x) { return x.name; }).map(function (x) {
+          var t = {}, ex = x.extratags || {}, a = x.address || {};
+          for (var k in ex) t[k] = ex[k];
+          t.name = x.name;
+          if (a.house_number) t['addr:housenumber'] = a.house_number;
+          if (a.road) t['addr:street'] = a.road;
+          if (a.postcode) t['addr:postcode'] = a.postcode;
+          return { tags: t };
+        }) };
+      });
+  }
   function osmSearch() {
     var cat = $('o-cat').value.trim(), city = $('o-city').value.trim(), lim = parseInt($('o-limit').value, 10) || 100;
     var tag = osmTag(cat);
@@ -981,11 +996,15 @@ td { overflow-wrap: anywhere; }
         if (!g.length) throw new Error('could not find that city, try "Houston, TX"');
         var b = g[0].boundingbox;
         var q = '[out:json][timeout:25];nwr["' + tag[0] + '"="' + tag[1] + '"]["name"](' + b[0] + ',' + b[2] + ',' + b[1] + ',' + b[3] + ');out center tags ' + lim + ';';
-        return overpassRun(q, say);
+        return overpassRun(q, say).catch(function () {
+          say('The main OpenStreetMap server is slow. Trying the quick search...');
+          return quickOsm(tag[1].replace(/_/g, ' '), city);
+        });
       })
       .then(function (j) {
         showFound((j.elements || []).map(fromOsm).map(function (o) { o.niche = nice; return o; }), 'OpenStreetMap');
         if (!sList.length) say('No businesses found. Try another category or a smaller area. OpenStreetMap coverage varies by city.');
+        else if (j.quick) say($('sMsg').textContent + ' The main server was slow, so this is the quick search (up to 40 results).');
       })
       .catch(function (e) {
         var blocked = e && e.name === 'TypeError';
