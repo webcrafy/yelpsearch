@@ -216,7 +216,7 @@ td.mono { white-space: nowrap; }
     border-right: 0; border-top: 1px solid var(--line);
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px));
   }
-  .brand, .side-foot { display: none; }
+  .brand, .side-foot, .side .acct { display: none; }
   .nav { flex-direction: row; width: 100%; gap: 2px; }
   .nav a { flex: 1 1 0; flex-direction: column; gap: 2px; font-size: 12px; padding: 8px 4px; justify-content: center; text-align: center; }
   .nav .badge { position: absolute; top: 2px; right: 10px; margin: 0; font-size: 10.5px; min-width: 18px; padding: 0 5px; }
@@ -423,6 +423,11 @@ td.mono { white-space: nowrap; }
   .fac div { grid-template-columns: 96px minmax(0, 1fr) 26px; }
   .bx.s6 { flex-direction: column; align-items: flex-start; }
 }
+.set-form { display: grid; gap: 12px; max-width: 420px; }
+.set-form input { width: 100%; }
+.set-msg { font-size: 13.5px; background: var(--panel-2); border-radius: 8px; padding: 8px 10px; }
+.set-msg:empty { display: none; }
+.panel .muted { color: var(--muted); margin: 0; font-size: 14px; }
 </style>
 
 <div class="home" id="home" hidden>
@@ -608,6 +613,10 @@ td.mono { white-space: nowrap; }
       <a href="#drafts" data-view="drafts">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="4.5" rx="1"/><path d="M5 8.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5"/><path d="M10 13h4"/></svg>
         <span>Drafts</span><span class="badge" id="b-drafts"></span>
+      </a>
+      <a href="#settings" data-view="settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 14.5a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3h0a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5h0a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v0a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+        <span>Settings</span>
       </a>
     </nav>
     <div class="acct" id="acct"></div>
@@ -861,6 +870,46 @@ td.mono { white-space: nowrap; }
       </section>
     </section>
 
+    <section id="view-settings" hidden>
+      <header class="page-head">
+        <div>
+          <h1>Settings</h1>
+          <p class="lede">Manage your profile, password and look.</p>
+        </div>
+      </header>
+      <div class="stack">
+        <section class="panel">
+          <h2>Profile</h2>
+          <form class="set-form" id="setProfile" novalidate>
+            <div><label for="sName">Display name</label><input id="sName" maxlength="60" autocomplete="name"></div>
+            <div><label for="sEmail">Email</label><input id="sEmail" type="email" autocomplete="email"></div>
+            <div class="set-msg" id="sProfMsg" role="status"></div>
+            <div><button class="btn" type="submit">Save profile</button></div>
+          </form>
+        </section>
+        <section class="panel">
+          <h2>Password</h2>
+          <form class="set-form" id="setPass" novalidate>
+            <div><label for="pCur">Current password</label><input id="pCur" type="password" autocomplete="current-password"></div>
+            <div><label for="pNew">New password</label><input id="pNew" type="password" autocomplete="new-password" minlength="6"></div>
+            <div><label for="pNew2">Repeat new password</label><input id="pNew2" type="password" autocomplete="new-password" minlength="6"></div>
+            <div class="set-msg" id="sPassMsg" role="status"></div>
+            <div><button class="btn" type="submit">Change password</button></div>
+          </form>
+        </section>
+        <section class="panel">
+          <h2>Appearance</h2>
+          <p class="muted">Theme, accent color and text size. Saved to your account.</p>
+          <div><button class="btn ghost" data-prefs="1" type="button">Change appearance</button></div>
+        </section>
+        <section class="panel">
+          <h2>Session</h2>
+          <p class="muted" id="sSess"></p>
+          <div><button class="btn ghost" data-out="1" type="button">Sign out</button></div>
+        </section>
+      </div>
+    </section>
+
     <section id="view-drafts" hidden>
       <header class="page-head">
         <div>
@@ -1026,11 +1075,18 @@ window.HD_CONFIG = window.HD_CONFIG || {
     (other.leads || []).forEach(function (l) { if (!seen[l.id]) { seen[l.id] = 1; out.leads.push(l); } });
     return out;
   }
+  function dname() { var m = (user && user.user_metadata) || {}; return String(m.name || '').trim(); }
+  function renderSettings() {
+    if (!user) return;
+    $('sName').value = dname();
+    $('sEmail').value = user.new_email || user.email || '';
+    $('sSess').textContent = 'Signed in as ' + (user.email || '') + '.';
+  }
   function setSync(s) { syncState = s; renderAccount(); }
   function renderAccount() {
     var label = !sb ? 'Saved in this browser only' : syncState === 'saving' ? 'Saving...' : syncState === 'error' ? 'Could not sync. Will retry on next change' : syncState === 'saved' ? 'All changes saved to your account' : 'Signed in';
     var dot = '<span class="dot' + (sb && (syncState === 'saved' || syncState === 'idle') ? ' ok' : '') + '"></span>';
-    var who = user ? esc(user.email) : '';
+    var who = user ? esc(dname() || user.email) + (dname() ? ' &middot; ' + esc(user.email) : '') : '';
     $('acct').innerHTML = sb
       ? '<div>' + dot + label + '</div><b>' + who + '</b><div class="row"><button class="btn small ghost" type="button" data-out="1">Sign out</button><button class="btn small ghost" type="button" data-prefs="1">Appearance</button></div>'
       : '<div>' + label + '. Use Copy for Google Sheets on the Leads page for a backup.</div>';
@@ -2249,7 +2305,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     trash = []; save(); render(); toast('Drafts emptied');
   });
 
-  var VIEWS = ['overview', 'import', 'leads', 'drafts'];
+  var VIEWS = ['overview', 'import', 'leads', 'drafts', 'settings'];
   function showView() {
     var v = (location.hash || '').replace('#', '');
     if (VIEWS.indexOf(v) < 0) v = 'overview';
@@ -2298,6 +2354,45 @@ window.HD_CONFIG = window.HD_CONFIG || {
     leads = leads.filter(function (l) { return !l.example; });
     if (!current()) selected = leads.length ? leads[0].id : null;
     save(); render(); renderDraft();
+  });
+
+  /* ---------- profile and password ---------- */
+  $('setProfile').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var m = $('sProfMsg'), name = $('sName').value.trim(), em = $('sEmail').value.trim(), upd = {};
+    if (!sb || !user) return;
+    if (name !== dname()) upd.data = { name: name };
+    if (em !== (user.new_email || user.email)) {
+      if (!/^\S+@\S+\.\S+$/.test(em)) { m.textContent = 'Enter a valid email address.'; return; }
+      upd.email = em;
+    }
+    if (!upd.data && !upd.email) { m.textContent = 'Nothing to change.'; return; }
+    m.textContent = 'Saving...';
+    sb.auth.updateUser(upd).then(function (r) {
+      if (r.error) { m.textContent = r.error.message; return; }
+      if (r.data && r.data.user) user = r.data.user;
+      renderSettings(); renderAccount();
+      if (upd.data && !me) { me = name; $('me').value = me; save(); }
+      m.textContent = upd.email ? 'Saved. Open the link we sent to the new email to confirm the change.' : 'Profile saved.';
+    }, function () { m.textContent = 'Could not reach the server. Try again.'; });
+  });
+  $('setPass').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var m = $('sPassMsg'), cur = $('pCur').value, p1 = $('pNew').value, p2 = $('pNew2').value;
+    if (!sb || !user) return;
+    if (!cur) { m.textContent = 'Enter your current password.'; return; }
+    if (p1.length < 6) { m.textContent = 'The new password needs at least 6 characters.'; return; }
+    if (p1 !== p2) { m.textContent = 'The two new passwords do not match.'; return; }
+    if (p1 === cur) { m.textContent = 'Choose a password different from the current one.'; return; }
+    m.textContent = 'Checking...';
+    sb.auth.signInWithPassword({ email: user.email, password: cur }).then(function (r) {
+      if (r.error) { m.textContent = 'The current password is not correct.'; return; }
+      return sb.auth.updateUser({ password: p1 }).then(function (r2) {
+        if (r2.error) { m.textContent = r2.error.message; return; }
+        $('pCur').value = ''; $('pNew').value = ''; $('pNew2').value = '';
+        m.textContent = 'Password changed.';
+      });
+    }).then(null, function () { m.textContent = 'Could not reach the server. Try again.'; });
   });
 
   /* ---------- appearance ---------- */
@@ -2381,7 +2476,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('cc').value = cc;
     var v0 = visible()[0];
     selected = v0 ? v0.id : null;
-    render(); renderDraft(); showView(); renderAccount();
+    render(); renderDraft(); showView(); renderAccount(); renderSettings();
   }
   $('toHome').hidden = !sb;
   var setupMode = /^#(setup|connect)$/.test(location.hash);
