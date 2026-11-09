@@ -297,6 +297,8 @@ td.mono { white-space: nowrap; }
 .dot.ok { background: var(--accent); }
 .panel.acct-panel { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; text-align: left; }
 .acct-panel p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.auth-card textarea { width: 100%; font-family: var(--font-mono); font-size: 12px; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; justify-self: start; }
 </style>
 
 <div class="auth" id="auth" hidden>
@@ -317,6 +319,27 @@ td.mono { white-space: nowrap; }
     <div class="auth-msg" id="authMsg" role="status"></div>
     <button class="btn" id="authGo" type="submit">Sign in</button>
     <p>Use at least 6 characters for the password.</p>
+    <button class="linkbtn" id="chgConn" type="button" hidden>Use a different Supabase project</button>
+  </form>
+  <form class="auth-card" id="setupForm" novalidate hidden>
+    <div class="brand"><span class="mark" aria-hidden="true"></span><span>Hunting Desk</span></div>
+    <div>
+      <h1>Connect Supabase</h1>
+      <p>Paste your own Supabase project details. They are saved only in this browser, never inside the page code, so nobody else sees them.</p>
+    </div>
+    <div class="fields">
+      <div><label for="sUrl">Project URL</label><input id="sUrl" placeholder="https://abcd1234.supabase.co" autocomplete="off" spellcheck="false"></div>
+      <div><label for="sKey">anon public key</label><input id="sKey" type="password" placeholder="eyJ..." autocomplete="off" spellcheck="false"></div>
+    </div>
+    <div class="auth-msg" id="setupMsg" role="status"></div>
+    <button class="btn" id="setupGo" type="submit">Test and connect</button>
+    <details>
+      <summary style="cursor:pointer;font-size:13.5px">First time? Run this SQL once in Supabase</summary>
+      <p style="margin:8px 0">Supabase, SQL Editor, New query, paste, Run.</p>
+      <textarea id="sqlBox" rows="9" readonly></textarea>
+      <button class="btn small ghost" id="sqlCopy" type="button" style="margin-top:8px">Copy SQL</button>
+    </details>
+    <p>Use the anon public key only. The service_role key is refused.</p>
   </form>
 </div>
 <div class="app">
@@ -662,24 +685,7 @@ td.mono { white-space: nowrap; }
 <div class="toast" id="toast" role="status"></div>
 
 <script>
-/* ===== SETTINGS: paste your Supabase values between the quotes. Leave empty to run without accounts. =====
-   Use the anon public key only. Never use service_role.
-   One-time database setup: run this SQL in Supabase > SQL Editor:
-
-// Run this once in Supabase: SQL Editor > New query > paste > Run
-create table if not exists public.lead_desk_state (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  data jsonb not null default '{}'::jsonb,
-  updated_at timestamptz not null default now()
-);
-alter table public.lead_desk_state enable row level security;
-
-create policy "read own"   on public.lead_desk_state for select using (auth.uid() = user_id);
-create policy "insert own" on public.lead_desk_state for insert with check (auth.uid() = user_id);
-create policy "update own" on public.lead_desk_state for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "delete own" on public.lead_desk_state for delete using (auth.uid() = user_id);
-
-*/
+/* Optional: you can paste Supabase values here, but you do not need to. The app has a Connect screen that stores them in your own browser only. */
 window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" onerror="void 0"></script>
@@ -699,6 +705,11 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
 
   /* ---------- storage + account ---------- */
   var CFG = window.HD_CONFIG || {};
+  var CFG_KEY = 'hd-supabase', cfgStored = false;
+  if (!(CFG.supabaseUrl && CFG.supabaseKey)) {
+    try { var sc = JSON.parse(localStorage.getItem(CFG_KEY) || 'null'); if (sc && sc.url && sc.key) { CFG = { supabaseUrl: sc.url, supabaseKey: sc.key }; cfgStored = true; } } catch (e) {}
+  }
+  var SQL = ['create table if not exists public.lead_desk_state (', '  user_id uuid primary key references auth.users(id) on delete cascade,', "  data jsonb not null default '{}'::jsonb,", '  updated_at timestamptz not null default now()', ');', 'alter table public.lead_desk_state enable row level security;', 'create policy "read own" on public.lead_desk_state for select using (auth.uid() = user_id);', 'create policy "insert own" on public.lead_desk_state for insert with check (auth.uid() = user_id);', 'create policy "update own" on public.lead_desk_state for update using (auth.uid() = user_id) with check (auth.uid() = user_id);', 'create policy "delete own" on public.lead_desk_state for delete using (auth.uid() = user_id);'].join('\n');
   var libMissing = !!(CFG.supabaseUrl && CFG.supabaseKey && !window.supabase);
   var sb = null, user = null, ckey = KEY, savedAt = 0, pushT = null, syncState = 'local';
   try { if (CFG.supabaseUrl && CFG.supabaseKey && window.supabase) sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey); } catch (e) { sb = null; }
@@ -737,8 +748,8 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
       ? '<div>' + dot + label + '</div><b>' + who + '</b><button class="btn small ghost" type="button" data-out="1">Sign out</button>'
       : '<div>' + label + '. Use Copy for Google Sheets on the Leads page for a backup.</div>';
     $('acctCard').innerHTML = sb
-      ? '<div><h2>Account</h2><p>' + dot + label + ' &middot; ' + who + '</p></div><button class="btn ghost" type="button" data-out="1">Sign out</button>'
-      : '<div><h2>Storage</h2><p>Leads are saved in this browser only. Login is OFF because no Supabase URL and key are set at the top of index.html (the SETTINGS block).</p></div>';
+      ? '<div><h2>Account</h2><p>' + dot + label + ' &middot; ' + who + '</p></div><span class="row"><button class="btn ghost" type="button" data-out="1">Sign out</button>' + (cfgStored ? '<button class="btn ghost" type="button" data-disc="1">Disconnect Supabase</button>' : '') + '</span>'
+      : '';
   }
   document.addEventListener('click', function (e) { if (e.target.closest('[data-out="1"]')) signOut(); });
 
@@ -1988,6 +1999,33 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
     save(); render(); renderDraft();
   });
 
+  /* ---------- connect screen ---------- */
+  $('sqlBox').value = SQL;
+  $('sqlCopy').addEventListener('click', function () { $('sqlBox').select(); try { document.execCommand('copy'); this.textContent = 'Copied'; } catch (e) {} });
+  function keyRole(k) {
+    try { var p = k.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(atob(p)).role || ''; } catch (e) { return ''; }
+  }
+  $('setupForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var url = $('sUrl').value.trim().replace(/\/+$/, ''), key = $('sKey').value.trim(), m = $('setupMsg');
+    if (!/^https:\/\/[a-z0-9.-]+$/i.test(url)) { m.textContent = 'The Project URL should look like https://abcd1234.supabase.co'; return; }
+    if (!key) { m.textContent = 'Paste the anon public key.'; return; }
+    if (keyRole(key) === 'service_role' || /^sb_secret_/.test(key)) { m.textContent = 'That is a secret key. Never paste it here. Use the anon public key.'; return; }
+    var btn = $('setupGo'); btn.disabled = true; m.textContent = 'Testing connection...';
+    fetch(url + '/auth/v1/settings', { headers: { apikey: key } }).then(function (r) {
+      btn.disabled = false;
+      if (!r.ok) { m.textContent = 'Supabase rejected these details (' + r.status + '). Check the URL and the anon public key.'; return; }
+      try { localStorage.setItem(CFG_KEY, JSON.stringify({ url: url, key: key })); } catch (x) { m.textContent = 'This browser blocked saving. Allow site data and try again.'; return; }
+      m.textContent = 'Connected. Loading...'; location.reload();
+    }, function () { btn.disabled = false; m.textContent = 'Could not reach that URL. Check it and your internet.'; });
+  });
+  function disconnect() {
+    try { localStorage.removeItem(CFG_KEY); } catch (e) {}
+    location.reload();
+  }
+  $('chgConn').addEventListener('click', function () { if (confirm('Disconnect this Supabase project from this browser?')) disconnect(); });
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-disc="1"]')) { if (confirm('Disconnect Supabase from this browser? Your leads stay in your Supabase account.')) { var go = function () { disconnect(); }; if (sb && user) { try { localStorage.removeItem(ckey); } catch (x) {} sb.auth.signOut().then(go, go); } else go(); } } });
+
   /* ---------- boot ---------- */
   function start() {
     leads.forEach(function (l) { if (!l.source) l.source = 'yelp'; });
@@ -1997,6 +2035,7 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
     selected = v0 ? v0.id : null;
     render(); renderDraft(); showView(); renderAccount();
   }
+  $('chgConn').hidden = !cfgStored;
   if (libMissing) {
     document.body.classList.add('lock'); $('auth').hidden = false; $('authGo').disabled = true;
     $('authMsg').textContent = 'Login library could not load (blocked network or ad blocker). Reload the page, or turn off the blocker for this site.';
@@ -2006,11 +2045,8 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
       if (r.data && r.data.session) enter(r.data.session.user); else showAuth('in', '');
     }, function () { showAuth('in', 'Could not reach the server.'); });
   } else {
-    document.body.classList.add('lock'); $('auth').hidden = false; $('authGo').disabled = true;
-    $('aEmail').disabled = true; $('aPass').disabled = true; $('authTabs').hidden = true;
-    $('authTitle').textContent = 'Login is not set up yet';
-    $('authSub').textContent = 'Open index.html, find the SETTINGS block at the top, and paste your Supabase URL and anon public key between the quotes. Then run the SQL from the same block once in Supabase. After that, this page becomes the sign in screen.';
-    $('authMsg').textContent = 'The dashboard stays locked until login is set up.';
+    document.body.classList.add('lock'); $('auth').hidden = false;
+    $('authForm').hidden = true; $('setupForm').hidden = false;
   }
 })();
 </script>
