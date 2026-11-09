@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html{color-scheme:light}body{margin:0}</style>
+<title>Yelp Lead Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a two-pane workbench (capture | message) above a full-width lead ledger. */
+:root {
+  --bg: #EEF1F3;
+  --surface: #FFFFFF;
+  --surface-2: #F5F7F8;
+  --ink: #12202B;
+  --muted: #586977;
+  --line: #D3DAE0;
+  --accent: #0B6E8A;
+  --on-accent: #FFFFFF;
+  --hot-bg: #FDE6DA;
+  --hot-ink: #9A3412;
+  --warm-bg: #FBF0CC;
+  --warm-ink: #7A5B00;
+  --cold-bg: #E4E9ED;
+  --cold-ink: #4A5A67;
+  --missing: #B45309;
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E161C; --surface: #15212A; --surface-2: #1B2933; --ink: #E6EDF2; --muted: #8FA2B1; --line: #263642;
+    --accent: #4CB8D6; --on-accent: #06222C;
+    --hot-bg: #3A1D10; --hot-ink: #FDBA8C; --warm-bg: #3A2F0A; --warm-ink: #F2D36B; --cold-bg: #1E2B34; --cold-ink: #9FB1BE;
+    --missing: #F59E0B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E161C; --surface: #15212A; --surface-2: #1B2933; --ink: #E6EDF2; --muted: #8FA2B1; --line: #263642;
+  --accent: #4CB8D6; --on-accent: #06222C;
+  --hot-bg: #3A1D10; --hot-ink: #FDBA8C; --warm-bg: #3A2F0A; --warm-ink: #F2D36B; --cold-bg: #1E2B34; --cold-ink: #9FB1BE;
+  --missing: #F59E0B;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: 32px; line-height: 1.1; }
+h2 { font-size: 20px; }
+.top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; }
+.lede { margin: 6px 0 0; color: var(--muted); max-width: 60ch; }
+.counts { display: flex; gap: 8px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+.counts b { color: var(--ink); font-weight: 500; }
+.panes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .panes { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.hint { margin: 0; color: var(--muted); font-size: 13.5px; }
+label { display: block; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+input, select, textarea {
+  width: 100%; font: inherit; color: var(--ink); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-width: 0;
+}
+textarea { resize: vertical; }
+input.missing { border-color: var(--missing); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sect { margin: 4px 0 -4px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; border-top: 1px solid var(--line); padding-top: 12px; }
+.found { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 6px; max-height: 320px; overflow: auto; }
+.found label { display: flex; gap: 10px; align-items: flex-start; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); padding: 8px 10px; margin: 0; border-bottom: 1px solid var(--line); font-weight: 400; cursor: pointer; }
+.found label:last-child { border-bottom: 0; }
+.found input { width: auto; margin-top: 4px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn {
+  font: inherit; font-weight: 500; cursor: pointer; border-radius: 6px; padding: 8px 14px;
+  background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent);
+}
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+.btn:hover { filter: brightness(1.06); }
+.status { margin: 0; min-height: 1.4em; font-size: 13.5px; color: var(--muted); }
+.status a, .note a, td a { color: var(--accent); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { font: inherit; font-size: 13.5px; background: transparent; color: var(--ink); border: 0; padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+#draft { min-height: 210px; line-height: 1.55; font-size: 14.5px; }
+.note { margin: 0; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; }
+.ledger-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; justify-content: space-between; }
+.ledger-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.ledger-tools .f { min-width: 140px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 900px; font-size: 13.5px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr.sel td { background: var(--surface-2); }
+td select { padding: 4px 6px; font-size: 13px; }
+.mono { font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.sub { color: var(--muted); font-size: 12.5px; }
+.tag { margin-left: 6px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+.score { display: inline-block; min-width: 46px; text-align: center; font-family: var(--font-mono); font-weight: 500; border-radius: 6px; padding: 3px 8px; font-variant-numeric: tabular-nums; }
+.score.hot { background: var(--hot-bg); color: var(--hot-ink); }
+.score.warm { background: var(--warm-bg); color: var(--warm-ink); }
+.score.cold { background: var(--cold-bg); color: var(--cold-ink); }
+.empty { padding: 28px 8px; text-align: center; color: var(--muted); }
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; font-size: 13.5px;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.toast.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Yelp Lead Desk</h1>
+      <p class="lede">Paste a Yelp business page, get a scored lead and a ready-to-send message.</p>
+    </div>
+    <div class="counts" id="counts" aria-live="polite"></div>
+  </header>
+
+  <section class="card" aria-labelledby="h-search">
+    <h2 id="h-search">Import a Yelp search</h2>
+    <p class="hint">Search Yelp for the businesses you want to sell websites to (plumbers, barbers, dentists), not for web designers. Paste the search link, then copy the results page text and paste it below. Each Yelp page lists about 10 businesses.</p>
+    <div>
+      <label for="s-url">Yelp search link</label>
+      <input id="s-url" autocomplete="off" placeholder="https://www.yelp.com/search?find_desc=Plumbers&find_loc=Houston%2C+TX">
+    </div>
+    <p class="status" id="sUrlMsg"></p>
+    <div>
+      <label for="s-paste">Search results page text</label>
+      <textarea id="s-paste" rows="5" placeholder="On the Yelp results page press Ctrl+A then Ctrl+C, and paste here"></textarea>
+    </div>
+    <div class="row">
+      <button class="btn" id="s-find" type="button">Find businesses</button>
+      <button class="btn ghost" id="s-sample" type="button">Try a sample</button>
+      <span class="status" id="sMsg" role="status"></span>
+    </div>
+    <div id="sFoundWrap" hidden>
+      <div class="found" id="sFound"></div>
+      <div class="row" style="margin-top: 12px">
+        <button class="btn" id="sAdd" type="button">Add selected</button>
+        <button class="btn ghost" id="sAll" type="button">Select all</button>
+        <button class="btn ghost" id="sNone" type="button">Select none</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="panes">
+    <section class="card" aria-labelledby="h-capture">
+      <h2 id="h-capture">Add a lead</h2>
+      <p class="hint">Open the business page on yelp.com, press Ctrl+A then Ctrl+C (Cmd on Mac), and paste it here.</p>
+      <div>
+        <label for="paste">Yelp page text</label>
+        <textarea id="paste" rows="5" placeholder="Paste the copied page here"></textarea>
+      </div>
+      <div class="row">
+        <button class="btn" id="extract" type="button">Extract details</button>
+        <button class="btn ghost" id="sample" type="button">Try a sample</button>
+      </div>
+      <p class="status" id="extractMsg" role="status"></p>
+
+      <div class="grid2">
+        <div><label for="f-name">Business name</label><input id="f-name" autocomplete="off"></div>
+        <div><label for="f-niche">Category</label><input id="f-niche" list="niches" autocomplete="off"></div>
+        <div><label for="f-city">City</label><input id="f-city" autocomplete="off"></div>
+        <div><label for="f-state">State</label><input id="f-state" maxlength="2" autocomplete="off"></div>
+        <div><label for="f-rating">Rating</label><input id="f-rating" inputmode="decimal" autocomplete="off"></div>
+        <div><label for="f-reviews">Reviews</label><input id="f-reviews" inputmode="numeric" autocomplete="off"></div>
+        <div><label for="f-phone">Phone</label><input id="f-phone" inputmode="tel" autocomplete="off"></div>
+        <div><label for="f-site">Website</label><input id="f-site" autocomplete="off" placeholder="blank if none listed"></div>
+        <div>
+          <label for="f-web">Website status</label>
+          <select id="f-web">
+            <option value="none">No website</option>
+            <option value="unknown">Not checked yet</option>
+            <option value="old">Old or slow</option>
+            <option value="ok">Looks fine</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-chan">How to reach them</label>
+          <select id="f-chan">
+            <option value="">Not found yet</option>
+            <option>WhatsApp</option><option>Facebook</option><option>Instagram</option>
+            <option>Email</option><option>Contact form</option><option>Call only</option>
+          </select>
+        </div>
+      </div>
+      <div class="sect">More details</div>
+      <div class="grid2">
+        <div><label for="f-owner">Owner or contact name</label><input id="f-owner" autocomplete="off"></div>
+        <div><label for="f-address">Street address</label><input id="f-address" autocomplete="off"></div>
+        <div><label for="f-zip">ZIP</label><input id="f-zip" inputmode="numeric" maxlength="5" autocomplete="off"></div>
+        <div>
+          <label for="f-price">Price range</label>
+          <select id="f-price"><option value="">Not listed</option><option>$</option><option>$$</option><option>$$$</option><option>$$$$</option></select>
+        </div>
+        <div>
+          <label for="f-claimed">Yelp page</label>
+          <select id="f-claimed"><option value="unknown">Not sure</option><option value="claimed">Claimed by owner</option><option value="unclaimed">Unclaimed</option></select>
+        </div>
+        <div><label for="f-years">Years in business</label><input id="f-years" inputmode="numeric" autocomplete="off"></div>
+        <div><label for="f-hours">Hours</label><input id="f-hours" autocomplete="off"></div>
+        <div><label for="f-email">Email</label><input id="f-email" inputmode="email" autocomplete="off"></div>
+        <div><label for="f-wa">WhatsApp number</label><input id="f-wa" inputmode="tel" autocomplete="off" placeholder="with country code"></div>
+        <div><label for="f-fb">Facebook</label><input id="f-fb" autocomplete="off" placeholder="page link or name"></div>
+        <div><label for="f-ig">Instagram</label><input id="f-ig" autocomplete="off" placeholder="@handle or link"></div>
+        <div><label for="f-services">Services or specialties</label><input id="f-services" autocomplete="off"></div>
+      </div>
+      <div>
+        <label for="f-problem">What is wrong with their site (used in the message)</label>
+        <input id="f-problem" autocomplete="off" placeholder="e.g. the menu does not load on phones">
+      </div>
+      <div>
+        <label for="f-notes">Your notes</label>
+        <textarea id="f-notes" rows="2" placeholder="Anything you want to remember about this lead"></textarea>
+      </div>
+      <p class="status" id="psLink"></p>
+      <div class="row">
+        <button class="btn" id="add" type="button">Add to ledger</button>
+        <button class="btn ghost" id="clearForm" type="button">Clear form</button>
+        <span class="status" id="formMsg" role="status"></span>
+      </div>
+      <datalist id="niches">
+        <option value="Plumbing"><option value="HVAC"><option value="Electrician"><option value="Restaurant">
+        <option value="Barber"><option value="Hair Salon"><option value="Dentist"><option value="Auto Repair">
+        <option value="Cleaning Service"><option value="Roofing"><option value="Landscaping"><option value="Real Estate">
+      </datalist>
+    </section>
+
+    <section class="card" aria-labelledby="h-draft">
+      <h2 id="h-draft">Message</h2>
+      <p class="hint" id="draftFor">Pick a lead from the ledger.</p>
+      <div>
+        <label for="me">Your name</label>
+        <input id="me" autocomplete="name" placeholder="Used in the sign-off">
+      </div>
+      <div class="row">
+        <div class="seg" role="group" aria-label="Message stage" id="segKind">
+          <button type="button" data-kind="first" aria-pressed="true">First message</button>
+          <button type="button" data-kind="f1" aria-pressed="false">Follow-up, day 3</button>
+          <button type="button" data-kind="f2" aria-pressed="false">Last note, day 7</button>
+        </div>
+        <div class="seg" role="group" aria-label="Message format" id="segChan">
+          <button type="button" data-chan="dm" aria-pressed="true">Short DM</button>
+          <button type="button" data-chan="email" aria-pressed="false">Email</button>
+        </div>
+      </div>
+      <div>
+        <label for="draft">Draft (edit freely)</label>
+        <textarea id="draft" rows="9"></textarea>
+      </div>
+      <div class="row"><button class="btn" id="copyDraft" type="button">Copy message</button></div>
+      <p class="note">Yelp does not show whether a number has WhatsApp. Look for a WhatsApp number on the business's own site or Google profile first. If there is none, use Facebook, Instagram or email. Emails need your real address in the footer.</p>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="h-ledger">
+    <div class="ledger-head">
+      <div>
+        <h2 id="h-ledger">Lead ledger</h2>
+        <p class="hint">Score = website gap (35) + rating (15) + review count (20) + a known contact route (15) + claimed Yelp page (10) + years in business (5).</p>
+      </div>
+      <div class="ledger-tools">
+        <div class="f"><label for="sort">Sort</label>
+          <select id="sort"><option value="score">Highest score</option><option value="new">Newest</option><option value="name">Name</option></select>
+        </div>
+        <div class="f"><label for="filter">Show</label>
+          <select id="filter">
+            <option value="all">All leads</option>
+            <option value="tier:hot">Hot only</option><option value="tier:warm">Warm only</option><option value="tier:cold">Cold only</option>
+            <option value="st:New">Status: New</option><option value="st:Messaged">Status: Messaged</option>
+            <option value="st:Replied">Status: Replied</option><option value="st:Won">Status: Won</option>
+          </select>
+        </div>
+        <button class="btn ghost" id="copySheets" type="button">Copy for Google Sheets</button>
+        <button class="btn ghost" id="copyCsv" type="button">Copy CSV</button>
+        <button class="btn ghost" id="clearEx" type="button" hidden>Remove examples</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th>Score</th><th>Business</th><th>Rating</th><th>Phone</th><th>Website</th><th>Reach via</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div id="manualWrap" hidden>
+      <label for="manual">Copy blocked here. Select all and copy by hand</label>
+      <textarea id="manual" rows="5" readonly></textarea>
+    </div>
+    <p class="hint">Leads are saved in this browser only. Use the copy buttons to keep a backup in a Google Sheet.</p>
+  </section>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  var KEY = 'yelp-lead-desk-v1';
+  var $ = function (id) { return document.getElementById(id); };
+  var leads = [], me = '', selected = null, kind = 'first', chan = 'dm';
+
+  var WEB = [['unknown', 'Not checked'], ['none', 'No website'], ['old', 'Old or slow'], ['ok', 'Looks fine']];
+  var CHAN = [['', 'Not found'], ['WhatsApp', 'WhatsApp'], ['Facebook', 'Facebook'], ['Instagram', 'Instagram'], ['Email', 'Email'], ['Contact form', 'Contact form'], ['Call only', 'Call only']];
+  var STAT = [['New', 'New'], ['Messaged', 'Messaged'], ['Replied', 'Replied'], ['Won', 'Won'], ['Not interested', 'Not interested']];
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  /* ---------- storage ---------- */
+  function load() {
+    try {
+      var r = localStorage.getItem(KEY);
+      if (r) { var d = JSON.parse(r); leads = d.leads || []; me = d.me || ''; return true; }
+    } catch (e) {}
+    return false;
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ leads: leads, me: me })); } catch (e) {} }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  function seed() {
+    var base = { webStatus: 'none', problem: '', channel: '', status: 'New', followUp: '', example: true, state: '' };
+    function mk(o) { var l = {}; for (var k in base) l[k] = base[k]; for (var j in o) l[j] = o[j]; l.id = uid(); l.added = Date.now(); return l; }
+    leads = [
+      mk({ name: 'Bayou City Plumbing', niche: 'Plumbing', city: 'Houston', state: 'TX', rating: '4.5', reviews: '128', phone: '(713) 555-0142', website: '', webStatus: 'none', channel: 'Facebook', owner: 'Mike Torres', address: '2150 Westheimer Rd', zip: '77098', price: '$$', claimed: 'claimed', years: '18', hours: 'Open 7:00 AM - 6:00 PM', fb: 'facebook.com/bayoucityplumbing', services: 'Water heaters, drain cleaning, leak repair' }),
+      mk({ name: 'Westheimer Barber Co.', niche: 'Barber', city: 'Houston', state: 'TX', rating: '4.8', reviews: '64', phone: '(713) 555-0177', website: 'westheimerbarber.example', webStatus: 'old', problem: 'the booking button does not work on phones', channel: 'Instagram' }),
+      mk({ name: 'Sunrise Auto Repair', niche: 'Auto Repair', city: 'Austin', state: 'TX', rating: '3.9', reviews: '22', phone: '(512) 555-0109', website: 'sunriseauto.example', webStatus: 'ok', channel: '' })
+    ];
+  }
+
+  /* ---------- scoring ---------- */
+  function score(l) {
+    var s = 0;
+    s += l.webStatus === 'none' ? 35 : l.webStatus === 'old' ? 25 : l.webStatus === 'ok' ? 0 : 10;
+    var r = parseFloat(l.rating) || 0;
+    s += r >= 4.5 ? 15 : r >= 4 ? 12 : r >= 3.5 ? 6 : r > 0 ? 2 : 0;
+    var n = parseInt(l.reviews, 10) || 0;
+    s += n >= 100 ? 20 : n >= 50 ? 16 : n >= 30 ? 12 : n >= 10 ? 6 : n > 0 ? 2 : 0;
+    s += l.channel ? (l.channel === 'Call only' ? 6 : 15) : 0;
+    s += l.claimed === 'claimed' ? 10 : l.claimed === 'unclaimed' ? 2 : 4;
+    var y = parseInt(l.years, 10) || 0;
+    s += y >= 5 ? 5 : y >= 2 ? 3 : 0;
+    return s;
+  }
+  function tier(s) { return s >= 70 ? ['hot', 'Hot'] : s >= 45 ? ['warm', 'Warm'] : ['cold', 'Cold']; }
+
+  //PARSER-START
+  function parseCount(s) {
+    s = String(s).replace(/,/g, '').trim();
+    if (/k$/i.test(s)) return String(Math.round(parseFloat(s) * 1000));
+    return String(parseInt(s, 10) || '');
+  }
+  function parseYelp(raw) {
+    var lines = raw.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+    var text = lines.join('\n');
+    var out = { name: '', niche: '', city: '', state: '', rating: '', reviews: '', phone: '', website: '', owner: '', address: '', zip: '', price: '', claimed: '', years: '', hours: '', email: '', wa: '', fb: '', ig: '', services: '' };
+    var skipName = /^(yelp|home|skip to|log in|sign up|write a review|photos?|add photo|claimed|unclaimed|search|for businesses|yelp for business)/i;
+
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i];
+      if (ln.length >= 2 && ln.length <= 90 && !skipName.test(ln)) {
+        out.name = ln.replace(/\s*[-–|]\s*yelp.*$/i, '').trim();
+        break;
+      }
+    }
+    var ph = text.match(/\(?\d{3}\)?[\s.\-]*\d{3}[\s.\-]\d{4}/);
+    if (ph) out.phone = ph[0];
+
+    var rv = text.match(/([\d.,]+\s*[kK]?)\s*reviews?/i);
+    var rvLine = -1;
+    if (rv) {
+      out.reviews = parseCount(rv[1]);
+      for (var a = 0; a < lines.length; a++) { if (lines[a].indexOf(rv[0]) !== -1) { rvLine = a; break; } }
+    }
+    var rt = text.match(/\b([1-5](?:\.\d)?)\s*(?:star|★)/i) ||
+             text.match(/\b([1-5](?:\.\d)?)\s*\(\s*[\d.,]+\s*[kK]?\s*reviews?/i) ||
+             text.match(/\b([1-5]\.\d)\b/);
+    if (rt) out.rating = rt[1];
+
+    var blocked = /^(claimed|unclaimed|open|closed|hours|call|directions|get directions|website|business website|menu|reviews?|photos?|write a review|save|share|more|see all|phone number)/i;
+    var catRe = /^[A-Za-z&' \/\-]+(,\s*[A-Za-z&' \/\-]+){0,3}$/;
+    var from = rvLine >= 0 ? rvLine + 1 : 1;
+    for (var b = from; b < Math.min(lines.length, from + 8); b++) {
+      var c = lines[b];
+      if (c.length < 70 && catRe.test(c) && !blocked.test(c) && c !== out.name) { out.niche = c; break; }
+    }
+
+    var ad = text.match(/([A-Za-z][A-Za-z .'\-]{1,38}),\s*([A-Z]{2})\s+\d{5}/);
+    if (ad) { out.city = ad[1].trim(); out.state = ad[2]; }
+
+    var domRe = /^(https?:\/\/)?(www\.)?[a-z0-9][a-z0-9.\-]*\.[a-z]{2,}(\/\S*)?$/i;
+    for (var w = 0; w < lines.length; w++) {
+      if (/^business website$/i.test(lines[w]) && lines[w + 1]) { out.website = lines[w + 1]; break; }
+    }
+    if (!out.website) {
+      for (var z = 0; z < lines.length; z++) {
+        var t = lines[z];
+        if (domRe.test(t) && !/yelp\.com|facebook\.com|instagram\.com|wa\.me/i.test(t) && t.indexOf('@') === -1) { out.website = t; break; }
+      }
+    }
+    var zm = text.match(/,\s*[A-Z]{2}\s+(\d{5})/);
+    if (zm) out.zip = zm[1];
+    for (var s = 0; s < lines.length; s++) {
+      if (/,\s*[A-Z]{2}\s+\d{5}/.test(lines[s])) {
+        if (s > 0 && /^\d+\s+\S+/.test(lines[s - 1])) out.address = lines[s - 1];
+        else { var inl = lines[s].match(/^(\d+[^,]*),/); if (inl) out.address = inl[1].trim(); }
+        break;
+      }
+    }
+    var pm = text.match(/(^|[\s·])(\${1,4})(?=$|[\s·])/m);
+    if (pm) out.price = pm[2];
+    if (/\bunclaimed\b/i.test(text)) out.claimed = 'unclaimed';
+    else if (/\bclaimed\b/i.test(text)) out.claimed = 'claimed';
+    var ym = text.match(/(\d{1,3})\s+years?\s+in\s+business/i);
+    if (ym) out.years = ym[1];
+    else {
+      var ey = text.match(/(?:established|since)\s+(?:in\s+)?((?:19|20)\d{2})/i);
+      if (ey) out.years = String(new Date().getFullYear() - parseInt(ey[1], 10));
+    }
+    var hm = text.match(/\b(?:open|hours?)[:\s]+\d{1,2}(?::\d{2})?\s*[AP]M\s*[-–]\s*\d{1,2}(?::\d{2})?\s*[AP]M/i);
+    if (hm) out.hours = hm[0];
+    var em = text.match(/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/);
+    if (em) out.email = em[0];
+    var fm = text.match(/(?:https?:\/\/)?(?:www\.)?facebook\.com\/[^\s"')]+/i);
+    if (fm) out.fb = fm[0];
+    var im = text.match(/(?:https?:\/\/)?(?:www\.)?instagram\.com\/[^\s"')]+/i);
+    if (im) out.ig = im[0];
+    var wm = text.match(/wa\.me\/(\d{7,15})/i) || text.match(/whatsapp[^\d+\n]{0,15}(\+?[\d\s().\-]{9,18}\d)/i);
+    if (wm) out.wa = wm[1].replace(/^(\d)/, '+$1').replace(/^\++/, '+');
+    for (var o = 0; o < lines.length; o++) {
+      if (/^(meet the )?business owner( information)?$/i.test(lines[o]) && lines[o + 1] && lines[o + 1].length < 40) { out.owner = lines[o + 1]; break; }
+      var on = lines[o].match(/^(.{2,40})\s+business owner$/i);
+      if (on) { out.owner = on[1]; break; }
+    }
+    for (var q = 0; q < lines.length; q++) {
+      if (/^(specialties|services offered)$/i.test(lines[q]) && lines[q + 1]) { out.services = lines[q + 1].slice(0, 200); break; }
+    }
+    return out;
+  }
+  //PARSER-END
+
+  /* ---------- form ---------- */
+  var F = ['name', 'niche', 'city', 'state', 'rating', 'reviews', 'phone', 'site', 'problem', 'owner', 'address', 'zip', 'years', 'hours', 'email', 'wa', 'fb', 'ig', 'services', 'notes'];
+  function setField(k, v) { var el = $('f-' + k); el.value = v || ''; }
+  function normUrl(u) { u = (u || '').trim(); if (!u) return ''; return /^https?:\/\//i.test(u) ? u : 'https://' + u; }
+
+  function updatePs() {
+    var u = normUrl($('f-site').value);
+    $('psLink').innerHTML = u
+      ? 'Check mobile speed: <a href="https://pagespeed.web.dev/analysis?url=' + encodeURIComponent(u) + '" target="_blank" rel="noopener">open PageSpeed Insights</a>, then set the website status.'
+      : '';
+  }
+
+  function extract() {
+    var raw = $('paste').value;
+    if (!raw.trim()) { $('extractMsg').textContent = 'Paste the Yelp page text first.'; return; }
+    var o = parseYelp(raw);
+    ['name', 'niche', 'city', 'state', 'rating', 'reviews', 'phone'].forEach(function (k) { setField(k, o[k]); });
+    setField('site', o.website);
+    $('f-web').value = o.website ? 'unknown' : 'none';
+    var extraKeys = ['owner', 'address', 'zip', 'years', 'hours', 'email', 'wa', 'fb', 'ig', 'services'];
+    var extra = 0;
+    extraKeys.forEach(function (k) { setField(k, o[k]); if (o[k]) extra++; });
+    $('f-price').value = o.price || ''; if (o.price) extra++;
+    $('f-claimed').value = o.claimed || 'unknown'; if (o.claimed) extra++;
+    $('f-chan').value = o.wa ? 'WhatsApp' : o.email ? 'Email' : o.ig ? 'Instagram' : o.fb ? 'Facebook' : '';
+    var keys = ['name', 'niche', 'city', 'state', 'rating', 'reviews', 'phone'];
+    var found = 0;
+    keys.forEach(function (k) {
+      var miss = !o[k];
+      $('f-' + k).classList.toggle('missing', miss);
+      if (!miss) found++;
+    });
+    $('extractMsg').textContent = 'Filled ' + found + ' of ' + keys.length + ' fields' +
+      (found < keys.length ? '. Outlined fields were not found, fill them by hand.' : '.') +
+      (extra ? ' Also found ' + extra + ' extra details.' : '') +
+      (o.website ? ' A website is listed, so check it and set the status.' : ' No website listed, which makes this a strong lead.');
+    updatePs();
+  }
+
+  var SAMPLE = 'Bayou City Plumbing\n4.5 (128 reviews)\nClaimed\n$$\nPlumbing, Water Heater Installation & Repair\nOpen 7:00 AM - 6:00 PM\nPhone number\n(713) 555-0142\nGet Directions\n2150 Westheimer Rd\nHouston, TX 77098\nSpecialties\nWater heaters, drain cleaning, leak repair\nBusiness owner information\nMike Torres\nBusiness Owner\n18 years in business\nfacebook.com/bayoucityplumbing\ninfo@bayoucityplumbing.example';
+
+  function clearForm() {
+    F.forEach(function (k) { setField(k, ''); $('f-' + k).classList.remove('missing'); });
+    ['name', 'niche', 'city', 'state', 'rating', 'reviews', 'phone'].forEach(function (k) { $('f-' + k).classList.remove('missing'); });
+    $('f-web').value = 'none'; $('f-chan').value = ''; $('paste').value = '';
+    $('f-price').value = ''; $('f-claimed').value = 'unknown';
+    $('extractMsg').textContent = ''; $('formMsg').textContent = ''; updatePs();
+  }
+
+  function addLead() {
+    var name = $('f-name').value.trim();
+    if (!name) { $('formMsg').textContent = 'Enter a business name first.'; $('f-name').focus(); return; }
+    var l = {
+      id: uid(), added: Date.now(), name: name,
+      niche: $('f-niche').value.trim(), city: $('f-city').value.trim(), state: $('f-state').value.trim().toUpperCase(),
+      rating: $('f-rating').value.trim(), reviews: $('f-reviews').value.trim(), phone: $('f-phone').value.trim(),
+      website: $('f-site').value.trim(), webStatus: $('f-web').value, problem: $('f-problem').value.trim(),
+      channel: $('f-chan').value, status: 'New', followUp: '', example: false,
+      owner: $('f-owner').value.trim(), address: $('f-address').value.trim(), zip: $('f-zip').value.trim(),
+      price: $('f-price').value, claimed: $('f-claimed').value, years: $('f-years').value.trim(),
+      hours: $('f-hours').value.trim(), email: $('f-email').value.trim(), wa: $('f-wa').value.trim(),
+      fb: $('f-fb').value.trim(), ig: $('f-ig').value.trim(), services: $('f-services').value.trim(),
+      notes: $('f-notes').value.trim()
+    };
+    leads.push(l); selected = l.id; save();
+    clearForm(); $('formMsg').textContent = 'Added ' + name + '.';
+    render(); renderDraft();
+  }
+
+  /* ---------- search import ---------- */
+  //SEARCH-START
+  function parseSearchUrl(u) {
+    var res = { ok: false, niche: '', city: '', state: '', page: 1, url: '' };
+    u = (u || '').trim();
+    if (!u) return res;
+    try {
+      var url = new URL(/^https?:\/\//i.test(u) ? u : 'https://' + u);
+      if (!/(^|\.)yelp\.com$/i.test(url.hostname)) return res;
+      var q = url.searchParams;
+      res.niche = (q.get('find_desc') || '').trim();
+      var loc = (q.get('find_loc') || '').trim();
+      var m = loc.match(/^(.*?),\s*([A-Za-z]{2})\b/);
+      if (m) { res.city = m[1].trim(); res.state = m[2].toUpperCase(); } else { res.city = loc; }
+      res.page = Math.floor((parseInt(q.get('start'), 10) || 0) / 10) + 1;
+      res.url = url.href; res.ok = true;
+    } catch (e) {}
+    return res;
+  }
+  function parseSearch(raw) {
+    var lines = raw.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+    var idx = [];
+    lines.forEach(function (ln, i) { if (/^\d{1,3}\.\s+\S.{1,80}$/.test(ln)) idx.push(i); });
+    var skip = /^(open|closed|claimed|unclaimed|message|request|more|offers|fast|responds|get\s|see\s|call|website|directions|sponsored|ad$|read|photo|write|new$|opens|closes|about|page\s)/i;
+    var catRe = /^[A-Za-z&' \/\-]+(,\s*[A-Za-z&' \/\-]+){0,3}$/;
+    var out = [], seen = {};
+    idx.forEach(function (start, k) {
+      var end = Math.min(k + 1 < idx.length ? idx[k + 1] : lines.length, start + 14);
+      var block = lines.slice(start, end);
+      var name = block[0].replace(/^\d{1,3}\.\s+/, '').trim();
+      var rest = block.slice(1);
+      var text = rest.join('\n');
+      var rating = '', reviews = '';
+      var both = text.match(/([1-5](?:\.\d)?)\s*\(\s*([\d.,]+\s*[kK]?)\s*reviews?\s*\)/i);
+      if (both) { rating = both[1]; reviews = parseCount(both[2]); }
+      else {
+        var r1 = text.match(/\b([1-5]\.\d)\b/); if (r1) rating = r1[1];
+        var r2 = text.match(/([\d.,]+\s*[kK]?)\s*reviews?/i); if (r2) reviews = parseCount(r2[1]);
+      }
+      var from = 0;
+      for (var j = 0; j < rest.length; j++) { if (/reviews?/i.test(rest[j])) { from = j + 1; break; } }
+      var cat = '';
+      for (var c = from; c < Math.min(rest.length, from + 6); c++) {
+        if (rest[c].length < 60 && catRe.test(rest[c]) && !skip.test(rest[c])) { cat = rest[c]; break; }
+      }
+      var ph = text.match(/\(?\d{3}\)?[\s.\-]*\d{3}[\s.\-]\d{4}/);
+      var notes = [];
+      if (/virtual consultations?/i.test(text)) notes.push('Offers virtual consultations');
+      if (/fast responder|responds? (quickly|in)/i.test(text)) notes.push('Fast responder on Yelp');
+      var key = name.toLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push({ name: name, rating: rating, reviews: reviews, niche: cat, phone: ph ? ph[0] : '', notes: notes.join('. ') });
+    });
+    return out;
+  }
+  //SEARCH-END
+
+  var searchCtx = { niche: '', city: '', state: '' };
+  var sList = [];
+  var S_URL = 'https://www.yelp.com/search?find_desc=Plumbers&find_loc=Houston%2C+TX';
+  var S_SAMPLE = 'Top 10 Best Plumbers near Houston, TX\n1. Bayou City Plumbing\n4.5\n(128 reviews)\nPlumbing, Water Heater Installation\nOpen until 6:00 PM\n2. Gulf Coast Drain Pros\n4.8\n(64 reviews)\nPlumbing, Drain Cleaning\nOffers virtual consultations\n3. Montrose Rooter & Repair\n4.2\n(31 reviews)\nPlumbing\nClosed until 8:00 AM\n4. Lone Star Water Heaters\n3.9\n(1.2k reviews)\nWater Heater Installation & Repair\nFast responder\nPage 1 of 10';
+
+  function onSearchUrl() {
+    var v = $('s-url').value;
+    if (!v.trim()) { $('sUrlMsg').textContent = ''; return; }
+    var r = parseSearchUrl(v);
+    if (!r.ok) { $('sUrlMsg').textContent = 'That does not look like a Yelp search link.'; return; }
+    searchCtx = { niche: r.niche, city: r.city, state: r.state };
+    var info = [r.niche, [r.city, r.state].filter(Boolean).join(', '), 'page ' + r.page].filter(Boolean).join(' · ');
+    $('sUrlMsg').innerHTML = esc(info) + '. <a href="' + esc(r.url) + '" target="_blank" rel="noopener">Open this search on Yelp</a>, then copy the results page text.';
+  }
+  function updateAddCount() {
+    var n = $('sFound').querySelectorAll('input:checked').length;
+    $('sAdd').textContent = 'Add selected (' + n + ')';
+    $('sAdd').disabled = !n;
+  }
+  function renderFound() {
+    $('sFoundWrap').hidden = !sList.length;
+    $('sFound').innerHTML = sList.map(function (f, i) {
+      var meta = [f.rating ? f.rating + '★' : '', f.reviews ? f.reviews + ' reviews' : '', f.niche || searchCtx.niche].filter(Boolean).join(' · ');
+      return '<label><input type="checkbox" data-i="' + i + '" checked><span><strong>' + esc(f.name) + '</strong><div class="sub">' + esc(meta) + '</div></span></label>';
+    }).join('');
+    updateAddCount();
+  }
+  function findBusinesses() {
+    var raw = $('s-paste').value;
+    if (!raw.trim()) { $('sMsg').textContent = 'Paste the search results text first.'; return; }
+    if (/^https?:\/\/\S+$/i.test(raw.trim())) {
+      $('sMsg').textContent = 'That is a link. Put links in the box above. Open the link on Yelp, press Ctrl+A and Ctrl+C on that page, then paste the page text here.';
+      return;
+    }
+    onSearchUrl();
+    sList = parseSearch(raw);
+    $('sMsg').textContent = sList.length
+      ? 'Found ' + sList.length + ' businesses. Untick any you do not want.'
+      : 'No numbered results found. Copy the whole results page (Ctrl+A, Ctrl+C) and try again.';
+    renderFound();
+  }
+  function addFound() {
+    var boxes = $('sFound').querySelectorAll('input[type=checkbox]');
+    var added = 0, dup = 0, first = null;
+    [].forEach.call(boxes, function (b) {
+      if (!b.checked) return;
+      var f = sList[+b.getAttribute('data-i')];
+      var exists = leads.some(function (l) {
+        return !l.example && l.name.toLowerCase() === f.name.toLowerCase() && (l.city || '').toLowerCase() === (searchCtx.city || '').toLowerCase();
+      });
+      if (exists) { dup++; return; }
+      var l = {
+        id: uid(), added: Date.now() + added, name: f.name, niche: f.niche || searchCtx.niche,
+        city: searchCtx.city, state: searchCtx.state, rating: f.rating, reviews: f.reviews, phone: f.phone,
+        website: '', webStatus: 'unknown', problem: '', channel: '', status: 'New', followUp: '', example: false,
+        owner: '', address: '', zip: '', price: '', claimed: 'unknown', years: '', hours: '', email: '', wa: '',
+        fb: '', ig: '', services: '', notes: f.notes
+      };
+      leads.push(l); if (!first) first = l.id; added++;
+    });
+    if (first) selected = first;
+    save(); render(); renderDraft();
+    $('sMsg').textContent = 'Added ' + added + (dup ? ', skipped ' + dup + ' already in the ledger' : '') + '. Open each business page on Yelp and paste it in Add a lead to fill in the website and contact details.';
+    sList = []; renderFound(); $('s-paste').value = '';
+  }
+  function setAll(v) {
+    [].forEach.call($('sFound').querySelectorAll('input[type=checkbox]'), function (b) { b.checked = v; });
+    updateAddCount();
+  }
+  $('s-url').addEventListener('input', onSearchUrl);
+  $('s-find').addEventListener('click', findBusinesses);
+  $('s-sample').addEventListener('click', function () { $('s-url').value = S_URL; $('s-paste').value = S_SAMPLE; findBusinesses(); });
+  $('sAdd').addEventListener('click', addFound);
+  $('sAll').addEventListener('click', function () { setAll(true); });
+  $('sNone').addEventListener('click', function () { setAll(false); });
+  $('sFound').addEventListener('change', updateAddCount);
+
+  /* ---------- ledger ---------- */
+  function opts(list, val) {
+    return list.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === val ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('');
+  }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var p = iso.split('-'); var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+  function visible() {
+    var f = $('filter').value, s = $('sort').value;
+    var list = leads.filter(function (l) {
+      if (f === 'all') return true;
+      if (f.indexOf('tier:') === 0) return tier(score(l))[0] === f.slice(5);
+      return l.status === f.slice(3);
+    });
+    list.sort(function (a, b) {
+      if (s === 'new') return b.added - a.added;
+      if (s === 'name') return a.name.localeCompare(b.name);
+      return score(b) - score(a);
+    });
+    return list;
+  }
+  function waDigits(v) { return String(v || '').replace(/\D/g, ''); }
+  function socialUrl(u, host) {
+    u = (u || '').trim(); if (!u) return '';
+    if (/^https?:\/\//i.test(u)) return u;
+    if (u.indexOf(host) !== -1) return 'https://' + u.replace(/^\/+/, '');
+    return 'https://' + host + '/' + u.replace(/^@/, '');
+  }
+  function details(l) {
+    var bits = [];
+    var addr = [l.address, l.zip].filter(Boolean).join(' ');
+    if (addr) bits.push(addr);
+    var meta = [];
+    if (l.price) meta.push(l.price);
+    if (l.claimed === 'claimed') meta.push('Claimed on Yelp'); else if (l.claimed === 'unclaimed') meta.push('Unclaimed');
+    if (l.years) meta.push(l.years + ' yrs in business');
+    if (l.hours) meta.push(l.hours);
+    if (meta.length) bits.push(meta.join(' · '));
+    if (l.owner) bits.push('Owner: ' + l.owner);
+    if (l.services) bits.push(l.services);
+    if (l.notes) bits.push('Note: ' + l.notes);
+    return bits.map(function (b) { return '<div class="sub">' + esc(b) + '</div>'; }).join('');
+  }
+  function contacts(l) {
+    var out = [];
+    var wd = waDigits(l.wa);
+    if (wd) out.push('<a href="https://wa.me/' + wd + '" target="_blank" rel="noopener">WhatsApp ' + esc(l.wa) + '</a>');
+    if (l.email) out.push('<span class="mono">' + esc(l.email) + '</span>');
+    var ig = socialUrl(l.ig, 'instagram.com');
+    if (ig) out.push('<a href="' + esc(ig) + '" target="_blank" rel="noopener">Instagram</a>');
+    var fb = socialUrl(l.fb, 'facebook.com');
+    if (fb) out.push('<a href="' + esc(fb) + '" target="_blank" rel="noopener">Facebook</a>');
+    return out.map(function (b) { return '<div class="sub">' + b + '</div>'; }).join('');
+  }
+  function row(l) {
+    var sc = score(l), t = tier(sc);
+    var place = [l.niche, [l.city, l.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+    var site = l.website ? '<div class="sub"><a href="' + esc(normUrl(l.website)) + '" target="_blank" rel="noopener">' + esc(l.website.replace(/^https?:\/\//i, '').slice(0, 28)) + '</a></div>' : '';
+    return '<tr data-id="' + l.id + '"' + (l.id === selected ? ' class="sel"' : '') + '>' +
+      '<td><span class="score ' + t[0] + '" title="' + t[1] + ' lead">' + sc + '</span></td>' +
+      '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + '<div class="sub">' + esc(place) + '</div>' + details(l) + '</td>' +
+      '<td class="mono">' + (l.rating ? esc(l.rating) + '★' : '–') + (l.reviews ? ' · ' + esc(l.reviews) : '') + '</td>' +
+      '<td class="mono">' + esc(l.phone || '–') + '</td>' +
+      '<td><select data-f="webStatus" aria-label="Website status">' + opts(WEB, l.webStatus) + '</select>' + site + '</td>' +
+      '<td><select data-f="channel" aria-label="Reach via">' + opts(CHAN, l.channel) + '</select>' + contacts(l) + '</td>' +
+      '<td><select data-f="status" aria-label="Status">' + opts(STAT, l.status) + '</select>' + (l.followUp ? '<div class="sub">Follow up ' + esc(fmtDate(l.followUp)) + '</div>' : '') + '</td>' +
+      '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button><button class="btn small ghost" type="button" data-act="del" aria-label="Delete ' + esc(l.name) + '">Delete</button></div></td></tr>';
+  }
+  function render() {
+    var list = visible();
+    $('rows').innerHTML = list.length ? list.map(row).join('') : '<tr><td colspan="8" class="empty">No leads match. Paste a Yelp page above to add one.</td></tr>';
+    var hot = leads.filter(function (l) { return tier(score(l))[0] === 'hot'; }).length;
+    var msgd = leads.filter(function (l) { return l.status === 'Messaged'; }).length;
+    $('counts').innerHTML = '<span><b>' + leads.length + '</b> leads</span><span><b>' + hot + '</b> hot</span><span><b>' + msgd + '</b> messaged</span>';
+    $('clearEx').hidden = !leads.some(function (l) { return l.example; });
+  }
+
+  /* ---------- message drafts ---------- */
+  function current() { for (var i = 0; i < leads.length; i++) if (leads[i].id === selected) return leads[i]; return null; }
+
+  function build(l) {
+    var biz = l.name || 'your business';
+    var who = me.trim() || '[Your name]';
+    var niche = (l.niche || '').split(',')[0].trim().toLowerCase() || 'local services';
+    var city = l.city || 'your area';
+    var proof = (l.rating && l.reviews) ? l.rating + ' stars from ' + l.reviews + ' reviews' : 'strong reviews';
+    if ((parseInt(l.years, 10) || 0) >= 5) proof += ', ' + l.years + ' years in business';
+    var ownerFirst = (l.owner || '').trim().split(/\s+/)[0];
+    var site = l.website ? l.website.replace(/^https?:\/\//i, '') : 'your website';
+    var prob = (l.problem || '').trim() || 'it is slow and hard to use on a phone';
+    var none = l.webStatus === 'none';
+    var ok = l.webStatus === 'ok';
+    var offer = none ? '1-page mockup' : 'screenshot of what I would fix';
+    var dm = kind === 'dm';
+    var isDm = chan === 'dm';
+    var greet = ownerFirst ? 'Hi ' + ownerFirst + ',' : 'Hi ' + biz + ' team,';
+    var body, subject;
+
+    if (kind === 'first') {
+      if (none) {
+        subject = 'A website for ' + biz;
+        body = isDm
+          ? 'I\'m ' + who + '. Saw ' + biz + ' on Yelp (' + proof + '), great work. I noticed there\'s no website linked, so people searching for ' + niche + ' in ' + city + ' can\'t find you directly. Want me to send a free 1-page mockup? No pressure, tell me and I\'ll stop.'
+          : 'I\'m ' + who + ', a web developer. I came across ' + biz + ' on Yelp (' + proof + ') and noticed there is no website linked, so people searching for ' + niche + ' in ' + city + ' cannot see your services or contact you directly. I build simple, fast, mobile-friendly websites for local businesses at a fixed price. Could I send you a free 1-page mockup for ' + biz + '?';
+      } else if (ok) {
+        subject = 'One idea for ' + site;
+        body = isDm
+          ? 'I\'m ' + who + '. Saw ' + biz + ' on Yelp (' + proof + ') and looked at ' + site + ', it\'s solid. One idea: [your idea, e.g. a click-to-call button or online booking]. Want a quick mockup? No pressure, tell me and I\'ll stop.'
+          : 'I\'m ' + who + ', a web developer. I looked at ' + site + ' after finding ' + biz + ' on Yelp (' + proof + '). The site is solid, and I have one idea that could bring in more calls from phone visitors: [your idea]. Could I send a quick mockup?';
+      } else {
+        subject = 'Quick fix for ' + site;
+        body = isDm
+          ? 'I\'m ' + who + '. Saw ' + biz + ' on Yelp (' + proof + '), nice work. I looked at ' + site + ' and noticed ' + prob + ', which can lose customers searching for ' + niche + ' in ' + city + '. Want a free screenshot of what I\'d fix? No pressure, tell me and I\'ll stop.'
+          : 'I\'m ' + who + ', a web developer. I found ' + biz + ' on Yelp (' + proof + ') and looked at ' + site + '. I noticed ' + prob + ', which can cost you customers searching for ' + niche + ' in ' + city + '. I fix this for local businesses at a fixed price. Could I send a free screenshot showing exactly what I would change?';
+      }
+    } else if (kind === 'f1') {
+      subject = 'Re: ' + (none ? 'A website for ' + biz : 'Quick fix for ' + site);
+      body = isDm
+        ? 'Quick follow-up from ' + who + '. Happy to send the free ' + offer + ' for ' + biz + '. It takes me about a day and costs nothing. Should I send it over?'
+        : 'Following up on my last message. I am happy to send the free ' + offer + ' for ' + biz + '. It takes me about a day and costs nothing. Should I send it over?';
+    } else {
+      subject = 'Closing the loop';
+      body = isDm
+        ? 'Last note from me. If a better website isn\'t a priority right now, no problem at all. If it ever is, I\'m happy to help ' + biz + '. All the best.'
+        : 'This is my last note. If a better website is not a priority right now, no problem at all. If it ever is, I would be happy to help ' + biz + '. All the best.';
+    }
+    if (isDm) return greet + ' ' + body;
+    return 'Subject: ' + subject + '\n\n' + greet + '\n\n' + body + '\n\nBest,\n' + who + '\n[Your business name] · [Your street address]\nReply "stop" and I won\'t email again.';
+  }
+  var kindVal = 'first';
+  function renderDraft() {
+    var l = current();
+    kind = kindVal;
+    if (!l) { $('draftFor').textContent = 'Pick a lead from the ledger.'; $('draft').value = ''; return; }
+    $('draftFor').textContent = 'For ' + l.name + (l.example ? ' (example lead)' : '');
+    $('draft').value = build(l);
+  }
+
+  /* ---------- copy ---------- */
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('on');
+    clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('on'); }, 1800);
+  }
+  function copyText(text, fallbackEl) {
+    function manual() {
+      if (fallbackEl) { fallbackEl.focus(); fallbackEl.select(); }
+      else { $('manualWrap').hidden = false; $('manual').value = text; $('manual').focus(); $('manual').select(); }
+      toast('Press Ctrl+C to copy');
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { toast('Copied'); }, manual);
+        return;
+      }
+    } catch (e) {}
+    manual();
+  }
+  var COLS = ['Business', 'Owner', 'Category', 'Address', 'City', 'State', 'ZIP', 'Rating', 'Reviews', 'Price', 'Yelp page', 'Years in business', 'Hours', 'Phone', 'WhatsApp', 'Email', 'Facebook', 'Instagram', 'Website', 'Website status', 'Problem note', 'Services', 'Notes', 'Reach via', 'Status', 'Follow-up', 'Score'];
+  function rowsData() {
+    var wl = { none: 'No website', old: 'Old or slow', ok: 'Looks fine', unknown: 'Not checked' };
+    return visible().filter(function (l) { return !l.example; }).map(function (l) {
+      return [l.name, l.owner, l.niche, l.address, l.city, l.state, l.zip, l.rating, l.reviews, l.price, l.claimed, l.years, l.hours, l.phone, l.wa, l.email, l.fb, l.ig, l.website, wl[l.webStatus] || '', l.problem, l.services, l.notes, l.channel, l.status, l.followUp, score(l)];
+    });
+  }
+  function exportText(sep) {
+    var data = rowsData();
+    if (!data.length) return null;
+    function cell(v) {
+      v = String(v == null ? '' : v);
+      if (sep === '\t') return v.replace(/[\t\r\n]+/g, ' ');
+      return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    }
+    return [COLS].concat(data).map(function (r) { return r.map(cell).join(sep); }).join('\n');
+  }
+
+  /* ---------- events ---------- */
+  $('extract').addEventListener('click', extract);
+  $('sample').addEventListener('click', function () { $('paste').value = SAMPLE; extract(); });
+  $('clearForm').addEventListener('click', clearForm);
+  $('add').addEventListener('click', addLead);
+  $('f-site').addEventListener('input', updatePs);
+  $('sort').addEventListener('change', render);
+  $('filter').addEventListener('change', render);
+
+  $('me').addEventListener('input', function () { me = this.value; save(); renderDraft(); });
+
+  $('segKind').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-kind]'); if (!b) return;
+    kindVal = b.getAttribute('data-kind');
+    [].forEach.call(this.querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    renderDraft();
+  });
+  $('segChan').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-chan]'); if (!b) return;
+    chan = b.getAttribute('data-chan');
+    [].forEach.call(this.querySelectorAll('button'), function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    renderDraft();
+  });
+  $('copyDraft').addEventListener('click', function () { copyText($('draft').value, $('draft')); });
+
+  $('rows').addEventListener('click', function (e) {
+    var tr = e.target.closest('tr[data-id]'); if (!tr) return;
+    var id = tr.getAttribute('data-id');
+    var btn = e.target.closest('button[data-act]');
+    if (btn && btn.getAttribute('data-act') === 'del') {
+      leads = leads.filter(function (l) { return l.id !== id; });
+      if (selected === id) selected = leads.length ? leads[0].id : null;
+      save(); render(); renderDraft(); return;
+    }
+    if (e.target.closest('select, a')) return;
+    selected = id; render(); renderDraft();
+  });
+  $('rows').addEventListener('change', function (e) {
+    var sel = e.target.closest('select[data-f]'); if (!sel) return;
+    var tr = sel.closest('tr'); var id = tr.getAttribute('data-id');
+    var l = leads.filter(function (x) { return x.id === id; })[0]; if (!l) return;
+    var f = sel.getAttribute('data-f');
+    l[f] = sel.value;
+    if (f === 'status') {
+      if (sel.value === 'Messaged') {
+        var d = new Date(); d.setDate(d.getDate() + 3);
+        l.followUp = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+      } else { l.followUp = ''; }
+    }
+    selected = id; save(); render(); renderDraft();
+  });
+
+  $('copySheets').addEventListener('click', function () {
+    var t = exportText('\t');
+    if (!t) { toast('Add your own leads first. Examples are not exported.'); return; }
+    copyText(t);
+  });
+  $('copyCsv').addEventListener('click', function () {
+    var t = exportText(',');
+    if (!t) { toast('Add your own leads first. Examples are not exported.'); return; }
+    copyText(t);
+  });
+  $('clearEx').addEventListener('click', function () {
+    leads = leads.filter(function (l) { return !l.example; });
+    if (!current()) selected = leads.length ? leads[0].id : null;
+    save(); render(); renderDraft();
+  });
+
+  /* ---------- boot ---------- */
+  if (!load()) seed();
+  $('me').value = me;
+  selected = leads.length ? visible()[0].id : null;
+  render(); renderDraft();
+})();
+</script>
+
+</html>
