@@ -319,7 +319,6 @@ td.mono { white-space: nowrap; }
     <div class="auth-msg" id="authMsg" role="status"></div>
     <button class="btn" id="authGo" type="submit">Sign in</button>
     <p>Use at least 6 characters for the password.</p>
-    <button class="linkbtn" id="chgConn" type="button" hidden>Use a different Supabase project</button>
   </form>
   <form class="auth-card" id="setupForm" novalidate hidden>
     <div class="brand"><span class="mark" aria-hidden="true"></span><span>Hunting Desk</span></div>
@@ -339,7 +338,12 @@ td.mono { white-space: nowrap; }
       <textarea id="sqlBox" rows="9" readonly></textarea>
       <button class="btn small ghost" id="sqlCopy" type="button" style="margin-top:8px">Copy SQL</button>
     </details>
-    <p>Use the anon public key only. The service_role key is refused.</p>
+    <div id="cfgDone" hidden>
+      <p style="margin-bottom:8px">Connected on this browser. To make login work on every device, paste this line over the <b>window.HD_CONFIG</b> line near the top of index.html and upload it. The publishable key is meant to be public.</p>
+      <textarea id="cfgOut" rows="3" readonly></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="btn small ghost" id="cfgCopy" type="button">Copy line</button><button class="btn small" id="cfgGo" type="button">Open the app</button></div>
+    </div>
+    <p>Use the publishable (anon) key only. Secret keys are refused.</p>
   </form>
 </div>
 <div class="app">
@@ -2007,8 +2011,11 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
   }
   $('setupForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    var url = $('sUrl').value.trim().replace(/\/+$/, ''), key = $('sKey').value.trim(), m = $('setupMsg');
-    if (!/^https:\/\/[a-z0-9.-]+$/i.test(url)) { m.textContent = 'The Project URL should look like https://abcd1234.supabase.co'; return; }
+    var raw = $('sUrl').value.replace(/\s+/g, ''), key = $('sKey').value.replace(/\s+/g, ''), m = $('setupMsg'), url = '';
+    var dash = raw.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i), host = raw.match(/^(?:https?:\/\/)?([a-z0-9-]+\.supabase\.(?:co|in|net))/i);
+    if (dash) url = 'https://' + dash[1].toLowerCase() + '.supabase.co'; else if (host) url = 'https://' + host[1].toLowerCase();
+    if (/abcd1234/i.test(raw)) { m.textContent = 'That is only the example. Paste your own Project URL from Supabase (Settings, API).'; return; }
+    if (!url) { m.textContent = 'Could not read that URL. Copy the Project URL from Supabase, it looks like https://yourref.supabase.co'; return; }
     if (!key) { m.textContent = 'Paste the anon public key.'; return; }
     if (keyRole(key) === 'service_role' || /^sb_secret_/.test(key)) { m.textContent = 'That is a secret key. Never paste it here. Use the anon public key.'; return; }
     var btn = $('setupGo'); btn.disabled = true; m.textContent = 'Testing connection...';
@@ -2016,14 +2023,16 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
       btn.disabled = false;
       if (!r.ok) { m.textContent = 'Supabase rejected these details (' + r.status + '). Check the URL and the anon public key.'; return; }
       try { localStorage.setItem(CFG_KEY, JSON.stringify({ url: url, key: key })); } catch (x) { m.textContent = 'This browser blocked saving. Allow site data and try again.'; return; }
-      m.textContent = 'Connected. Loading...'; location.reload();
+      m.textContent = 'Connected.'; $('setupGo').hidden = true; $('cfgOut').value = 'window.HD_CONFIG = { supabaseUrl: "' + url + '", supabaseKey: "' + key + '" };'; $('cfgDone').hidden = false;
     }, function () { btn.disabled = false; m.textContent = 'Could not reach that URL. Check it and your internet.'; });
   });
+  $('cfgCopy').addEventListener('click', function () { $('cfgOut').select(); try { document.execCommand('copy'); this.textContent = 'Copied'; } catch (e) {} });
+  $('cfgGo').addEventListener('click', function () { history.replaceState(null, '', location.pathname); location.reload(); });
+  window.addEventListener('hashchange', function () { if (/^#(setup|connect)$/.test(location.hash)) location.reload(); });
   function disconnect() {
     try { localStorage.removeItem(CFG_KEY); } catch (e) {}
     location.reload();
   }
-  $('chgConn').addEventListener('click', function () { if (confirm('Disconnect this Supabase project from this browser?')) disconnect(); });
   document.addEventListener('click', function (e) { if (e.target.closest('[data-disc="1"]')) { if (confirm('Disconnect Supabase from this browser? Your leads stay in your Supabase account.')) { var go = function () { disconnect(); }; if (sb && user) { try { localStorage.removeItem(ckey); } catch (x) {} sb.auth.signOut().then(go, go); } else go(); } } });
 
   /* ---------- boot ---------- */
@@ -2035,8 +2044,10 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
     selected = v0 ? v0.id : null;
     render(); renderDraft(); showView(); renderAccount();
   }
-  $('chgConn').hidden = !cfgStored;
-  if (libMissing) {
+  var setupMode = /^#(setup|connect)$/.test(location.hash);
+  if (setupMode) {
+    document.body.classList.add('lock'); $('auth').hidden = false; $('authForm').hidden = true; $('setupForm').hidden = false;
+  } else if (libMissing) {
     document.body.classList.add('lock'); $('auth').hidden = false; $('authGo').disabled = true;
     $('authMsg').textContent = 'Login library could not load (blocked network or ad blocker). Reload the page, or turn off the blocker for this site.';
   } else if (sb) {
@@ -2046,7 +2057,10 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
     }, function () { showAuth('in', 'Could not reach the server.'); });
   } else {
     document.body.classList.add('lock'); $('auth').hidden = false;
-    $('authForm').hidden = true; $('setupForm').hidden = false;
+    $('authTitle').textContent = 'Private app';
+    $('authSub').textContent = 'Sign in is not available on this site.';
+    $('authTabs').hidden = true; $('authGo').hidden = true; $('authForm').querySelector('.fields').hidden = true;
+    var lp = $('authForm').querySelectorAll('p'); lp[lp.length - 1].hidden = true;
   }
 })();
 </script>
