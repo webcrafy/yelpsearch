@@ -811,7 +811,10 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
       apply(m);
       try { localStorage.setItem(ckey, JSON.stringify(blob())); } catch (e) {}
       hideAuth(); start();
-      if (parts.length && (!remote || local || legacy)) { setSync('saving'); push(); } else setSync('saved');
+      if (parts.length && (!remote || local || legacy)) {
+        setSync('saving');
+        push().then(function (r) { if (legacy && !(r && r.error)) { try { localStorage.removeItem(KEY); } catch (e) {} } });
+      } else setSync('saved');
     });
   }
 
