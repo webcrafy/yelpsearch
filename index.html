@@ -24,7 +24,7 @@
   --warm-ink: #7A5B00;
   --cold-bg: #E4E9ED;
   --cold-ink: #4A5A67;
-  --missing: #B45309;
+  --missing: #B45309; --ok-bg: #DDF3E4; --ok-ink: #17623A;
   --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
@@ -34,7 +34,7 @@
     --bg: #0E161C; --surface: #15212A; --surface-2: #1B2933; --ink: #E6EDF2; --muted: #8FA2B1; --line: #263642;
     --accent: #4CB8D6; --on-accent: #06222C;
     --hot-bg: #3A1D10; --hot-ink: #FDBA8C; --warm-bg: #3A2F0A; --warm-ink: #F2D36B; --cold-bg: #1E2B34; --cold-ink: #9FB1BE;
-    --missing: #F59E0B;
+    --missing: #F59E0B; --ok-bg: #12301F; --ok-ink: #7FD6A0;
     color-scheme: dark;
   }
 }
@@ -42,7 +42,7 @@
   --bg: #0E161C; --surface: #15212A; --surface-2: #1B2933; --ink: #E6EDF2; --muted: #8FA2B1; --line: #263642;
   --accent: #4CB8D6; --on-accent: #06222C;
   --hot-bg: #3A1D10; --hot-ink: #FDBA8C; --warm-bg: #3A2F0A; --warm-ink: #F2D36B; --cold-bg: #1E2B34; --cold-ink: #9FB1BE;
-  --missing: #F59E0B;
+  --missing: #F59E0B; --ok-bg: #12301F; --ok-ink: #7FD6A0;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -84,6 +84,11 @@ input.missing { border-color: var(--missing); }
 .srcpane { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .check { display: flex; gap: 8px; align-items: center; text-transform: none; letter-spacing: 0; font-size: 13.5px; color: var(--ink); font-weight: 400; margin: 0; }
 .check input { width: auto; }
+.watest { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.pill { align-self: flex-start; font-size: 12px; border-radius: 999px; padding: 2px 8px; font-weight: 500; }
+.pill.ok { background: var(--ok-bg); color: var(--ok-ink); }
+.pill.no { background: var(--cold-bg); color: var(--cold-ink); }
+a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: var(--ink); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn {
   font: inherit; font-weight: 500; cursor: pointer; border-radius: 6px; padding: 8px 14px;
@@ -405,13 +410,17 @@ td { overflow-wrap: anywhere; }
             <option value="tier:hot">Hot only</option><option value="tier:warm">Warm only</option><option value="tier:cold">Cold only</option>
             <option value="st:New">Status: New</option><option value="st:Messaged">Status: Messaged</option>
             <option value="st:Replied">Status: Replied</option><option value="st:Won">Status: Won</option>
+            <option value="wa:yes">WhatsApp: has it</option><option value="wa:untested">WhatsApp: not tested</option><option value="wa:no">WhatsApp: no</option>
           </select>
         </div>
+        <button class="btn ghost" id="scanAll" type="button">Check all sites</button>
+        <div class="f" style="min-width: 90px; flex: 0 0 90px"><label for="cc">Country code</label><input id="cc" inputmode="numeric" maxlength="3" autocomplete="off"></div>
         <button class="btn ghost" id="copySheets" type="button">Copy for Google Sheets</button>
         <button class="btn ghost" id="copyCsv" type="button">Copy CSV</button>
         <button class="btn ghost" id="clearEx" type="button" hidden>Remove examples</button>
       </div>
     </div>
+    <div class="seg" id="srcFilter" role="group" aria-label="Lead source"></div>
     <div class="scroll">
       <table>
         <thead><tr>
@@ -424,6 +433,8 @@ td { overflow-wrap: anywhere; }
       <label for="manual">Copy blocked here. Select all and copy by hand</label>
       <textarea id="manual" rows="5" readonly></textarea>
     </div>
+    <p class="hint">Check site reads the business's own website and lists the social links, email and WhatsApp number it publishes, so you can see which social media a business has without opening anything. It works on the deployed site only, and only for leads that have a website.</p>
+    <p class="hint">Test on WhatsApp opens WhatsApp for that number without sending anything. If WhatsApp says the number is not on WhatsApp, press No. Landline numbers usually are not on WhatsApp. Country code 1 is added to 10-digit US numbers.</p>
     <p class="hint">Leads are saved in this browser only. Use the copy buttons to keep a backup in a Google Sheet.</p>
   </section>
 </div>
@@ -433,7 +444,8 @@ td { overflow-wrap: anywhere; }
 (function () {
   var KEY = 'yelp-lead-desk-v1';
   var $ = function (id) { return document.getElementById(id); };
-  var leads = [], me = '', selected = null, kind = 'first', chan = 'dm';
+  var leads = [], me = '', cc = '1', selected = null, kind = 'first', chan = 'dm', ledgerSrc = 'all', curSrc = 'yelp';
+  var SRC_NAMES = { yelp: 'Yelp', google: 'Google', osm: 'OpenStreetMap', file: 'CSV / other' };
 
   var WEB = [['unknown', 'Not checked'], ['none', 'No website'], ['old', 'Old or slow'], ['ok', 'Looks fine']];
   var CHAN = [['', 'Not found'], ['WhatsApp', 'WhatsApp'], ['Facebook', 'Facebook'], ['Instagram', 'Instagram'], ['Email', 'Email'], ['Contact form', 'Contact form'], ['Call only', 'Call only']];
@@ -445,15 +457,15 @@ td { overflow-wrap: anywhere; }
   function load() {
     try {
       var r = localStorage.getItem(KEY);
-      if (r) { var d = JSON.parse(r); leads = d.leads || []; me = d.me || ''; return true; }
+      if (r) { var d = JSON.parse(r); leads = d.leads || []; me = d.me || ''; cc = d.cc || '1'; return true; }
     } catch (e) {}
     return false;
   }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify({ leads: leads, me: me })); } catch (e) {} }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ leads: leads, me: me, cc: cc })); } catch (e) {} }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
   function seed() {
-    var base = { webStatus: 'none', problem: '', channel: '', status: 'New', followUp: '', example: true, state: '' };
+    var base = { webStatus: 'none', problem: '', channel: '', status: 'New', followUp: '', example: true, state: '', source: 'yelp' };
     function mk(o) { var l = {}; for (var k in base) l[k] = base[k]; for (var j in o) l[j] = o[j]; l.id = uid(); l.added = Date.now(); return l; }
     leads = [
       mk({ name: 'Bayou City Plumbing', niche: 'Plumbing', city: 'Houston', state: 'TX', rating: '4.5', reviews: '128', phone: '(713) 555-0142', website: '', webStatus: 'none', channel: 'Facebook', owner: 'Mike Torres', address: '2150 Westheimer Rd', zip: '77098', price: '$$', claimed: 'claimed', years: '18', hours: 'Open 7:00 AM - 6:00 PM', fb: 'facebook.com/bayoucityplumbing', services: 'Water heaters, drain cleaning, leak repair' }),
@@ -630,7 +642,7 @@ td { overflow-wrap: anywhere; }
       niche: $('f-niche').value.trim(), city: $('f-city').value.trim(), state: $('f-state').value.trim().toUpperCase(),
       rating: $('f-rating').value.trim(), reviews: $('f-reviews').value.trim(), phone: $('f-phone').value.trim(),
       website: $('f-site').value.trim(), webStatus: $('f-web').value, problem: $('f-problem').value.trim(),
-      channel: $('f-chan').value, status: 'New', followUp: '', example: false,
+      channel: $('f-chan').value, status: 'New', followUp: '', example: false, source: 'yelp',
       owner: $('f-owner').value.trim(), address: $('f-address').value.trim(), zip: $('f-zip').value.trim(),
       price: $('f-price').value, claimed: $('f-claimed').value, years: $('f-years').value.trim(),
       hours: $('f-hours').value.trim(), email: $('f-email').value.trim(), wa: $('f-wa').value.trim(),
@@ -1005,7 +1017,7 @@ td { overflow-wrap: anywhere; }
       });
       if (exists) { dup++; return; }
       if (!l.channel) l.channel = l.wa ? 'WhatsApp' : l.email ? 'Email' : l.ig ? 'Instagram' : l.fb ? 'Facebook' : '';
-      l.id = uid(); l.added = Date.now() + added;
+      l.id = uid(); l.added = Date.now() + added; l.source = curSrc;
       leads.push(l); if (!first) first = l.id; added++;
     });
     if (first) selected = first;
@@ -1018,6 +1030,7 @@ td { overflow-wrap: anywhere; }
     updateAddCount();
   }
   function showSource(src) {
+    curSrc = src;
     [].forEach.call($('srcTabs').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-src') === src)); });
     ['yelp', 'google', 'osm', 'file'].forEach(function (s) { $('src-' + s).hidden = s !== src; });
     $('sMsg').textContent = ''; sList = []; renderFound();
@@ -1057,8 +1070,10 @@ td { overflow-wrap: anywhere; }
   function visible() {
     var f = $('filter').value, s = $('sort').value;
     var list = leads.filter(function (l) {
+      if (ledgerSrc !== 'all' && (l.source || 'yelp') !== ledgerSrc) return false;
       if (f === 'all') return true;
       if (f.indexOf('tier:') === 0) return tier(score(l))[0] === f.slice(5);
+      if (f.indexOf('wa:') === 0) { var w = f.slice(3); return w === 'yes' ? l.waStatus === 'yes' : w === 'no' ? l.waStatus === 'no' : (!l.waStatus && !!waNumber(l)); }
       return l.status === f.slice(3);
     });
     list.sort(function (a, b) {
@@ -1067,6 +1082,58 @@ td { overflow-wrap: anywhere; }
       return score(b) - score(a);
     });
     return list;
+  }
+  var OTHER_SOCIAL = { linkedin: 'LinkedIn', tiktok: 'TikTok', youtube: 'YouTube', x: 'X', pinterest: 'Pinterest', nextdoor: 'Nextdoor' };
+  function otherSocial(l) {
+    var sc = l.social || {};
+    return Object.keys(OTHER_SOCIAL).filter(function (k) { return sc[k]; }).map(function (k) { return OTHER_SOCIAL[k] + ': ' + sc[k]; }).join(' | ');
+  }
+  function validSite(u) { return /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/\S*)?$/i.test((u || '').trim()); }
+  function scanLead(l) {
+    return fetch('/api/site-scan?url=' + encodeURIComponent(normUrl(l.website)))
+      .then(function (r) {
+        return r.text().then(function (t) {
+          var j;
+          try { j = JSON.parse(t); } catch (e) { throw new Error('nofn'); }
+          if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+          return j;
+        });
+      })
+      .then(function (j) {
+        var sc = j.social || {};
+        l.social = sc;
+        if (sc.facebook && !l.fb) l.fb = sc.facebook;
+        if (sc.instagram && !l.ig) l.ig = sc.instagram;
+        if (j.emails && j.emails[0] && !l.email) l.email = j.emails[0];
+        if (j.phones && j.phones[0] && !l.phone) l.phone = j.phones[0];
+        if (j.whatsapp) { if (!l.wa) l.wa = '+' + j.whatsapp; l.waStatus = 'yes'; l.channel = 'WhatsApp'; }
+        else if (!l.channel) l.channel = l.email ? 'Email' : l.ig ? 'Instagram' : l.fb ? 'Facebook' : '';
+        var names = [];
+        if (sc.facebook) names.push('Facebook');
+        if (sc.instagram) names.push('Instagram');
+        Object.keys(OTHER_SOCIAL).forEach(function (k) { if (sc[k]) names.push(OTHER_SOCIAL[k]); });
+        if (j.whatsapp) names.push('WhatsApp');
+        if (j.emails && j.emails.length) names.push('email');
+        l.scanMsg = names.length ? 'Site lists: ' + names.join(', ') : 'Site checked: no social links or WhatsApp found';
+        l.scanAt = Date.now(); l.scanFail = '';
+      })
+      .catch(function (e) {
+        if (e.message === 'nofn') { l.scanFail = 'nofn'; l.scanMsg = 'Site check needs the deployed site with the api/site-scan.js file. It does not run in the Claude preview.'; }
+        else { l.scanFail = 'err'; l.scanMsg = 'Could not read the site (' + e.message + ')'; l.scanAt = Date.now(); }
+      });
+  }
+  function waNumber(l) {
+    var n = digits(l.wa || l.phone);
+    if (!n) return '';
+    if (n.length === 10) n = (cc || '1') + n;
+    return n;
+  }
+  function waTools(l) {
+    var n = waNumber(l);
+    if (!n) return '';
+    var st = l.waStatus === 'yes' ? '<span class="pill ok">On WhatsApp</span>' : l.waStatus === 'no' ? '<span class="pill no">Not on WhatsApp</span>' : '';
+    return '<div class="watest">' + st + '<div class="row"><a class="btn small ghost" href="https://wa.me/' + n + '" target="_blank" rel="noopener">Test on WhatsApp</a>' +
+      '<button class="btn small ghost" type="button" data-act="wa-yes">Has it</button><button class="btn small ghost" type="button" data-act="wa-no">No</button></div></div>';
   }
   function waDigits(v) { return String(v || '').replace(/\D/g, ''); }
   function socialUrl(u, host) {
@@ -1099,6 +1166,9 @@ td { overflow-wrap: anywhere; }
     if (ig) out.push('<a href="' + esc(ig) + '" target="_blank" rel="noopener">Instagram</a>');
     var fb = socialUrl(l.fb, 'facebook.com');
     if (fb) out.push('<a href="' + esc(fb) + '" target="_blank" rel="noopener">Facebook</a>');
+    var sc = l.social || {};
+    Object.keys(OTHER_SOCIAL).forEach(function (k) { if (sc[k]) out.push('<a href="' + esc(sc[k]) + '" target="_blank" rel="noopener">' + OTHER_SOCIAL[k] + '</a>'); });
+    if (l.scanMsg) out.push('<span>' + esc(l.scanMsg) + '</span>');
     return out.map(function (b) { return '<div class="sub">' + b + '</div>'; }).join('');
   }
   function row(l) {
@@ -1107,15 +1177,22 @@ td { overflow-wrap: anywhere; }
     var site = l.website ? '<div class="sub"><a href="' + esc(normUrl(l.website)) + '" target="_blank" rel="noopener">' + esc(l.website.replace(/^https?:\/\//i, '').slice(0, 28)) + '</a></div>' : '';
     return '<tr data-id="' + l.id + '"' + (l.id === selected ? ' class="sel"' : '') + '>' +
       '<td><span class="score ' + t[0] + '" title="' + t[1] + ' lead">' + sc + '</span></td>' +
-      '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + '<div class="sub">' + esc(place) + '</div>' + details(l) + '</td>' +
+      '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + '<div class="sub">' + esc(place) + '</div>' + details(l) + '</td>' +
       '<td class="mono">' + (l.rating ? esc(l.rating) + '★' : '–') + (l.reviews ? ' · ' + esc(l.reviews) : '') + '</td>' +
       '<td class="mono">' + esc(l.phone || '–') + '</td>' +
       '<td><select data-f="webStatus" aria-label="Website status">' + opts(WEB, l.webStatus) + '</select>' + site + '</td>' +
-      '<td><select data-f="channel" aria-label="Reach via">' + opts(CHAN, l.channel) + '</select>' + contacts(l) + '</td>' +
+      '<td><select data-f="channel" aria-label="Reach via">' + opts(CHAN, l.channel) + '</select>' + contacts(l) + waTools(l) + '</td>' +
       '<td><select data-f="status" aria-label="Status">' + opts(STAT, l.status) + '</select>' + (l.followUp ? '<div class="sub">Follow up ' + esc(fmtDate(l.followUp)) + '</div>' : '') + '</td>' +
-      '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button><button class="btn small ghost" type="button" data-act="del" aria-label="Delete ' + esc(l.name) + '">Delete</button></div></td></tr>';
+      '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button>' + (validSite(l.website) ? '<button class="btn small ghost" type="button" data-act="scan">' + (l.scanAt ? 'Recheck site' : 'Check site') + '</button>' : '') + '<button class="btn small ghost" type="button" data-act="del" aria-label="Delete ' + esc(l.name) + '">Delete</button></div></td></tr>';
   }
   function render() {
+    var counts = { all: leads.length };
+    leads.forEach(function (l) { var s = l.source || 'yelp'; counts[s] = (counts[s] || 0) + 1; });
+    if (ledgerSrc !== 'all' && !counts[ledgerSrc]) ledgerSrc = 'all';
+    var tabs = [['all', 'All']].concat(Object.keys(SRC_NAMES).map(function (k) { return [k, SRC_NAMES[k]]; })).filter(function (p) { return p[0] === 'all' || counts[p[0]]; });
+    $('srcFilter').innerHTML = tabs.map(function (p) {
+      return '<button type="button" data-s="' + p[0] + '" aria-pressed="' + (ledgerSrc === p[0]) + '">' + esc(p[1]) + ' (' + (counts[p[0]] || 0) + ')</button>';
+    }).join('');
     var list = visible();
     $('rows').innerHTML = list.length ? list.map(row).join('') : '<tr><td colspan="8" class="empty">No leads match. Paste a Yelp page above to add one.</td></tr>';
     var heads = [].map.call(document.querySelectorAll('thead th'), function (th) { return th.textContent; });
@@ -1139,6 +1216,7 @@ td { overflow-wrap: anywhere; }
     var proof = (l.rating && l.reviews) ? l.rating + ' stars from ' + l.reviews + ' reviews' : 'strong reviews';
     if ((parseInt(l.years, 10) || 0) >= 5) proof += ', ' + l.years + ' years in business';
     var ownerFirst = (l.owner || '').trim().split(/\s+/)[0];
+    var onSrc = ({ yelp: 'on Yelp', google: 'on Google Maps' })[l.source] || 'online';
     var site = l.website ? l.website.replace(/^https?:\/\//i, '') : 'your website';
     var prob = (l.problem || '').trim() || 'it is slow and hard to use on a phone';
     var none = l.webStatus === 'none';
@@ -1153,18 +1231,18 @@ td { overflow-wrap: anywhere; }
       if (none) {
         subject = 'A website for ' + biz;
         body = isDm
-          ? 'I\'m ' + who + '. Saw ' + biz + ' on Yelp (' + proof + '), great work. I noticed there\'s no website linked, so people searching for ' + niche + ' in ' + city + ' can\'t find you directly. Want me to send a free 1-page mockup? No pressure, tell me and I\'ll stop.'
-          : 'I\'m ' + who + ', a web developer. I came across ' + biz + ' on Yelp (' + proof + ') and noticed there is no website linked, so people searching for ' + niche + ' in ' + city + ' cannot see your services or contact you directly. I build simple, fast, mobile-friendly websites for local businesses at a fixed price. Could I send you a free 1-page mockup for ' + biz + '?';
+          ? 'I\'m ' + who + '. Saw ' + biz + ' ' + onSrc + ' (' + proof + '), great work. I noticed there\'s no website linked, so people searching for ' + niche + ' in ' + city + ' can\'t find you directly. Want me to send a free 1-page mockup? No pressure, tell me and I\'ll stop.'
+          : 'I\'m ' + who + ', a web developer. I came across ' + biz + ' ' + onSrc + ' (' + proof + ') and noticed there is no website linked, so people searching for ' + niche + ' in ' + city + ' cannot see your services or contact you directly. I build simple, fast, mobile-friendly websites for local businesses at a fixed price. Could I send you a free 1-page mockup for ' + biz + '?';
       } else if (ok) {
         subject = 'One idea for ' + site;
         body = isDm
-          ? 'I\'m ' + who + '. Saw ' + biz + ' on Yelp (' + proof + ') and looked at ' + site + ', it\'s solid. One idea: [your idea, e.g. a click-to-call button or online booking]. Want a quick mockup? No pressure, tell me and I\'ll stop.'
-          : 'I\'m ' + who + ', a web developer. I looked at ' + site + ' after finding ' + biz + ' on Yelp (' + proof + '). The site is solid, and I have one idea that could bring in more calls from phone visitors: [your idea]. Could I send a quick mockup?';
+          ? 'I\'m ' + who + '. Saw ' + biz + ' ' + onSrc + ' (' + proof + ') and looked at ' + site + ', it\'s solid. One idea: [your idea, e.g. a click-to-call button or online booking]. Want a quick mockup? No pressure, tell me and I\'ll stop.'
+          : 'I\'m ' + who + ', a web developer. I looked at ' + site + ' after finding ' + biz + ' ' + onSrc + ' (' + proof + '). The site is solid, and I have one idea that could bring in more calls from phone visitors: [your idea]. Could I send a quick mockup?';
       } else {
         subject = 'Quick fix for ' + site;
         body = isDm
-          ? 'I\'m ' + who + '. Saw ' + biz + ' on Yelp (' + proof + '), nice work. I looked at ' + site + ' and noticed ' + prob + ', which can lose customers searching for ' + niche + ' in ' + city + '. Want a free screenshot of what I\'d fix? No pressure, tell me and I\'ll stop.'
-          : 'I\'m ' + who + ', a web developer. I found ' + biz + ' on Yelp (' + proof + ') and looked at ' + site + '. I noticed ' + prob + ', which can cost you customers searching for ' + niche + ' in ' + city + '. I fix this for local businesses at a fixed price. Could I send a free screenshot showing exactly what I would change?';
+          ? 'I\'m ' + who + '. Saw ' + biz + ' ' + onSrc + ' (' + proof + '), nice work. I looked at ' + site + ' and noticed ' + prob + ', which can lose customers searching for ' + niche + ' in ' + city + '. Want a free screenshot of what I\'d fix? No pressure, tell me and I\'ll stop.'
+          : 'I\'m ' + who + ', a web developer. I found ' + biz + ' ' + onSrc + ' (' + proof + ') and looked at ' + site + '. I noticed ' + prob + ', which can cost you customers searching for ' + niche + ' in ' + city + '. I fix this for local businesses at a fixed price. Could I send a free screenshot showing exactly what I would change?';
       }
     } else if (kind === 'f1') {
       subject = 'Re: ' + (none ? 'A website for ' + biz : 'Quick fix for ' + site);
@@ -1208,11 +1286,11 @@ td { overflow-wrap: anywhere; }
     } catch (e) {}
     manual();
   }
-  var COLS = ['Business', 'Owner', 'Category', 'Address', 'City', 'State', 'ZIP', 'Rating', 'Reviews', 'Price', 'Yelp page', 'Years in business', 'Hours', 'Phone', 'WhatsApp', 'Email', 'Facebook', 'Instagram', 'Website', 'Website status', 'Problem note', 'Services', 'Notes', 'Reach via', 'Status', 'Follow-up', 'Score'];
+  var COLS = ['Business', 'Source', 'Owner', 'Category', 'Address', 'City', 'State', 'ZIP', 'Rating', 'Reviews', 'Price', 'Yelp page', 'Years in business', 'Hours', 'Phone', 'WhatsApp', 'WhatsApp status', 'Email', 'Facebook', 'Instagram', 'Other social', 'Website', 'Website status', 'Problem note', 'Services', 'Notes', 'Reach via', 'Status', 'Follow-up', 'Score'];
   function rowsData() {
     var wl = { none: 'No website', old: 'Old or slow', ok: 'Looks fine', unknown: 'Not checked' };
     return visible().filter(function (l) { return !l.example; }).map(function (l) {
-      return [l.name, l.owner, l.niche, l.address, l.city, l.state, l.zip, l.rating, l.reviews, l.price, l.claimed, l.years, l.hours, l.phone, l.wa, l.email, l.fb, l.ig, l.website, wl[l.webStatus] || '', l.problem, l.services, l.notes, l.channel, l.status, l.followUp, score(l)];
+      return [l.name, SRC_NAMES[l.source] || 'Other', l.owner, l.niche, l.address, l.city, l.state, l.zip, l.rating, l.reviews, l.price, l.claimed, l.years, l.hours, l.phone, l.wa, ({ yes: 'Has WhatsApp', no: 'No WhatsApp' })[l.waStatus] || 'Not tested', l.email, l.fb, l.ig, otherSocial(l), l.website, wl[l.webStatus] || '', l.problem, l.services, l.notes, l.channel, l.status, l.followUp, score(l)];
     });
   }
   function exportText(sep) {
@@ -1260,6 +1338,20 @@ td { overflow-wrap: anywhere; }
       if (selected === id) selected = leads.length ? leads[0].id : null;
       save(); render(); renderDraft(); return;
     }
+    if (btn && btn.getAttribute('data-act') === 'scan') {
+      var sl = leads.filter(function (x) { return x.id === id; })[0];
+      if (sl) { btn.disabled = true; btn.textContent = 'Checking...'; scanLead(sl).then(function () { selected = id; save(); render(); renderDraft(); }); }
+      return;
+    }
+    if (btn && /^wa-/.test(btn.getAttribute('data-act'))) {
+      var lead = leads.filter(function (x) { return x.id === id; })[0];
+      if (lead) {
+        if (btn.getAttribute('data-act') === 'wa-yes') { lead.waStatus = 'yes'; if (!lead.wa) lead.wa = '+' + waNumber(lead); lead.channel = 'WhatsApp'; }
+        else { lead.waStatus = 'no'; if (lead.channel === 'WhatsApp') lead.channel = ''; }
+        selected = id; save(); render(); renderDraft();
+      }
+      return;
+    }
     if (e.target.closest('select, a')) return;
     selected = id; render(); renderDraft();
   });
@@ -1278,6 +1370,29 @@ td { overflow-wrap: anywhere; }
     selected = id; save(); render(); renderDraft();
   });
 
+  $('cc').addEventListener('input', function () { cc = this.value.replace(/\D/g, '') || '1'; save(); render(); });
+  $('srcFilter').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-s]'); if (!b) return;
+    ledgerSrc = b.getAttribute('data-s'); render();
+  });
+  var scanning = false;
+  $('scanAll').addEventListener('click', function () {
+    if (scanning) return;
+    var todo = visible().filter(function (l) { return !l.example && validSite(l.website) && !l.scanAt; });
+    if (!todo.length) { toast('No unchecked websites in this list'); return; }
+    scanning = true; $('scanAll').disabled = true;
+    var i = 0;
+    (function next() {
+      if (i >= todo.length || (i > 0 && todo[i - 1].scanFail === 'nofn')) {
+        scanning = false; $('scanAll').disabled = false; $('scanAll').textContent = 'Check all sites';
+        save(); render(); renderDraft();
+        toast(i > 0 && todo[i - 1].scanFail === 'nofn' ? 'Site check works on the deployed site only' : 'Checked ' + todo.length + ' sites');
+        return;
+      }
+      $('scanAll').textContent = 'Checking ' + (i + 1) + ' of ' + todo.length + '...';
+      scanLead(todo[i]).then(function () { i++; save(); setTimeout(next, 250); });
+    })();
+  });
   $('copySheets').addEventListener('click', function () {
     var t = exportText('\t');
     if (!t) { toast('Add your own leads first. Examples are not exported.'); return; }
@@ -1296,7 +1411,9 @@ td { overflow-wrap: anywhere; }
 
   /* ---------- boot ---------- */
   if (!load()) seed();
+  leads.forEach(function (l) { if (!l.source) l.source = 'yelp'; });
   $('me').value = me;
+  $('cc').value = cc;
   selected = leads.length ? visible()[0].id : null;
   render(); renderDraft();
 })();
