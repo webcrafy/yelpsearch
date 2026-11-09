@@ -45,6 +45,7 @@
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
 body.lock { overflow: hidden; }
+body.lock .app, body.lock #drawer, body.lock #scrim { display: none !important; }
 h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.015em; }
 h1 { font-size: 30px; line-height: 1.1; }
 h2 { font-size: 18px; }
@@ -1997,7 +1998,7 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
     render(); renderDraft(); showView(); renderAccount();
   }
   if (libMissing) {
-    $('auth').hidden = false; $('authGo').disabled = true;
+    document.body.classList.add('lock'); $('auth').hidden = false; $('authGo').disabled = true;
     $('authMsg').textContent = 'Login library could not load (blocked network or ad blocker). Reload the page, or turn off the blocker for this site.';
   } else if (sb) {
     renderAccount();
@@ -2005,7 +2006,11 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
       if (r.data && r.data.session) enter(r.data.session.user); else showAuth('in', '');
     }, function () { showAuth('in', 'Could not reach the server.'); });
   } else {
-    load(); start();
+    document.body.classList.add('lock'); $('auth').hidden = false; $('authGo').disabled = true;
+    $('aEmail').disabled = true; $('aPass').disabled = true; $('authTabs').hidden = true;
+    $('authTitle').textContent = 'Login is not set up yet';
+    $('authSub').textContent = 'Open index.html, find the SETTINGS block at the top, and paste your Supabase URL and anon public key between the quotes. Then run the SQL from the same block once in Supabase. After that, this page becomes the sign in screen.';
+    $('authMsg').textContent = 'The dashboard stays locked until login is set up.';
   }
 })();
 </script>
