@@ -682,6 +682,7 @@ create policy "delete own" on public.lead_desk_state for delete using (auth.uid(
 window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" onerror="void 0"></script>
+<script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>');}</script>
 <script>
 (function () {
   var KEY = 'yelp-lead-desk-v1';
@@ -697,6 +698,7 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
 
   /* ---------- storage + account ---------- */
   var CFG = window.HD_CONFIG || {};
+  var libMissing = !!(CFG.supabaseUrl && CFG.supabaseKey && !window.supabase);
   var sb = null, user = null, ckey = KEY, savedAt = 0, pushT = null, syncState = 'local';
   try { if (CFG.supabaseUrl && CFG.supabaseKey && window.supabase) sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey); } catch (e) { sb = null; }
 
@@ -735,7 +737,7 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
       : '<div>' + label + '. Use Copy for Google Sheets on the Leads page for a backup.</div>';
     $('acctCard').innerHTML = sb
       ? '<div><h2>Account</h2><p>' + dot + label + ' &middot; ' + who + '</p></div><button class="btn ghost" type="button" data-out="1">Sign out</button>'
-      : '<div><h2>Storage</h2><p>Leads are saved in this browser only. Cloud accounts are off until config.js has your Supabase keys.</p></div>';
+      : '<div><h2>Storage</h2><p>Leads are saved in this browser only. Login is OFF because no Supabase URL and key are set at the top of index.html (the SETTINGS block).</p></div>';
   }
   document.addEventListener('click', function (e) { if (e.target.closest('[data-out="1"]')) signOut(); });
 
@@ -1994,7 +1996,10 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
     selected = v0 ? v0.id : null;
     render(); renderDraft(); showView(); renderAccount();
   }
-  if (sb) {
+  if (libMissing) {
+    $('auth').hidden = false; $('authGo').disabled = true;
+    $('authMsg').textContent = 'Login library could not load (blocked network or ad blocker). Reload the page, or turn off the blocker for this site.';
+  } else if (sb) {
     renderAccount();
     sb.auth.getSession().then(function (r) {
       if (r.data && r.data.session) enter(r.data.session.user); else showAuth('in', '');
