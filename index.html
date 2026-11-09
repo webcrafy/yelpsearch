@@ -89,6 +89,7 @@ input.missing { border-color: var(--missing); }
 .pill.ok { background: var(--ok-bg); color: var(--ok-ink); }
 .pill.no { background: var(--cold-bg); color: var(--cold-ink); }
 a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: var(--ink); }
+.siteIn { margin-top: 6px; padding: 4px 6px; font-size: 13px; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn {
   font: inherit; font-weight: 500; cursor: pointer; border-radius: 6px; padding: 8px 14px;
@@ -1175,6 +1176,7 @@ td { overflow-wrap: anywhere; }
     var sc = score(l), t = tier(sc);
     var place = [l.niche, [l.city, l.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
     var site = l.website ? '<div class="sub"><a href="' + esc(normUrl(l.website)) + '" target="_blank" rel="noopener">' + esc(l.website.replace(/^https?:\/\//i, '').slice(0, 28)) + '</a></div>' : '';
+    site = (validSite(l.website) ? site : (l.website ? '<div class="sub">' + esc(l.website) + '</div>' : '')) + '<input class="siteIn" data-f="website" aria-label="Website address" placeholder="paste website" value="' + esc(validSite(l.website) ? l.website : '') + '">';
     return '<tr data-id="' + l.id + '"' + (l.id === selected ? ' class="sel"' : '') + '>' +
       '<td><span class="score ' + t[0] + '" title="' + t[1] + ' lead">' + sc + '</span></td>' +
       '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + '<div class="sub">' + esc(place) + '</div>' + details(l) + '</td>' +
@@ -1356,11 +1358,15 @@ td { overflow-wrap: anywhere; }
     selected = id; render(); renderDraft();
   });
   $('rows').addEventListener('change', function (e) {
-    var sel = e.target.closest('select[data-f]'); if (!sel) return;
+    var sel = e.target.closest('select[data-f], input[data-f]'); if (!sel) return;
     var tr = sel.closest('tr'); var id = tr.getAttribute('data-id');
     var l = leads.filter(function (x) { return x.id === id; })[0]; if (!l) return;
     var f = sel.getAttribute('data-f');
     l[f] = sel.value;
+    if (f === 'website') {
+      l.website = sel.value.trim(); l.scanAt = 0; l.scanMsg = ''; l.scanFail = '';
+      if (validSite(l.website) && l.webStatus === 'none') l.webStatus = 'unknown';
+    }
     if (f === 'status') {
       if (sel.value === 'Messaged') {
         var d = new Date(); d.setDate(d.getDate() + 3);
