@@ -428,6 +428,41 @@ td.mono { white-space: nowrap; }
 .set-msg { font-size: 13.5px; background: var(--panel-2); border-radius: 8px; padding: 8px 10px; }
 .set-msg:empty { display: none; }
 .panel .muted { color: var(--muted); margin: 0; font-size: 14px; }
+.av { width: 64px; height: 64px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 24px; overflow: hidden; flex: none; }
+.av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.av.sm { width: 38px; height: 38px; font-size: 15px; }
+.prof-top { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.set-form h3 { font-size: 15px; margin-top: 8px; }
+.acct-who { display: flex; gap: 12px; align-items: center; min-width: 0; }
+/* home motion: everything is visible at rest, animation only plays on top */
+@keyframes hd-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes hd-in { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+@keyframes hd-ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 50%, transparent); } 100% { box-shadow: 0 0 0 9px transparent; } }
+@keyframes hd-blink { 50% { opacity: 0; } }
+.pill i { animation: hd-ping 2.4s ease-out infinite; }
+.home .btn { transition: transform .15s ease, background-color .15s ease, border-color .15s ease; }
+.home .btn:hover { transform: translateY(-1px); }
+.home.play .pill { animation: hd-up .6s cubic-bezier(.2,.7,.2,1) backwards; }
+.home.play .hero h1 { animation: hd-up .7s cubic-bezier(.2,.7,.2,1) .08s backwards; }
+.home.play .hero p.sub { animation: hd-up .7s cubic-bezier(.2,.7,.2,1) .18s backwards; }
+.home.play .hero .cta { animation: hd-up .7s cubic-bezier(.2,.7,.2,1) .28s backwards; }
+.home.play .facts { animation: hd-up .7s cubic-bezier(.2,.7,.2,1) .38s backwards; }
+.home.play .pv { animation: hd-up .8s cubic-bezier(.2,.7,.2,1) .2s backwards; }
+.home.play .pv-row:nth-child(2) { animation: hd-in .6s cubic-bezier(.2,.7,.2,1) .5s backwards; }
+.home.play .pv-row:nth-child(3) { animation: hd-in .6s cubic-bezier(.2,.7,.2,1) .65s backwards; }
+.home.play .pv-row:nth-child(4) { animation: hd-in .6s cubic-bezier(.2,.7,.2,1) .8s backwards; }
+.home.play .msg { animation: hd-up .7s cubic-bezier(.2,.7,.2,1) 1s backwards; }
+.msg p.typing::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: var(--accent); animation: hd-blink 0.9s steps(1) infinite; }
+@supports (animation-timeline: view()) {
+  @keyframes hd-reveal { from { opacity: .15; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+  @keyframes hd-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .strip, .bx, .flow li, .faq details, .band, .sec h2, .sec .kick { animation: hd-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 40%; }
+  .fac i { transform-origin: left center; animation: hd-grow linear both; animation-timeline: view(); animation-range: entry 20% entry 90%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home *, .home *::before, .home *::after { animation: none !important; transition: none !important; }
+  .home { scroll-behavior: auto; }
+}
 </style>
 
 <div class="home" id="home" hidden>
@@ -459,13 +494,13 @@ td.mono { white-space: nowrap; }
       <div class="stage" aria-label="Example lead book">
         <div class="pv">
           <div class="pv-head"><span>Lead book</span><span class="pv-tag">Example data</span></div>
-          <div class="pv-row"><span class="pv-score hot">100</span><div><div class="pv-name">Bayou City Plumbing</div><div class="pv-sub">Plumbing, Houston TX &middot; 4.5 stars, 128 reviews</div></div><div class="pv-gap"><b>No website</b><br>Facebook found</div></div>
-          <div class="pv-row"><span class="pv-score hot">75</span><div><div class="pv-name">Westheimer Barber Co.</div><div class="pv-sub">Barber, Houston TX &middot; 4.8 stars, 64 reviews</div></div><div class="pv-gap"><b>Old website</b><br>Instagram found</div></div>
-          <div class="pv-row"><span class="pv-score">16</span><div><div class="pv-name">Sunrise Auto Repair</div><div class="pv-sub">Auto repair, Austin TX &middot; 3.9 stars, 22 reviews</div></div><div class="pv-gap">Site looks fine</div></div>
+          <div class="pv-row"><span class="pv-score hot" data-v="100">100</span><div><div class="pv-name">Bayou City Plumbing</div><div class="pv-sub">Plumbing, Houston TX &middot; 4.5 stars, 128 reviews</div></div><div class="pv-gap"><b>No website</b><br>Facebook found</div></div>
+          <div class="pv-row"><span class="pv-score hot" data-v="75">75</span><div><div class="pv-name">Westheimer Barber Co.</div><div class="pv-sub">Barber, Houston TX &middot; 4.8 stars, 64 reviews</div></div><div class="pv-gap"><b>Old website</b><br>Instagram found</div></div>
+          <div class="pv-row"><span class="pv-score" data-v="16">16</span><div><div class="pv-name">Sunrise Auto Repair</div><div class="pv-sub">Auto repair, Austin TX &middot; 3.9 stars, 22 reviews</div></div><div class="pv-gap">Site looks fine</div></div>
         </div>
         <div class="msg">
           <div class="t"><b>Drafted message</b><span>WhatsApp, example</span></div>
-          <p>Hi, I came across Bayou City Plumbing on Yelp. 128 reviews and a 4.5 rating, but I could not find a website. I build simple sites for local businesses. Want me to send a quick mockup?</p>
+          <p id="typeMsg" data-full="Hi, I came across Bayou City Plumbing on Yelp. 128 reviews and a 4.5 rating, but I could not find a website. I build simple sites for local businesses. Want me to send a quick mockup?">Hi, I came across Bayou City Plumbing on Yelp. 128 reviews and a 4.5 rating, but I could not find a website. I build simple sites for local businesses. Want me to send a quick mockup?</p>
         </div>
       </div>
     </section>
@@ -557,6 +592,18 @@ td.mono { white-space: nowrap; }
     <div class="auth-msg" id="authMsg" role="status"></div>
     <button class="btn" id="authGo" type="submit">Sign in</button>
     <p>Use at least 6 characters for the password.</p>
+  </form>
+  <form class="auth-card" id="codeForm" novalidate hidden>
+    <div class="brand"><span class="mark" aria-hidden="true"></span><span>Hunting Desk</span></div>
+    <div><h1>Reset your password</h1><p id="codeSub">We sent a message to your email. Enter the code from it and choose a new password. The link in the same email also works.</p></div>
+    <div class="fields">
+      <div><label for="cCode">Code from the email</label><input id="cCode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456"></div>
+      <div><label for="cPass">New password</label><input id="cPass" type="password" autocomplete="new-password" minlength="6"></div>
+      <div><label for="cPass2">Repeat new password</label><input id="cPass2" type="password" autocomplete="new-password" minlength="6"></div>
+    </div>
+    <div class="auth-msg" id="codeMsg" role="status"></div>
+    <button class="btn" id="codeGo" type="submit">Reset password</button>
+    <div style="display:flex;gap:16px;flex-wrap:wrap"><button class="linkbtn" id="codeResend" type="button">Send a new code</button><button class="linkbtn" id="codeBack" type="button">Back to sign in</button></div>
   </form>
   <form class="auth-card" id="resetForm" novalidate hidden>
     <div class="brand"><span class="mark" aria-hidden="true"></span><span>Hunting Desk</span></div>
@@ -881,8 +928,23 @@ td.mono { white-space: nowrap; }
         <section class="panel">
           <h2>Profile</h2>
           <form class="set-form" id="setProfile" novalidate>
+            <div class="prof-top">
+              <div class="av" id="pfAv" aria-hidden="true"></div>
+              <div class="row">
+                <label class="btn small ghost" for="pfPhoto" style="margin:0;cursor:pointer">Upload photo</label>
+                <input id="pfPhoto" type="file" accept="image/*" class="sr">
+                <button class="btn small ghost" id="pfPhotoDel" type="button">Remove photo</button>
+              </div>
+            </div>
             <div><label for="sName">Display name</label><input id="sName" maxlength="60" autocomplete="name"></div>
             <div><label for="sEmail">Email</label><input id="sEmail" type="email" autocomplete="email"></div>
+            <h3>Business details</h3>
+            <p class="muted">Used in the messages you send, so you do not retype them.</p>
+            <div><label for="sRole">What you do</label><input id="sRole" maxlength="60" placeholder="web developer" autocomplete="off"></div>
+            <div><label for="sAgency">Business or agency name</label><input id="sAgency" maxlength="80" autocomplete="organization"></div>
+            <div><label for="sSite">Website or portfolio link</label><input id="sSite" maxlength="120" placeholder="yoursite.com" autocomplete="url"></div>
+            <div><label for="sPhone">Phone or WhatsApp</label><input id="sPhone" maxlength="30" inputmode="tel" autocomplete="tel"></div>
+            <div><label for="sAddr">Business address for email footers</label><input id="sAddr" maxlength="140" autocomplete="street-address"></div>
             <div class="set-msg" id="sProfMsg" role="status"></div>
             <div><button class="btn" type="submit">Save profile</button></div>
           </form>
@@ -1014,7 +1076,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
 (function () {
   var KEY = 'yelp-lead-desk-v1';
   var $ = function (id) { return document.getElementById(id); };
-  var leads = [], me = '', cc = '1', selected = null, kind = 'first', chan = 'dm', ledgerSrc = 'all', curSrc = 'yelp', trash = [], picked = {};
+  var profile = {}, leads = [], me = '', cc = '1', selected = null, kind = 'first', chan = 'dm', ledgerSrc = 'all', curSrc = 'yelp', trash = [], picked = {};
   var SRC_NAMES = { yelp: 'Yelp', google: 'Google', osm: 'OpenStreetMap', file: 'CSV / other' };
 
   var WEB = [['unknown', 'Not checked'], ['none', 'No website'], ['old', 'Old or slow'], ['ok', 'Looks fine']];
@@ -1050,8 +1112,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
   var sb = null, user = null, ckey = KEY, savedAt = 0, pushT = null, syncState = 'local';
   try { if (CFG.supabaseUrl && CFG.supabaseKey && window.supabase) sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey); } catch (e) { sb = null; }
 
-  function blob() { return { leads: leads, me: me, cc: cc, trash: trash, savedAt: savedAt, prefs: prefs }; }
-  function apply(d) { leads = d.leads || []; me = d.me || ''; cc = d.cc || '1'; trash = d.trash || []; savedAt = d.savedAt || 0; }
+  function blob() { return { leads: leads, me: me, cc: cc, trash: trash, savedAt: savedAt, prefs: prefs, profile: profile }; }
+  function apply(d) { profile = d.profile || profile || {}; leads = d.leads || []; me = d.me || ''; cc = d.cc || '1'; trash = d.trash || []; savedAt = d.savedAt || 0; }
   function readLocal(k) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
   function load() { var d = readLocal(ckey); if (d) { apply(d); return true; } return false; }
   function save() {
@@ -1069,15 +1131,19 @@ window.HD_CONFIG = window.HD_CONFIG || {
   }
   function mergeBlobs(a, b) {
     var base = (a.savedAt || 0) >= (b.savedAt || 0) ? a : b, other = base === a ? b : a;
-    var out = { prefs: base.prefs || other.prefs, leads: (base.leads || []).slice(), trash: (base.trash || []).slice(), me: base.me || other.me || '', cc: base.cc || other.cc || '1', savedAt: Math.max(a.savedAt || 0, b.savedAt || 0) };
+    var out = { profile: base.profile || other.profile || {}, prefs: base.prefs || other.prefs, leads: (base.leads || []).slice(), trash: (base.trash || []).slice(), me: base.me || other.me || '', cc: base.cc || other.cc || '1', savedAt: Math.max(a.savedAt || 0, b.savedAt || 0) };
     var seen = {};
     out.leads.concat(out.trash).forEach(function (l) { seen[l.id] = 1; });
     (other.leads || []).forEach(function (l) { if (!seen[l.id]) { seen[l.id] = 1; out.leads.push(l); } });
     return out;
   }
   function dname() { var m = (user && user.user_metadata) || {}; return String(m.name || '').trim(); }
+  function initials() { var n = dname() || (user && user.email) || '?'; var p = n.replace(/@.*/, '').split(/[\s._-]+/).filter(Boolean); return ((p[0] || '?').charAt(0) + (p.length > 1 ? p[1].charAt(0) : '')).toUpperCase(); }
+  function avHtml(cls) { return '<span class="av ' + (cls || '') + '">' + (profile.avatar ? '<img alt="" src="' + esc(profile.avatar) + '">' : esc(initials())) + '</span>'; }
   function renderSettings() {
     if (!user) return;
+    $('pfAv').innerHTML = profile.avatar ? '<img alt="" src="' + esc(profile.avatar) + '">' : esc(initials());
+    $('sRole').value = profile.role || ''; $('sAgency').value = profile.agency || ''; $('sSite').value = profile.site || ''; $('sPhone').value = profile.phone || ''; $('sAddr').value = profile.addr || '';
     $('sName').value = dname();
     $('sEmail').value = user.new_email || user.email || '';
     $('sSess').textContent = 'Signed in as ' + (user.email || '') + '.';
@@ -1088,10 +1154,10 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var dot = '<span class="dot' + (sb && (syncState === 'saved' || syncState === 'idle') ? ' ok' : '') + '"></span>';
     var who = user ? esc(dname() || user.email) + (dname() ? ' &middot; ' + esc(user.email) : '') : '';
     $('acct').innerHTML = sb
-      ? '<div>' + dot + label + '</div><b>' + who + '</b><div class="row"><button class="btn small ghost" type="button" data-out="1">Sign out</button><button class="btn small ghost" type="button" data-prefs="1">Appearance</button></div>'
+      ? '<div class="acct-who">' + avHtml('sm') + '<b>' + who + '</b></div><div>' + dot + label + '</div><div class="row"><button class="btn small ghost" type="button" data-out="1">Sign out</button><button class="btn small ghost" type="button" data-prefs="1">Appearance</button></div>'
       : '<div>' + label + '. Use Copy for Google Sheets on the Leads page for a backup.</div>';
     $('acctCard').innerHTML = sb
-      ? '<div><h2>Account</h2><p>' + dot + label + ' &middot; ' + who + '</p></div><span class="row"><button class="btn ghost" type="button" data-prefs="1">Appearance</button><button class="btn ghost" type="button" data-out="1">Sign out</button>' + (cfgStored ? '<button class="btn ghost" type="button" data-disc="1">Disconnect Supabase</button>' : '') + '</span>'
+      ? '<div class="acct-who">' + avHtml('') + '<div><h2>Account</h2><p>' + dot + label + ' &middot; ' + who + '</p></div></div><span class="row"><button class="btn ghost" type="button" data-prefs="1">Appearance</button><button class="btn ghost" type="button" data-out="1">Sign out</button>' + (cfgStored ? '<button class="btn ghost" type="button" data-disc="1">Disconnect Supabase</button>' : '') + '</span>'
       : '';
   }
   document.addEventListener('click', function (e) { if (e.target.closest('[data-out="1"]')) signOut(); });
@@ -1110,7 +1176,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   var authMode = 'in';
   function showAuth(mode, msg) {
     $('auth').hidden = false; $('home').hidden = true; document.body.classList.add('lock');
-    $('authForm').hidden = false; $('resetForm').hidden = true; $('forgot').hidden = mode !== 'in';
+    $('authForm').hidden = false; $('resetForm').hidden = true; $('codeForm').hidden = true; $('forgot').hidden = mode !== 'in';
     authMode = mode;
     $('authTitle').textContent = mode === 'in' ? 'Sign in' : 'Create your account';
     $('authGo').textContent = mode === 'in' ? 'Sign in' : 'Create account';
@@ -1124,7 +1190,33 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var s = e.target.closest('[data-scroll]'); if (!s) return;
     var el = document.getElementById(s.getAttribute('data-scroll')); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
-  function showHome() { $('auth').hidden = true; $('home').hidden = false; document.body.classList.add('lock'); $('home').scrollTop = 0; }
+  var typeT = null, countT = null;
+  function playHome() {
+    var h = $('home'), t = $('typeMsg'), full = t.getAttribute('data-full') || t.textContent;
+    clearInterval(typeT); clearInterval(countT);
+    var rm = false; try { rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    h.classList.remove('play'); t.classList.remove('typing'); t.textContent = full;
+    [].forEach.call(h.querySelectorAll('.pv-score'), function (s) { s.textContent = s.getAttribute('data-v'); });
+    if (rm) return;
+    void h.offsetWidth; h.classList.add('play');
+    var sc = [].slice.call(h.querySelectorAll('.pv-score')), t0 = Date.now();
+    sc.forEach(function (s) { s.textContent = '0'; });
+    countT = setInterval(function () {
+      var k = Math.min(1, (Date.now() - t0 - 300) / 900); if (k < 0) return;
+      var e = 1 - Math.pow(1 - k, 3);
+      sc.forEach(function (s) { s.textContent = String(Math.round(+s.getAttribute('data-v') * e)); });
+      if (k >= 1) clearInterval(countT);
+    }, 30);
+    t.textContent = ''; var i = 0;
+    setTimeout(function () {
+      t.classList.add('typing');
+      typeT = setInterval(function () {
+        i += 2; t.textContent = full.slice(0, i);
+        if (i >= full.length) { clearInterval(typeT); t.textContent = full; setTimeout(function () { t.classList.remove('typing'); }, 1600); }
+      }, 22);
+    }, 1300);
+  }
+  function showHome() { $('auth').hidden = true; $('home').hidden = false; document.body.classList.add('lock'); $('home').scrollTop = 0; playHome(); }
   document.addEventListener('click', function (e) {
     var g = e.target.closest('[data-go]'); if (g) { showAuth(g.getAttribute('data-go'), ''); return; }
     if (e.target.closest('#toHome')) showHome();
@@ -2075,7 +2167,9 @@ window.HD_CONFIG = window.HD_CONFIG || {
 
   function build(l) {
     var biz = l.name || 'your business';
-    var who = me.trim() || '[Your name]';
+    var who = me.trim() || dname() || '[Your name]';
+    var role = (profile.role || 'web developer').trim(), roleP = (/^[aeiou]/i.test(role) ? 'an ' : 'a ') + role + (profile.agency ? ' at ' + profile.agency : '');
+    var showcase = profile.site ? ' My work: ' + profile.site.replace(/^https?:\/\//i, '') : '';
     var niche = (l.niche || '').split(',')[0].trim().toLowerCase() || 'local services';
     var city = l.city || 'your area';
     var proof = (l.rating && l.reviews) ? l.rating + ' stars from ' + l.reviews + ' reviews' : 'strong reviews';
@@ -2097,17 +2191,17 @@ window.HD_CONFIG = window.HD_CONFIG || {
         subject = 'A website for ' + biz;
         body = isDm
           ? 'I\'m ' + who + '. Saw ' + biz + ' ' + onSrc + ' (' + proof + '), great work. I noticed there\'s no website linked, so people searching for ' + niche + ' in ' + city + ' can\'t find you directly. Want me to send a free 1-page mockup? No pressure, tell me and I\'ll stop.'
-          : 'I\'m ' + who + ', a web developer. I came across ' + biz + ' ' + onSrc + ' (' + proof + ') and noticed there is no website linked, so people searching for ' + niche + ' in ' + city + ' cannot see your services or contact you directly. I build simple, fast, mobile-friendly websites for local businesses at a fixed price. Could I send you a free 1-page mockup for ' + biz + '?';
+          : 'I\'m ' + who + ', ' + roleP + '. I came across ' + biz + ' ' + onSrc + ' (' + proof + ') and noticed there is no website linked, so people searching for ' + niche + ' in ' + city + ' cannot see your services or contact you directly. I build simple, fast, mobile-friendly websites for local businesses at a fixed price. Could I send you a free 1-page mockup for ' + biz + '?';
       } else if (ok) {
         subject = 'One idea for ' + site;
         body = isDm
           ? 'I\'m ' + who + '. Saw ' + biz + ' ' + onSrc + ' (' + proof + ') and looked at ' + site + ', it\'s solid. One idea: [your idea, e.g. a click-to-call button or online booking]. Want a quick mockup? No pressure, tell me and I\'ll stop.'
-          : 'I\'m ' + who + ', a web developer. I looked at ' + site + ' after finding ' + biz + ' ' + onSrc + ' (' + proof + '). The site is solid, and I have one idea that could bring in more calls from phone visitors: [your idea]. Could I send a quick mockup?';
+          : 'I\'m ' + who + ', ' + roleP + '. I looked at ' + site + ' after finding ' + biz + ' ' + onSrc + ' (' + proof + '). The site is solid, and I have one idea that could bring in more calls from phone visitors: [your idea]. Could I send a quick mockup?';
       } else {
         subject = 'Quick fix for ' + site;
         body = isDm
           ? 'I\'m ' + who + '. Saw ' + biz + ' ' + onSrc + ' (' + proof + '), nice work. I looked at ' + site + ' and noticed ' + prob + ', which can lose customers searching for ' + niche + ' in ' + city + '. Want a free screenshot of what I\'d fix? No pressure, tell me and I\'ll stop.'
-          : 'I\'m ' + who + ', a web developer. I found ' + biz + ' ' + onSrc + ' (' + proof + ') and looked at ' + site + '. I noticed ' + prob + ', which can cost you customers searching for ' + niche + ' in ' + city + '. I fix this for local businesses at a fixed price. Could I send a free screenshot showing exactly what I would change?';
+          : 'I\'m ' + who + ', ' + roleP + '. I found ' + biz + ' ' + onSrc + ' (' + proof + ') and looked at ' + site + '. I noticed ' + prob + ', which can cost you customers searching for ' + niche + ' in ' + city + '. I fix this for local businesses at a fixed price. Could I send a free screenshot showing exactly what I would change?';
       }
     } else if (kind === 'f1') {
       subject = 'Re: ' + (none ? 'A website for ' + biz : 'Quick fix for ' + site);
@@ -2120,8 +2214,13 @@ window.HD_CONFIG = window.HD_CONFIG || {
         ? 'Last note from me. If a better website isn\'t a priority right now, no problem at all. If it ever is, I\'m happy to help ' + biz + '. All the best.'
         : 'This is my last note. If a better website is not a priority right now, no problem at all. If it ever is, I would be happy to help ' + biz + '. All the best.';
     }
+    if (kind === 'first') body += showcase;
     if (isDm) return greet + ' ' + body;
-    return 'Subject: ' + subject + '\n\n' + greet + '\n\n' + body + '\n\nBest,\n' + who + '\n[Your business name] · [Your street address]\nReply "stop" and I won\'t email again.';
+    var sig = [who, profile.agency || '[Your business name]'];
+    if (profile.site) sig.push(profile.site.replace(/^https?:\/\//i, ''));
+    if (profile.phone) sig.push(profile.phone);
+    sig.push(profile.addr || '[Your street address]');
+    return 'Subject: ' + subject + '\n\n' + greet + '\n\n' + body + '\n\nBest,\n' + sig.join('\n') + '\nReply "stop" and I won\'t email again.';
   }
   var kindVal = 'first';
   function renderDraft() {
@@ -2357,25 +2456,50 @@ window.HD_CONFIG = window.HD_CONFIG || {
   });
 
   /* ---------- profile and password ---------- */
+  function cleanSite(s) { s = String(s || '').trim(); return s && !/^https?:\/\//i.test(s) ? 'https://' + s : s; }
   $('setProfile').addEventListener('submit', function (e) {
     e.preventDefault();
     var m = $('sProfMsg'), name = $('sName').value.trim(), em = $('sEmail').value.trim(), upd = {};
     if (!sb || !user) return;
+    var site = cleanSite($('sSite').value);
+    if (site && !/^https?:\/\/[^\s.]+\.[^\s]+$/i.test(site)) { m.textContent = 'Enter the website like yoursite.com'; return; }
     if (name !== dname()) upd.data = { name: name };
     if (em !== (user.new_email || user.email)) {
       if (!/^\S+@\S+\.\S+$/.test(em)) { m.textContent = 'Enter a valid email address.'; return; }
       upd.email = em;
     }
-    if (!upd.data && !upd.email) { m.textContent = 'Nothing to change.'; return; }
+    var np = { role: $('sRole').value.trim(), agency: $('sAgency').value.trim(), site: site, phone: $('sPhone').value.trim(), addr: $('sAddr').value.trim(), avatar: profile.avatar || '' };
+    var changedBiz = ['role', 'agency', 'site', 'phone', 'addr'].some(function (k) { return np[k] !== (profile[k] || ''); });
+    if (!upd.data && !upd.email && !changedBiz) { m.textContent = 'Nothing to change.'; return; }
+    if (changedBiz) { profile = np; if (!upd.data && !upd.email) { save(); renderSettings(); renderAccount(); renderDraft(); m.textContent = 'Profile saved.'; return; } }
     m.textContent = 'Saving...';
     sb.auth.updateUser(upd).then(function (r) {
       if (r.error) { m.textContent = r.error.message; return; }
       if (r.data && r.data.user) user = r.data.user;
-      renderSettings(); renderAccount();
-      if (upd.data && !me) { me = name; $('me').value = me; save(); }
+      if (changedBiz) profile = np;
+      if (upd.data && !me) { me = name; $('me').value = me; }
+      save(); renderSettings(); renderAccount(); renderDraft();
       m.textContent = upd.email ? 'Saved. Open the link we sent to the new email to confirm the change.' : 'Profile saved.';
     }, function () { m.textContent = 'Could not reach the server. Try again.'; });
   });
+  $('pfPhoto').addEventListener('change', function () {
+    var f = this.files && this.files[0], m = $('sProfMsg'); if (!f) return;
+    if (!/^image\//.test(f.type)) { m.textContent = 'Choose an image file.'; return; }
+    var rd = new FileReader();
+    rd.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var s = 128, c = document.createElement('canvas'); c.width = s; c.height = s;
+        var side = Math.min(img.width, img.height), sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+        c.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, s, s);
+        profile.avatar = c.toDataURL('image/jpeg', 0.82); save(); renderSettings(); renderAccount(); m.textContent = 'Photo saved.';
+      };
+      img.onerror = function () { m.textContent = 'That image could not be read.'; };
+      img.src = rd.result;
+    };
+    rd.readAsDataURL(f); this.value = '';
+  });
+  $('pfPhotoDel').addEventListener('click', function () { profile.avatar = ''; save(); renderSettings(); renderAccount(); $('sProfMsg').textContent = 'Photo removed.'; });
   $('setPass').addEventListener('submit', function (e) {
     e.preventDefault();
     var m = $('sPassMsg'), cur = $('pCur').value, p1 = $('pNew').value, p2 = $('pNew2').value;
@@ -2419,8 +2543,37 @@ window.HD_CONFIG = window.HD_CONFIG || {
     if (!/^\S+@\S+\.\S+$/.test(em)) { $('authMsg').textContent = 'Type your email above first, then click Forgot password.'; $('aEmail').focus(); return; }
     $('authMsg').textContent = 'Sending reset link...';
     sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname }).then(function (r) {
-      $('authMsg').textContent = r.error ? r.error.message : 'If this email has an account, a reset link is on its way. Check your inbox and spam folder.';
+      if (r.error) { $('authMsg').textContent = r.error.message; return; }
+      resetEmail = em; $('authForm').hidden = true; $('codeForm').hidden = false; $('codeMsg').textContent = '';
+      $('codeSub').textContent = 'We sent a message to ' + em + '. Enter the code from it and choose a new password. The link in the same email also works.';
+      $('cCode').focus();
     }, function () { $('authMsg').textContent = 'Could not reach the server. Try again.'; });
+  });
+  var resetEmail = '';
+  function sendCode(msgEl) {
+    msgEl.textContent = 'Sending...';
+    sb.auth.resetPasswordForEmail(resetEmail, { redirectTo: location.origin + location.pathname }).then(function (r) {
+      msgEl.textContent = r.error ? r.error.message : 'A new code is on its way. Check your inbox and spam folder.';
+    }, function () { msgEl.textContent = 'Could not reach the server. Try again.'; });
+  }
+  $('codeResend').addEventListener('click', function () { sendCode($('codeMsg')); });
+  $('codeBack').addEventListener('click', function () { $('codeForm').hidden = true; $('authForm').hidden = false; });
+  $('codeForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var m = $('codeMsg'), code = $('cCode').value.replace(/\s+/g, ''), p1 = $('cPass').value, p2 = $('cPass2').value;
+    if (!/^\d{6,10}$/.test(code)) { m.textContent = 'Enter the numeric code from the email.'; return; }
+    if (p1.length < 6) { m.textContent = 'Password needs at least 6 characters.'; return; }
+    if (p1 !== p2) { m.textContent = 'The two passwords do not match.'; return; }
+    $('codeGo').disabled = true; m.textContent = 'Checking the code...';
+    sb.auth.verifyOtp({ email: resetEmail, token: code, type: 'recovery' }).then(function (r) {
+      if (r.error) { $('codeGo').disabled = false; m.textContent = 'That code is wrong or has expired. Check it, or send a new code.'; return; }
+      return sb.auth.updateUser({ password: p1 }).then(function (r2) {
+        $('codeGo').disabled = false;
+        if (r2.error) { m.textContent = r2.error.message; return; }
+        $('codeForm').hidden = true; $('authForm').hidden = false;
+        enter(r2.data.user || (r.data && r.data.user));
+      });
+    }).then(null, function () { $('codeGo').disabled = false; m.textContent = 'Could not reach the server. Try again.'; });
   });
   $('resetForm').addEventListener('submit', function (e) {
     e.preventDefault();
