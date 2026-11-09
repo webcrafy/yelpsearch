@@ -3,42 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>html{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
-<title>Yelp Lead Desk</title>
+<title>Hunting Desk</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: sidebar + dashboard views (overview, import, leads, drafts) with a slide-over lead drawer.
    Two colors only: slate ink for structure, one orange accent for what needs attention. */
 :root {
-  --bg: #F2F4F7;
-  --panel: #FFFFFF;
-  --panel-2: #F6F8FA;
-  --line: #E1E6EC;
-  --ink: #101B26;
-  --muted: #5A6A7A;
-  --bar: #A9B5C1;
-  --accent: #D9480F;
-  --accent-soft: #FCEADD;
+  --bg: #F3F5F4;
+  --panel: #FBFCFB;
+  --panel-2: #EFF3F2;
+  --line: #DCE3E2;
+  --ink: #26343A;
+  --muted: #62747B;
+  --bar: #B4C3C6;
+  --accent: #3F747C;
+  --accent-soft: #E2EDEE;
   --on-accent: #FFFFFF;
-  --missing: #D9480F;
-  --shadow: 0 1px 2px rgba(16, 27, 38, 0.06), 0 10px 28px rgba(16, 27, 38, 0.08);
+  --missing: #3F747C;
+  --shadow: 0 1px 2px rgba(38, 52, 58, 0.05), 0 8px 22px rgba(38, 52, 58, 0.06);
   --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0B1218; --panel: #121C25; --panel-2: #172430; --line: #22313E; --ink: #E8EEF3; --muted: #8EA0B0; --bar: #3D4F5F;
-    --accent: #FF8A4C; --accent-soft: #3A2314; --on-accent: #1A0B02; --missing: #FF8A4C;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 32px rgba(0, 0, 0, 0.45);
+    --bg: #12181B; --panel: #182125; --panel-2: #1D282D; --line: #2A383E; --ink: #DCE5E8; --muted: #8FA2A9; --bar: #3B4E55;
+    --accent: #6FB0B8; --accent-soft: #1F3438; --on-accent: #0B1C1F; --missing: #6FB0B8;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 26px rgba(0, 0, 0, 0.32);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0B1218; --panel: #121C25; --panel-2: #172430; --line: #22313E; --ink: #E8EEF3; --muted: #8EA0B0; --bar: #3D4F5F;
-  --accent: #FF8A4C; --accent-soft: #3A2314; --on-accent: #1A0B02; --missing: #FF8A4C;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 32px rgba(0, 0, 0, 0.45);
+  --bg: #12181B; --panel: #182125; --panel-2: #1D282D; --line: #2A383E; --ink: #DCE5E8; --muted: #8FA2A9; --bar: #3B4E55;
+    --accent: #6FB0B8; --accent-soft: #1F3438; --on-accent: #0B1C1F; --missing: #6FB0B8;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 26px rgba(0, 0, 0, 0.32);
   color-scheme: dark;
 }
 [hidden] { display: none !important; }
@@ -183,7 +182,7 @@ td.mono { white-space: nowrap; }
 .panel.flush > .hint { padding: 12px 18px; border-top: 1px solid var(--line); }
 
 /* drawer */
-.scrim { position: fixed; inset: 0; background: rgba(8, 14, 20, 0.5); z-index: 40; }
+.scrim { position: fixed; inset: 0; background: rgba(18, 28, 32, 0.4); z-index: 40; }
 .drawer {
   position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100vw); z-index: 50; display: flex; flex-direction: column;
   background: var(--panel); border-left: 1px solid var(--line); box-shadow: var(--shadow); overflow: hidden;
@@ -278,11 +277,50 @@ td.mono { white-space: nowrap; }
 }
 @media (hover: none) { .btn:hover { filter: none; } }
 @media (min-width: 1400px) { .main { max-width: 1320px; } }
+
+/* account */
+.auth { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: var(--bg); padding: 20px; overflow: auto; }
+.auth-card { width: 100%; max-width: 400px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 28px 26px; display: grid; gap: 16px; }
+.auth-card .brand { font-size: 21px; }
+.auth-card h1 { font-size: 24px; }
+.auth-card p { margin: 0; color: var(--muted); font-size: 14px; }
+.auth-card label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 5px; }
+.auth-card input { width: 100%; }
+.auth-card .fields { display: grid; gap: 12px; }
+.auth-msg { font-size: 13.5px; min-height: 1.3em; color: var(--ink); background: var(--panel-2); border-radius: 8px; padding: 8px 10px; }
+.auth-msg:empty { display: none; }
+.acct { margin-top: auto; display: grid; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.acct b { color: var(--ink); font-weight: 600; word-break: break-all; font-size: 13px; }
+.acct .btn { justify-self: start; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--bar); margin-right: 6px; }
+.dot.ok { background: var(--accent); }
+.panel.acct-panel { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; text-align: left; }
+.acct-panel p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
 </style>
 
+<div class="auth" id="auth" hidden>
+  <form class="auth-card" id="authForm" novalidate>
+    <div class="brand"><span class="mark" aria-hidden="true"></span><span>Hunting Desk</span></div>
+    <div>
+      <h1 id="authTitle">Sign in</h1>
+      <p id="authSub">Your leads are saved to your account and follow you to any device.</p>
+    </div>
+    <div class="seg" id="authTabs" role="group" aria-label="Account">
+      <button type="button" data-mode="in" aria-pressed="true">Sign in</button>
+      <button type="button" data-mode="up" aria-pressed="false">Create account</button>
+    </div>
+    <div class="fields">
+      <div><label for="aEmail">Email</label><input id="aEmail" type="email" autocomplete="email" required></div>
+      <div><label for="aPass">Password</label><input id="aPass" type="password" autocomplete="current-password" minlength="6" required></div>
+    </div>
+    <div class="auth-msg" id="authMsg" role="status"></div>
+    <button class="btn" id="authGo" type="submit">Sign in</button>
+    <p>Use at least 6 characters for the password.</p>
+  </form>
+</div>
 <div class="app">
   <aside class="side" aria-label="Main">
-    <div class="brand"><span class="mark" aria-hidden="true"></span><span>Lead Desk</span></div>
+    <div class="brand"><span class="mark" aria-hidden="true"></span><span>Hunting Desk</span></div>
     <nav class="nav" id="nav" aria-label="Sections">
       <a href="#overview" data-view="overview">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
@@ -301,7 +339,7 @@ td.mono { white-space: nowrap; }
         <span>Drafts</span><span class="badge" id="b-drafts"></span>
       </a>
     </nav>
-    <p class="side-foot">Leads are saved in this browser only. Use Copy for Google Sheets on the Leads page to keep a backup.</p>
+    <div class="acct" id="acct"></div>
   </aside>
 
   <main class="main">
@@ -314,6 +352,7 @@ td.mono { white-space: nowrap; }
         <a class="btn" href="#import">Import leads</a>
       </header>
       <div class="kpis" id="kpis"></div>
+      <section class="panel acct-panel" id="acctCard"></section>
       <div class="grid-2">
         <section class="panel"><h2>Pipeline</h2><div class="bars" id="pipe"></div></section>
         <section class="panel"><h2>Sources</h2><div class="bars" id="srcBars"></div></section>
@@ -622,6 +661,28 @@ td.mono { white-space: nowrap; }
 <div class="toast" id="toast" role="status"></div>
 
 <script>
+/* ===== SETTINGS: paste your Supabase values between the quotes. Leave empty to run without accounts. =====
+   Use the anon public key only. Never use service_role.
+   One-time database setup: run this SQL in Supabase > SQL Editor:
+
+// Run this once in Supabase: SQL Editor > New query > paste > Run
+create table if not exists public.lead_desk_state (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+alter table public.lead_desk_state enable row level security;
+
+create policy "read own"   on public.lead_desk_state for select using (auth.uid() = user_id);
+create policy "insert own" on public.lead_desk_state for insert with check (auth.uid() = user_id);
+create policy "update own" on public.lead_desk_state for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "delete own" on public.lead_desk_state for delete using (auth.uid() = user_id);
+
+*/
+window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" onerror="void 0"></script>
+<script>
 (function () {
   var KEY = 'yelp-lead-desk-v1';
   var $ = function (id) { return document.getElementById(id); };
@@ -634,25 +695,106 @@ td.mono { white-space: nowrap; }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
-  /* ---------- storage ---------- */
-  function load() {
-    try {
-      var r = localStorage.getItem(KEY);
-      if (r) { var d = JSON.parse(r); leads = d.leads || []; me = d.me || ''; cc = d.cc || '1'; trash = d.trash || []; return true; }
-    } catch (e) {}
-    return false;
+  /* ---------- storage + account ---------- */
+  var CFG = window.HD_CONFIG || {};
+  var sb = null, user = null, ckey = KEY, savedAt = 0, pushT = null, syncState = 'local';
+  try { if (CFG.supabaseUrl && CFG.supabaseKey && window.supabase) sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey); } catch (e) { sb = null; }
+
+  function blob() { return { leads: leads, me: me, cc: cc, trash: trash, savedAt: savedAt }; }
+  function apply(d) { leads = d.leads || []; me = d.me || ''; cc = d.cc || '1'; trash = d.trash || []; savedAt = d.savedAt || 0; }
+  function readLocal(k) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+  function load() { var d = readLocal(ckey); if (d) { apply(d); return true; } return false; }
+  function save() {
+    savedAt = Date.now();
+    try { localStorage.setItem(ckey, JSON.stringify(blob())); } catch (e) {}
+    if (sb && user) { setSync('saving'); clearTimeout(pushT); pushT = setTimeout(push, 700); }
   }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify({ leads: leads, me: me, cc: cc, trash: trash })); } catch (e) {} }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
-  function seed() {
-    var base = { webStatus: 'none', problem: '', channel: '', status: 'New', followUp: '', example: true, state: '', source: 'yelp' };
-    function mk(o) { var l = {}; for (var k in base) l[k] = base[k]; for (var j in o) l[j] = o[j]; l.id = uid(); l.added = Date.now(); return l; }
-    leads = [
-      mk({ name: 'Bayou City Plumbing', niche: 'Plumbing', city: 'Houston', state: 'TX', rating: '4.5', reviews: '128', phone: '(713) 555-0142', website: '', webStatus: 'none', channel: 'Facebook', owner: 'Mike Torres', address: '2150 Westheimer Rd', zip: '77098', price: '$$', claimed: 'claimed', years: '18', hours: 'Open 7:00 AM - 6:00 PM', fb: 'facebook.com/bayoucityplumbing', services: 'Water heaters, drain cleaning, leak repair' }),
-      mk({ name: 'Westheimer Barber Co.', niche: 'Barber', city: 'Houston', state: 'TX', rating: '4.8', reviews: '64', phone: '(713) 555-0177', website: 'westheimerbarber.example', webStatus: 'old', problem: 'the booking button does not work on phones', channel: 'Instagram' }),
-      mk({ name: 'Sunrise Auto Repair', niche: 'Auto Repair', city: 'Austin', state: 'TX', rating: '3.9', reviews: '22', phone: '(512) 555-0109', website: 'sunriseauto.example', webStatus: 'ok', channel: '' })
-    ];
+  function push() {
+    if (!sb || !user) return Promise.resolve();
+    clearTimeout(pushT);
+    return sb.from('lead_desk_state').upsert({ user_id: user.id, data: blob(), updated_at: new Date().toISOString() })
+      .then(function (r) { setSync(r.error ? 'error' : 'saved'); return r; }, function () { setSync('error'); });
+  }
+  function mergeBlobs(a, b) {
+    var base = (a.savedAt || 0) >= (b.savedAt || 0) ? a : b, other = base === a ? b : a;
+    var out = { leads: (base.leads || []).slice(), trash: (base.trash || []).slice(), me: base.me || other.me || '', cc: base.cc || other.cc || '1', savedAt: Math.max(a.savedAt || 0, b.savedAt || 0) };
+    var seen = {};
+    out.leads.concat(out.trash).forEach(function (l) { seen[l.id] = 1; });
+    (other.leads || []).forEach(function (l) { if (!seen[l.id]) { seen[l.id] = 1; out.leads.push(l); } });
+    return out;
+  }
+  function setSync(s) { syncState = s; renderAccount(); }
+  function renderAccount() {
+    var label = !sb ? 'Saved in this browser only' : syncState === 'saving' ? 'Saving...' : syncState === 'error' ? 'Could not sync. Will retry on next change' : syncState === 'saved' ? 'All changes saved to your account' : 'Signed in';
+    var dot = '<span class="dot' + (sb && (syncState === 'saved' || syncState === 'idle') ? ' ok' : '') + '"></span>';
+    var who = user ? esc(user.email) : '';
+    $('acct').innerHTML = sb
+      ? '<div>' + dot + label + '</div><b>' + who + '</b><button class="btn small ghost" type="button" data-out="1">Sign out</button>'
+      : '<div>' + label + '. Use Copy for Google Sheets on the Leads page for a backup.</div>';
+    $('acctCard').innerHTML = sb
+      ? '<div><h2>Account</h2><p>' + dot + label + ' &middot; ' + who + '</p></div><button class="btn ghost" type="button" data-out="1">Sign out</button>'
+      : '<div><h2>Storage</h2><p>Leads are saved in this browser only. Cloud accounts are off until config.js has your Supabase keys.</p></div>';
+  }
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-out="1"]')) signOut(); });
+
+  function signOut() {
+    var go = function () {
+      try { localStorage.removeItem(ckey); } catch (e) {}
+      sb.auth.signOut().then(function () { user = null; leads = []; trash = []; me = ''; selected = null; showAuth('in', ''); });
+    };
+    push().then(function (r) {
+      if (r && r.error) { if (!confirm('Your latest changes could not be synced. Sign out anyway?')) return; }
+      go();
+    });
+  }
+
+  var authMode = 'in';
+  function showAuth(mode, msg) {
+    $('auth').hidden = false; document.body.classList.add('lock');
+    authMode = mode;
+    $('authTitle').textContent = mode === 'in' ? 'Sign in' : 'Create your account';
+    $('authGo').textContent = mode === 'in' ? 'Sign in' : 'Create account';
+    $('aPass').setAttribute('autocomplete', mode === 'in' ? 'current-password' : 'new-password');
+    [].forEach.call($('authTabs').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-mode') === mode ? 'true' : 'false'); });
+    $('authMsg').textContent = msg || '';
+    $('aPass').value = '';
+  }
+  function hideAuth() { $('auth').hidden = true; document.body.classList.remove('lock'); }
+  $('authTabs').addEventListener('click', function (e) { var b = e.target.closest('button[data-mode]'); if (b) showAuth(b.getAttribute('data-mode'), ''); });
+  $('authForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var em = $('aEmail').value.trim(), pw = $('aPass').value;
+    if (!/^\S+@\S+\.\S+$/.test(em)) { $('authMsg').textContent = 'Enter a valid email address.'; return; }
+    if (pw.length < 6) { $('authMsg').textContent = 'Password needs at least 6 characters.'; return; }
+    var btn = $('authGo'); btn.disabled = true; $('authMsg').textContent = authMode === 'in' ? 'Signing in...' : 'Creating account...';
+    var p = authMode === 'in' ? sb.auth.signInWithPassword({ email: em, password: pw }) : sb.auth.signUp({ email: em, password: pw });
+    p.then(function (r) {
+      btn.disabled = false;
+      if (r.error) { $('authMsg').textContent = r.error.message; return; }
+      if (!r.data.session) { showAuth('in', 'Account created. Check your email to confirm it, then sign in.'); return; }
+      enter(r.data.session.user);
+    }, function () { btn.disabled = false; $('authMsg').textContent = 'Could not reach the server. Check your internet and try again.'; });
+  });
+
+  /* after sign in: load this account, merge with any cache / older local leads */
+  function enter(u) {
+    user = u; ckey = KEY + ':' + u.id;
+    $('authMsg').textContent = 'Loading your leads...';
+    sb.from('lead_desk_state').select('data').eq('user_id', u.id).maybeSingle().then(function (r) {
+      if (r.error) { $('authMsg').textContent = 'Could not load your leads: ' + r.error.message; setSync('error'); return; }
+      var remote = r.data && r.data.data ? r.data.data : null;
+      var local = readLocal(ckey);
+      var legacy = null;
+      if (!remote && !local) legacy = readLocal(KEY);
+      var parts = [remote, local, legacy].filter(Boolean);
+      var m = parts.length ? parts.reduce(mergeBlobs) : { leads: [], trash: [], me: '', cc: '1', savedAt: 0 };
+      apply(m);
+      try { localStorage.setItem(ckey, JSON.stringify(blob())); } catch (e) {}
+      hideAuth(); start();
+      if (parts.length && (!remote || local || legacy)) { setSync('saving'); push(); } else setSync('saved');
+    });
   }
 
   /* ---------- scoring ---------- */
@@ -1844,14 +1986,24 @@ td.mono { white-space: nowrap; }
   });
 
   /* ---------- boot ---------- */
-  if (!load()) seed();
-  leads.forEach(function (l) { if (!l.source) l.source = 'yelp'; });
-  $('me').value = me;
-  $('cc').value = cc;
-  var v0 = visible()[0];
-  selected = v0 ? v0.id : null;
-  render(); renderDraft(); showView();
+  function start() {
+    leads.forEach(function (l) { if (!l.source) l.source = 'yelp'; });
+    $('me').value = me;
+    $('cc').value = cc;
+    var v0 = visible()[0];
+    selected = v0 ? v0.id : null;
+    render(); renderDraft(); showView(); renderAccount();
+  }
+  if (sb) {
+    renderAccount();
+    sb.auth.getSession().then(function (r) {
+      if (r.data && r.data.session) enter(r.data.session.user); else showAuth('in', '');
+    }, function () { showAuth('in', 'Could not reach the server.'); });
+  } else {
+    load(); start();
+  }
 })();
 </script>
 
+</body>
 </html>
