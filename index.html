@@ -485,6 +485,10 @@ td.mono { white-space: nowrap; }
 .listbar input { flex: 1 1 220px; min-width: 0; }
 .listbar .lb-l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 .listsave { margin-bottom: 12px; }
+.ownform { margin: 0 0 16px; }
+.ownform .og { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin: 12px 0; }
+.ownform .og .wide { grid-column: 1 / -1; }
+.ownform textarea { width: 100%; }
 .btn.saved { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
 .bulkbar input { flex: 1 1 160px; min-width: 0; max-width: 240px; }
 .folders { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
@@ -922,6 +926,24 @@ td.mono { white-space: nowrap; }
           <p class="lede">Score = website gap (35) + rating (15) + review count (20) + a known contact route (15) + claimed Yelp page (10) + years in business (5).</p>
         </div>
       </header>
+      <section class="panel ownform" id="ownForm" hidden aria-label="Add your own lead">
+        <h2>Add your own lead</h2>
+        <p class="sub">Only the business name is required. It is saved in your account like any other lead.</p>
+        <div class="og">
+          <div><label for="own-name">Business name *</label><input id="own-name" maxlength="120" autocomplete="off"></div>
+          <div><label for="own-niche">Industry</label><input id="own-niche" list="niches" maxlength="80" autocomplete="off" placeholder="e.g. Plumbing"></div>
+          <div><label for="own-city">City</label><input id="own-city" maxlength="80" autocomplete="off"></div>
+          <div><label for="own-state">State</label><input id="own-state" maxlength="2" autocomplete="off"></div>
+          <div><label for="own-phone">Phone / WhatsApp</label><input id="own-phone" inputmode="tel" autocomplete="off"></div>
+          <div><label for="own-email">Email</label><input id="own-email" type="email" autocomplete="off"></div>
+          <div><label for="own-site">Website</label><input id="own-site" autocomplete="off" placeholder="blank if none"></div>
+          <div><label for="own-owner">Owner / contact name</label><input id="own-owner" maxlength="80" autocomplete="off"></div>
+          <div><label for="own-folder">Save to folder (optional)</label><input id="own-folder" list="folderOpts" maxlength="60" autocomplete="off" placeholder="e.g. Important"></div>
+          <div class="wide"><label for="own-notes">Notes</label><textarea id="own-notes" rows="2" maxlength="500"></textarea></div>
+        </div>
+        <div class="row"><button class="btn" id="ownSave" type="button">Add lead</button><button class="btn ghost" id="ownCancel" type="button">Cancel</button></div>
+        <p class="status" id="ownMsg" role="status"></p>
+      </section>
       <section class="panel flush" aria-label="Lead list">
         <div class="toolbar">
           <div class="grow"><label for="q">Search</label><input id="q" type="search" autocomplete="off" placeholder="Name, city, category or phone"></div>
@@ -941,6 +963,7 @@ td.mono { white-space: nowrap; }
             </select>
           </div>
           <div class="f" style="min-width: 120px; flex: 0 0 120px"><label for="cc" style="white-space: nowrap">Country code</label><input id="cc" inputmode="numeric" maxlength="3" autocomplete="off"></div>
+          <button class="btn" id="addOwn" type="button">+ Add my own lead</button>
           <button class="btn ghost" id="scanAll" type="button">Check all sites</button>
           <button class="btn ghost" id="copySheets" type="button">Copy for Google Sheets</button>
           <button class="btn ghost" id="copyCsv" type="button">Copy CSV</button>
@@ -1161,7 +1184,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   var KEY = 'yelp-lead-desk-v1';
   var $ = function (id) { return document.getElementById(id); };
   var profile = {}, leads = [], me = '', cc = '1', selected = null, kind = 'first', chan = 'dm', ledgerSrc = 'all', curSrc = 'yelp', trash = [], picked = {};
-  var SRC_NAMES = { yelp: 'Yelp', google: 'Google', osm: 'OpenStreetMap', file: 'CSV / other' };
+  var SRC_NAMES = { yelp: 'Yelp', google: 'Google', osm: 'OpenStreetMap', file: 'CSV / other', manual: 'My own' };
 
   var WEB = [['unknown', 'Not checked'], ['none', 'No website'], ['old', 'Old or slow'], ['ok', 'Looks fine']];
   var CHAN = [['', 'Not found'], ['WhatsApp', 'WhatsApp'], ['Facebook', 'Facebook'], ['Instagram', 'Instagram'], ['Email', 'Email'], ['Contact form', 'Contact form'], ['Call only', 'Call only']];
@@ -2633,6 +2656,29 @@ window.HD_CONFIG = window.HD_CONFIG || {
     } catch (e) { copyText(text); }
   }
   function listLeads() { return leads.filter(function (l) { return !l.example && listOf(l) === curList; }); }
+  function ownOpen(on) {
+    $('ownForm').hidden = !on;
+    if (on) { $('ownMsg').textContent = ''; $('own-name').focus(); $('ownForm').scrollIntoView({ block: 'nearest' }); }
+  }
+  $('addOwn').addEventListener('click', function () { ownOpen($('ownForm').hidden); });
+  $('ownCancel').addEventListener('click', function () { ownOpen(false); });
+  $('ownSave').addEventListener('click', function () {
+    var name = $('own-name').value.trim();
+    if (!name) { $('ownMsg').textContent = 'Enter the business name first.'; $('own-name').focus(); return; }
+    var site = $('own-site').value.trim(), fo = $('own-folder').value.trim().slice(0, 60);
+    var l = {
+      id: uid(), added: Date.now(), name: name, niche: $('own-niche').value.trim(), city: $('own-city').value.trim(), state: $('own-state').value.trim().toUpperCase(),
+      rating: '', reviews: '', phone: $('own-phone').value.trim(), website: site, webStatus: site ? 'unknown' : 'none', problem: '',
+      channel: '', status: 'New', followUp: '', example: false, source: 'manual', owner: $('own-owner').value.trim(),
+      email: $('own-email').value.trim(), notes: $('own-notes').value.trim(), folder: fo, list: 'My own leads'
+    };
+    if (fo) lastFolder = fo;
+    leads.push(l); save();
+    ['name', 'niche', 'city', 'state', 'phone', 'email', 'site', 'owner', 'folder', 'notes'].forEach(function (k) { $('own-' + k).value = ''; });
+    $('ownMsg').textContent = 'Added ' + name + (fo ? ' to folder ' + fo : '') + '. Add another, or press Cancel.';
+    $('own-name').focus();
+    render(); toast('Added ' + name);
+  });
   $('catSel').addEventListener('change', function () { curCat = this.value; picked = {}; render(); });
   function folderLeads() { return leads.filter(function (l) { return !l.example && folderOf(l) === curFolder; }); }
   $('bulkSave').addEventListener('click', function () {
