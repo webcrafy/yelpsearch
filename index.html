@@ -941,31 +941,44 @@ td { overflow-wrap: anywhere; }
     showFound(items, 'the Google Maps text');
     if (!items.length) $('sMsg').textContent = 'No businesses found. If the Google Maps text looks different, send a few lines of it to Claude so the reader can be matched to it.';
   }
+  var OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+  function overpassRun(q) {
+    var i = 0, lastErr = null;
+    function tryNext() {
+      if (i >= OVERPASS.length) return Promise.reject(lastErr || new Error('all OpenStreetMap servers are busy'));
+      var url = OVERPASS[i++];
+      return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q) })
+        .then(function (r) { if (!r.ok) throw new Error('server busy (HTTP ' + r.status + ')'); return r.json(); })
+        .catch(function (e) { lastErr = e; return tryNext(); });
+    }
+    return tryNext();
+  }
   function osmSearch() {
     var cat = $('o-cat').value.trim(), city = $('o-city').value.trim(), lim = parseInt($('o-limit').value, 10) || 100;
     var tag = osmTag(cat);
     if (!tag) { $('sMsg').textContent = 'Use a category such as Plumbing, HVAC, Barber, Dentist, Restaurant, or type an OpenStreetMap tag like craft=plumber.'; return; }
-    if (!city) { $('sMsg').textContent = 'Enter a city, such as Houston, TX.'; return; }
+    if (!city) { $('sMsg').textContent = 'Enter a city with its state, such as Houston, TX.'; return; }
     var lm = city.match(/^(.*?),\s*([A-Za-z]{2})\b/);
     var nice = /=/.test(cat) ? tag[1] : cat;
     searchCtx = { niche: nice, city: lm ? lm[1].trim() : city, state: lm ? lm[2].toUpperCase() : '' };
     $('sMsg').textContent = 'Searching OpenStreetMap...';
     fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(city))
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('city lookup failed (HTTP ' + r.status + ')'); return r.json(); })
       .then(function (g) {
-        if (!g.length) throw new Error('could not find that city');
+        if (!g.length) throw new Error('could not find that city, try "Houston, TX"');
         var b = g[0].boundingbox;
-        var q = '[out:json][timeout:30];nwr["' + tag[0] + '"="' + tag[1] + '"]["name"](' + b[0] + ',' + b[2] + ',' + b[1] + ',' + b[3] + ');out center tags ' + lim + ';';
-        return fetch('https://overpass-api.de/api/interpreter', {
-          method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q)
-        });
+        var q = '[out:json][timeout:40];nwr["' + tag[0] + '"="' + tag[1] + '"]["name"](' + b[0] + ',' + b[2] + ',' + b[1] + ',' + b[3] + ');out center tags ' + lim + ';';
+        return overpassRun(q);
       })
-      .then(function (r) { if (!r.ok) throw new Error('the server was busy, try a smaller area or try again (HTTP ' + r.status + ')'); return r.json(); })
       .then(function (j) {
         showFound((j.elements || []).map(fromOsm).map(function (o) { o.niche = nice; return o; }), 'OpenStreetMap');
         if (!sList.length) $('sMsg').textContent = 'No businesses found. Try another category or a smaller area. OpenStreetMap coverage varies by city.';
       })
-      .catch(function (e) { netFail(e, 'OpenStreetMap'); });
+      .catch(function (e) {
+        var blocked = e && e.name === 'TypeError';
+        $('sMsg').textContent = 'OpenStreetMap search failed: ' + (blocked ? 'the browser could not reach the server' : e.message) +
+          '. On the Claude preview page this is expected, so use your Vercel site. On Vercel, turn off ad blockers or privacy extensions for the site and try again.';
+      });
   }
   function readTable() {
     var raw = $('c-paste').value;
