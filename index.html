@@ -690,7 +690,10 @@ td.mono { white-space: nowrap; }
 
 <script>
 /* Optional: you can paste Supabase values here, but you do not need to. The app has a Connect screen that stores them in your own browser only. */
-window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
+window.HD_CONFIG = window.HD_CONFIG || {
+  supabaseUrl: "https://qndiaznhhopsfsmnhmlg.supabase.co",
+  supabaseKey: "PASTE_PUBLISHABLE_KEY_HERE"   // sb_publishable_... (safe to be public, never the secret key)
+};
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" onerror="void 0"></script>
 <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>');}</script>
@@ -710,6 +713,7 @@ window.HD_CONFIG = window.HD_CONFIG || { supabaseUrl: "", supabaseKey: "" };
   /* ---------- storage + account ---------- */
   var CFG = window.HD_CONFIG || {};
   var CFG_KEY = 'hd-supabase', cfgStored = false;
+  if (/PASTE_/.test(CFG.supabaseKey || "")) CFG = {};
   if (!(CFG.supabaseUrl && CFG.supabaseKey)) {
     try { var sc = JSON.parse(localStorage.getItem(CFG_KEY) || 'null'); if (sc && sc.url && sc.key) { CFG = { supabaseUrl: sc.url, supabaseKey: sc.key }; cfgStored = true; } } catch (e) {}
   }
