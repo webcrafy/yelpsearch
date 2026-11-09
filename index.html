@@ -295,13 +295,39 @@ td.mono { white-space: nowrap; }
 .acct .btn { justify-self: start; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--bar); margin-right: 6px; }
 .dot.ok { background: var(--accent); }
-.panel.acct-panel { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; text-align: left; }
+.panel.acct-panel { display: flex; flex-direction: row; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; text-align: left; }
 .acct-panel p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
 .auth-card textarea { width: 100%; font-family: var(--font-mono); font-size: 12px; }
 .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; justify-self: start; }
+
+/* user accents */
+:root[data-accent="blue"] { --accent: #3F6FA0; --accent-soft: #E1EAF4; --missing: #3F6FA0; }
+@media (prefers-color-scheme: dark) { :root[data-accent="blue"]:not([data-theme="light"]) { --accent: #7FA9D6; --accent-soft: #1E2E3F; --missing: #7FA9D6; } }
+:root[data-accent="blue"][data-theme="dark"] { --accent: #7FA9D6; --accent-soft: #1E2E3F; --missing: #7FA9D6; }
+:root[data-accent="green"] { --accent: #4A7C59; --accent-soft: #E3EEE6; --missing: #4A7C59; }
+@media (prefers-color-scheme: dark) { :root[data-accent="green"]:not([data-theme="light"]) { --accent: #7DB88C; --accent-soft: #1F3326; --missing: #7DB88C; } }
+:root[data-accent="green"][data-theme="dark"] { --accent: #7DB88C; --accent-soft: #1F3326; --missing: #7DB88C; }
+:root[data-accent="violet"] { --accent: #6B5FA3; --accent-soft: #E8E5F2; --missing: #6B5FA3; }
+@media (prefers-color-scheme: dark) { :root[data-accent="violet"]:not([data-theme="light"]) { --accent: #A79BDB; --accent-soft: #2A2540; --missing: #A79BDB; } }
+:root[data-accent="violet"][data-theme="dark"] { --accent: #A79BDB; --accent-soft: #2A2540; --missing: #A79BDB; }
+:root[data-accent="rose"] { --accent: #A5586B; --accent-soft: #F3E4E8; --missing: #A5586B; }
+@media (prefers-color-scheme: dark) { :root[data-accent="rose"]:not([data-theme="light"]) { --accent: #D58FA1; --accent-soft: #3A2229; --missing: #D58FA1; } }
+:root[data-accent="rose"][data-theme="dark"] { --accent: #D58FA1; --accent-soft: #3A2229; --missing: #D58FA1; }
+:root[data-accent="amber"] { --accent: #9A6B2F; --accent-soft: #F2EAD9; --missing: #9A6B2F; }
+@media (prefers-color-scheme: dark) { :root[data-accent="amber"]:not([data-theme="light"]) { --accent: #D6A560; --accent-soft: #38291A; --missing: #D6A560; } }
+:root[data-accent="amber"][data-theme="dark"] { --accent: #D6A560; --accent-soft: #38291A; --missing: #D6A560; }
+:root[data-size="large"] body { font-size: 17px; }
+.prefs-open { position: absolute; top: 16px; right: 16px; }
+.prefs-pop { position: fixed; top: 60px; right: 16px; width: min(300px, calc(100vw - 32px)); z-index: 120; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 16px; display: grid; gap: 12px; }
+.prefs-pop .ph { display: flex; justify-content: space-between; align-items: center; }
+.prefs-pop label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+.sw { display: flex; gap: 10px; flex-wrap: wrap; }
+.sw button { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: 0 0 0 1px var(--line); }
+.sw button[aria-pressed="true"] { border-color: var(--panel); box-shadow: 0 0 0 2px var(--ink); }
 </style>
 
 <div class="auth" id="auth" hidden>
+  <button class="btn small ghost prefs-open" data-prefs="1" type="button">Appearance</button>
   <form class="auth-card" id="authForm" novalidate>
     <div class="brand"><span class="mark" aria-hidden="true"></span><span>Hunting Desk</span></div>
     <div>
@@ -316,9 +342,20 @@ td.mono { white-space: nowrap; }
       <div><label for="aEmail">Email</label><input id="aEmail" type="email" autocomplete="email" required></div>
       <div><label for="aPass">Password</label><input id="aPass" type="password" autocomplete="current-password" minlength="6" required></div>
     </div>
+    <button class="linkbtn" id="forgot" type="button">Forgot password?</button>
     <div class="auth-msg" id="authMsg" role="status"></div>
     <button class="btn" id="authGo" type="submit">Sign in</button>
     <p>Use at least 6 characters for the password.</p>
+  </form>
+  <form class="auth-card" id="resetForm" novalidate hidden>
+    <div class="brand"><span class="mark" aria-hidden="true"></span><span>Hunting Desk</span></div>
+    <div><h1>Set a new password</h1><p>Choose a new password for your account.</p></div>
+    <div class="fields">
+      <div><label for="rPass">New password</label><input id="rPass" type="password" autocomplete="new-password" minlength="6"></div>
+      <div><label for="rPass2">Repeat new password</label><input id="rPass2" type="password" autocomplete="new-password" minlength="6"></div>
+    </div>
+    <div class="auth-msg" id="resetMsg" role="status"></div>
+    <button class="btn" id="resetGo" type="submit">Save new password</button>
   </form>
   <form class="auth-card" id="setupForm" novalidate hidden>
     <div class="brand"><span class="mark" aria-hidden="true"></span><span>Hunting Desk</span></div>
@@ -686,13 +723,34 @@ td.mono { white-space: nowrap; }
     <div class="dpane" id="dp-details" hidden><div id="dDetails"></div></div>
   </div>
 </aside>
+<div class="prefs-pop" id="prefsPop" hidden role="dialog" aria-label="Appearance">
+  <div class="ph"><b>Appearance</b><button class="btn small ghost" id="prefsClose" type="button">Done</button></div>
+  <div><label>Theme</label>
+    <div class="seg" id="pfTheme" role="group" aria-label="Theme">
+      <button type="button" data-v="auto" aria-pressed="true">Auto</button><button type="button" data-v="light" aria-pressed="false">Light</button><button type="button" data-v="dark" aria-pressed="false">Dark</button>
+    </div></div>
+  <div><label>Accent color</label>
+    <div class="sw" id="pfAccent" role="group" aria-label="Accent color">
+      <button type="button" data-v="teal" aria-label="Teal" aria-pressed="true" style="background:#3F747C"></button>
+      <button type="button" data-v="blue" aria-label="Blue" aria-pressed="false" style="background:#3F6FA0"></button>
+      <button type="button" data-v="green" aria-label="Green" aria-pressed="false" style="background:#4A7C59"></button>
+      <button type="button" data-v="violet" aria-label="Violet" aria-pressed="false" style="background:#6B5FA3"></button>
+      <button type="button" data-v="rose" aria-label="Rose" aria-pressed="false" style="background:#A5586B"></button>
+      <button type="button" data-v="amber" aria-label="Amber" aria-pressed="false" style="background:#9A6B2F"></button>
+    </div></div>
+  <div><label>Text size</label>
+    <div class="seg" id="pfSize" role="group" aria-label="Text size">
+      <button type="button" data-v="normal" aria-pressed="true">Normal</button><button type="button" data-v="large" aria-pressed="false">Large</button>
+    </div></div>
+  <button class="linkbtn" id="pfReset" type="button">Reset to default</button>
+</div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
 /* Optional: you can paste Supabase values here, but you do not need to. The app has a Connect screen that stores them in your own browser only. */
 window.HD_CONFIG = window.HD_CONFIG || {
   supabaseUrl: "https://qndiaznhhopsfsmnhmlg.supabase.co",
-  supabaseKey: "PASTE_PUBLISHABLE_KEY_HERE"   // sb_publishable_... (safe to be public, never the secret key)
+  supabaseKey: "sb_publishable_eXwDxpk1JqmpgHcUkwOlCQ_8KeEMexM"   // publishable key: safe to be public. Never put the secret key here
 };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" onerror="void 0"></script>
@@ -711,7 +769,22 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
   /* ---------- storage + account ---------- */
+  var recov = /type=recovery/.test(location.hash);
+  var hashErr = (location.hash.match(/error_description=([^&]+)/) || [])[1] || '';
   var CFG = window.HD_CONFIG || {};
+  var PREF_KEY = 'hd-prefs', prefs = { theme: 'auto', accent: 'teal', size: 'normal' };
+  try { var sp = JSON.parse(localStorage.getItem(PREF_KEY) || 'null'); if (sp) for (var pk in sp) prefs[pk] = sp[pk]; } catch (e) {}
+  function applyPrefs() {
+    var r = document.documentElement;
+    if (prefs.theme === 'light' || prefs.theme === 'dark') r.setAttribute('data-theme', prefs.theme); else r.removeAttribute('data-theme');
+    if (prefs.accent && prefs.accent !== 'teal') r.setAttribute('data-accent', prefs.accent); else r.removeAttribute('data-accent');
+    if (prefs.size === 'large') r.setAttribute('data-size', 'large'); else r.removeAttribute('data-size');
+    [['pfTheme', 'theme'], ['pfAccent', 'accent'], ['pfSize', 'size']].forEach(function (g) {
+      var box = document.getElementById(g[0]); if (!box) return;
+      [].forEach.call(box.querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-v') === prefs[g[1]] ? 'true' : 'false'); });
+    });
+  }
+  applyPrefs();
   var CFG_KEY = 'hd-supabase', cfgStored = false;
   if (/PASTE_/.test(CFG.supabaseKey || "")) CFG = {};
   if (!(CFG.supabaseUrl && CFG.supabaseKey)) {
@@ -722,7 +795,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   var sb = null, user = null, ckey = KEY, savedAt = 0, pushT = null, syncState = 'local';
   try { if (CFG.supabaseUrl && CFG.supabaseKey && window.supabase) sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey); } catch (e) { sb = null; }
 
-  function blob() { return { leads: leads, me: me, cc: cc, trash: trash, savedAt: savedAt }; }
+  function blob() { return { leads: leads, me: me, cc: cc, trash: trash, savedAt: savedAt, prefs: prefs }; }
   function apply(d) { leads = d.leads || []; me = d.me || ''; cc = d.cc || '1'; trash = d.trash || []; savedAt = d.savedAt || 0; }
   function readLocal(k) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
   function load() { var d = readLocal(ckey); if (d) { apply(d); return true; } return false; }
@@ -741,7 +814,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   }
   function mergeBlobs(a, b) {
     var base = (a.savedAt || 0) >= (b.savedAt || 0) ? a : b, other = base === a ? b : a;
-    var out = { leads: (base.leads || []).slice(), trash: (base.trash || []).slice(), me: base.me || other.me || '', cc: base.cc || other.cc || '1', savedAt: Math.max(a.savedAt || 0, b.savedAt || 0) };
+    var out = { prefs: base.prefs || other.prefs, leads: (base.leads || []).slice(), trash: (base.trash || []).slice(), me: base.me || other.me || '', cc: base.cc || other.cc || '1', savedAt: Math.max(a.savedAt || 0, b.savedAt || 0) };
     var seen = {};
     out.leads.concat(out.trash).forEach(function (l) { seen[l.id] = 1; });
     (other.leads || []).forEach(function (l) { if (!seen[l.id]) { seen[l.id] = 1; out.leads.push(l); } });
@@ -753,10 +826,10 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var dot = '<span class="dot' + (sb && (syncState === 'saved' || syncState === 'idle') ? ' ok' : '') + '"></span>';
     var who = user ? esc(user.email) : '';
     $('acct').innerHTML = sb
-      ? '<div>' + dot + label + '</div><b>' + who + '</b><button class="btn small ghost" type="button" data-out="1">Sign out</button>'
+      ? '<div>' + dot + label + '</div><b>' + who + '</b><div class="row"><button class="btn small ghost" type="button" data-out="1">Sign out</button><button class="btn small ghost" type="button" data-prefs="1">Appearance</button></div>'
       : '<div>' + label + '. Use Copy for Google Sheets on the Leads page for a backup.</div>';
     $('acctCard').innerHTML = sb
-      ? '<div><h2>Account</h2><p>' + dot + label + ' &middot; ' + who + '</p></div><span class="row"><button class="btn ghost" type="button" data-out="1">Sign out</button>' + (cfgStored ? '<button class="btn ghost" type="button" data-disc="1">Disconnect Supabase</button>' : '') + '</span>'
+      ? '<div><h2>Account</h2><p>' + dot + label + ' &middot; ' + who + '</p></div><span class="row"><button class="btn ghost" type="button" data-prefs="1">Appearance</button><button class="btn ghost" type="button" data-out="1">Sign out</button>' + (cfgStored ? '<button class="btn ghost" type="button" data-disc="1">Disconnect Supabase</button>' : '') + '</span>'
       : '';
   }
   document.addEventListener('click', function (e) { if (e.target.closest('[data-out="1"]')) signOut(); });
@@ -775,6 +848,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   var authMode = 'in';
   function showAuth(mode, msg) {
     $('auth').hidden = false; document.body.classList.add('lock');
+    $('authForm').hidden = false; $('resetForm').hidden = true; $('forgot').hidden = mode !== 'in';
     authMode = mode;
     $('authTitle').textContent = mode === 'in' ? 'Sign in' : 'Create your account';
     $('authGo').textContent = mode === 'in' ? 'Sign in' : 'Create account';
@@ -813,9 +887,10 @@ window.HD_CONFIG = window.HD_CONFIG || {
       var parts = [remote, local, legacy].filter(Boolean);
       var m = parts.length ? parts.reduce(mergeBlobs) : { leads: [], trash: [], me: '', cc: '1', savedAt: 0 };
       apply(m);
+      if (m.prefs) { for (var k2 in m.prefs) prefs[k2] = m.prefs[k2]; applyPrefs(); try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch (e) {} }
       try { localStorage.setItem(ckey, JSON.stringify(blob())); } catch (e) {}
       hideAuth(); start();
-      if (parts.length && (!remote || local || legacy)) {
+      if (!remote || local || legacy) {
         setSync('saving');
         push().then(function (r) { if (legacy && !(r && r.error)) { try { localStorage.removeItem(KEY); } catch (e) {} } });
       } else setSync('saved');
@@ -2010,6 +2085,48 @@ window.HD_CONFIG = window.HD_CONFIG || {
     save(); render(); renderDraft();
   });
 
+  /* ---------- appearance ---------- */
+  function setPref(k, v) {
+    prefs[k] = v; applyPrefs();
+    try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch (e) {}
+    if (sb && user) save();
+  }
+  [['pfTheme', 'theme'], ['pfAccent', 'accent'], ['pfSize', 'size']].forEach(function (g) {
+    $(g[0]).addEventListener('click', function (e) { var b = e.target.closest('button[data-v]'); if (b) setPref(g[1], b.getAttribute('data-v')); });
+  });
+  $('pfReset').addEventListener('click', function () { setPref('theme', 'auto'); setPref('accent', 'teal'); setPref('size', 'normal'); });
+  $('prefsClose').addEventListener('click', function () { $('prefsPop').hidden = true; });
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-prefs="1"]');
+    if (t) { $('prefsPop').hidden = !$('prefsPop').hidden; return; }
+    if (!$('prefsPop').hidden && !e.target.closest('#prefsPop')) $('prefsPop').hidden = true;
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') $('prefsPop').hidden = true; });
+
+  /* ---------- forgot / reset password ---------- */
+  $('forgot').addEventListener('click', function () {
+    var em = $('aEmail').value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(em)) { $('authMsg').textContent = 'Type your email above first, then click Forgot password.'; $('aEmail').focus(); return; }
+    $('authMsg').textContent = 'Sending reset link...';
+    sb.auth.resetPasswordForEmail(em, { redirectTo: location.origin + location.pathname }).then(function (r) {
+      $('authMsg').textContent = r.error ? r.error.message : 'If this email has an account, a reset link is on its way. Check your inbox and spam folder.';
+    }, function () { $('authMsg').textContent = 'Could not reach the server. Try again.'; });
+  });
+  $('resetForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var p1 = $('rPass').value, p2 = $('rPass2').value, m = $('resetMsg');
+    if (p1.length < 6) { m.textContent = 'Password needs at least 6 characters.'; return; }
+    if (p1 !== p2) { m.textContent = 'The two passwords do not match.'; return; }
+    $('resetGo').disabled = true; m.textContent = 'Saving...';
+    sb.auth.updateUser({ password: p1 }).then(function (r) {
+      $('resetGo').disabled = false;
+      if (r.error) { m.textContent = r.error.message; return; }
+      try { history.replaceState(null, '', location.pathname); } catch (x) {}
+      $('resetForm').hidden = true; $('authForm').hidden = false;
+      enter(r.data.user);
+    }, function () { $('resetGo').disabled = false; m.textContent = 'Could not reach the server. Try again.'; });
+  });
+
   /* ---------- connect screen ---------- */
   $('sqlBox').value = SQL;
   $('sqlCopy').addEventListener('click', function () { $('sqlBox').select(); try { document.execCommand('copy'); this.textContent = 'Copied'; } catch (e) {} });
@@ -2060,7 +2177,13 @@ window.HD_CONFIG = window.HD_CONFIG || {
   } else if (sb) {
     renderAccount();
     sb.auth.getSession().then(function (r) {
-      if (r.data && r.data.session) enter(r.data.session.user); else showAuth('in', '');
+      var s = r.data && r.data.session;
+      if (recov) {
+        if (s) { document.body.classList.add('lock'); $('auth').hidden = false; $('authForm').hidden = true; $('resetForm').hidden = false; }
+        else showAuth('in', 'This reset link is invalid or has expired. Click Forgot password to get a new one.');
+        return;
+      }
+      if (s) enter(s.user); else showAuth('in', hashErr ? decodeURIComponent(hashErr.replace(/\+/g, ' ')) : '');
     }, function () { showAuth('in', 'Could not reach the server.'); });
   } else {
     document.body.classList.add('lock'); $('auth').hidden = false;
