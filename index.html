@@ -2881,7 +2881,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
       var dupe = isKnown(f);
       if (dupe) meta = 'Already in your leads · ' + meta;
       return '<label' + (dupe ? ' style="opacity:.55"' : '') + '><input type="checkbox" data-i="' + i + '"' + (f.noContact || dupe ? '' : ' checked') + (dupe ? ' disabled' : '') + '><span><strong>' + esc(f.name) + '</strong><div class="sub">' + esc(meta) + '</div>' +
-        (line2 ? '<div class="sub">' + esc(line2) + '</div>' : '') + '</span></label>';
+        (line2 ? '<div class="sub">' + esc(line2) + '</div>' : '') +
+        ((!f.phone || !f.website) ? '<div class="sub"><a href="' + esc(gmapsUrl({ name: f.name, address: f.address, city: f.city || searchCtx.city, state: f.state || searchCtx.state, country: f.country })) + '" target="_blank" rel="noopener">Find ' + (!f.phone ? 'phone' : 'website') + (!f.phone && !f.website ? ' &amp; website' : '') + ' on Google Maps</a></div>' : '') + '</span></label>';
     }).join('');
     updateAddCount();
   }
@@ -3185,6 +3186,10 @@ window.HD_CONFIG = window.HD_CONFIG || {
     document.body.classList.remove('lock');
     $('siteFrame').src = 'about:blank'; frameSrc = '';
   }
+  function gmapsUrl(l) {
+    var q = [l.name, l.address, l.city, l.state, l.country].filter(Boolean).join(' ');
+    return 'https://www.google.com/maps/search/' + encodeURIComponent(q).replace(/%20/g, '+');
+  }
   function renderDetails(l) {
     var addr = [l.address, l.zip].filter(Boolean).join(' ');
     var info = [];
@@ -3210,7 +3215,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       '<div class="dinfo">' + info.map(function (b) { return '<div class="sub">' + esc(b) + '</div>'; }).join('') + '</div>' +
       '<div class="dinfo">' + contacts(l) + '</div>' +
       waTools(l) +
-      '<div class="row">' + scanBtn + '<button class="btn small ghost" type="button" data-act="del">Move to Drafts</button></div>';
+      '<div class="row"><a class="btn small ghost" href="' + esc(gmapsUrl(l)) + '" target="_blank" rel="noopener">Find phone &amp; website on Google Maps</a>' + scanBtn + '<button class="btn small ghost" type="button" data-act="del">Move to Drafts</button></div>';
   }
   function renderDrawer() {
     var l = current();
