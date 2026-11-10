@@ -2537,7 +2537,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function hostOf(u) { return u === PROXY ? 'your Vercel server' : /^GET:/.test(u) ? 'relay ' + (String(u).slice(4).split('/')[2] || '') : (String(u).split('/')[2] || u); }
   function relays(q) {
     var d = encodeURIComponent('?data=' + encodeURIComponent(q));
-    return ['GET:https://corsproxy.io/?url=' + encodeURIComponent(OVERPASS[0] + '?data=' + encodeURIComponent(q)), 'GET:https://api.allorigins.win/raw?url=' + encodeURIComponent(OVERPASS[2] + '?data=' + encodeURIComponent(q))];
+    var u1 = OVERPASS[0] + '?data=' + encodeURIComponent(q), u2 = OVERPASS[2] + '?data=' + encodeURIComponent(q);
+    return ['GET:https://api.allorigins.win/raw?url=' + encodeURIComponent(u1), 'GET:https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(u2), 'GET:https://thingproxy.freeboard.io/fetch/' + u1];
   }
   function errText() { var seen = {}, out = []; osmErrs.forEach(function (e) { if (!seen[e]) { seen[e] = 1; out.push(e); } }); return out.slice(0, 5).join('; '); }
   function srvStats() { try { return JSON.parse(localStorage.getItem('hd-srv') || '{}') || {}; } catch (e) { return {}; } }
@@ -2594,36 +2595,50 @@ window.HD_CONFIG = window.HD_CONFIG || {
     }
     function hasEl(j) { return j && j.elements && j.elements.length; }
     var ord = srvOrder();
-    return attempt([PROXY].concat(relays(q).slice(0, 1), ord.slice(0, 3))).then(function (j) {
+    return attempt([PROXY].concat(relays(q).slice(0, 2), ord.slice(0, 3))).then(function (j) {
       if (hasEl(j)) return j;
       say('Double-checking with more servers...');
-      return attempt(relays(q).slice(1).concat(ord.slice(3))).then(function (k) { return hasEl(k) ? k : j; }, function () { return j; });
-    }, function () { say('Trying more servers...'); return attempt(relays(q).slice(1).concat(ord.slice(3))); });
+      return attempt(relays(q).slice(2).concat(ord.slice(3))).then(function (k) { return hasEl(k) ? k : j; }, function () { return j; });
+    }, function () { say('Trying more servers...'); return attempt(relays(q).slice(2).concat(ord.slice(3))); });
   }
-  function quickOsm(terms, place) {
-    var out = [], seen = {}, i = 0;
-    function next() {
-      if (i >= terms.length) return Promise.resolve({ quick: true, elements: out });
-      var term = String(terms[i++] || '').replace(/\s+/g, ' ');
-      return fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=40&addressdetails=1&extratags=1&q=' + encodeURIComponent(term + ' in ' + place), {}, 20000)
-        .then(function (r) { if (!r.ok) throw new Error('quick search failed (HTTP ' + r.status + ')'); return r.json(); })
+  function quickOsm(terms, place, box, say) {
+    var out = [], seen = {}, jobs = [], n = 0, failed = 0, lastErr = null;
+    var m = String(box || '').match(/\(([-\d.]+),([-\d.]+),([-\d.]+),([-\d.]+)\)/), S = m ? +m[1] : 0, W = m ? +m[2] : 0, N = m ? +m[3] : 0, E = m ? +m[4] : 0;
+    function vb(s0, w0, n0, e0) { return '&bounded=1&viewbox=' + [w0, n0, e0, s0].map(function (v) { return Math.round(v * 10000) / 10000; }).join(','); }
+    terms.forEach(function (t) { jobs.push({ q: t, v: m ? vb(S, W, N, E) : '', tag: t }); });
+    if (m) {
+      var mh = (S + N) / 2, mw = (W + E) / 2;
+      terms.slice(0, 2).forEach(function (t) {
+        [[S, W, mh, mw], [S, mw, mh, E], [mh, W, N, mw], [mh, mw, N, E]].forEach(function (c) { jobs.push({ q: t, v: vb(c[0], c[1], c[2], c[3]), tile: 1 }); });
+      });
+    } else jobs.push({ q: terms[0] + ' in ' + place, v: '' });
+    var SKIP = /^(highway|boundary|place|landuse|natural|waterway|railway|route)$/;
+    function next(i) {
+      if (i >= jobs.length || i >= 11 || failed >= 2 || out.length >= 80) return Promise.resolve({ quick: true, elements: out, err: lastErr });
+      var jb = jobs[i];
+      if (jb.tile && out.length >= 40) return next(i + 1);
+      if (say && i > 0) say('Searching OpenStreetMap another way... ' + out.length + ' found');
+      return fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=40&addressdetails=1&extratags=1&q=' + encodeURIComponent(jb.q) + jb.v, {}, 15000)
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         .then(function (arr) {
           arr.forEach(function (x) {
-            if (!x.name || seen[x.osm_type + x.osm_id]) return;
+            var cls = x.category || x['class'];
+            if (!x.name || SKIP.test(cls) || seen[x.osm_type + x.osm_id]) return;
             seen[x.osm_type + x.osm_id] = 1;
             var t = {}, ex = x.extratags || {}, a = x.address || {};
             for (var k in ex) t[k] = ex[k];
             t.name = x.name;
+            if (cls && x.type && !t[cls]) t[cls] = x.type;
             if (a.house_number) t['addr:housenumber'] = a.house_number;
             if (a.road) t['addr:street'] = a.road;
             if (a.postcode) t['addr:postcode'] = a.postcode;
-            out.push({ type: x.osm_type, id: x.osm_id, tags: t });
+            out.push({ type: x.osm_type, id: x.osm_id, tags: t, lat: +x.lat, lon: +x.lon });
           });
-        })
-        .then(function () { return new Promise(function (ok) { setTimeout(ok, i < terms.length ? 1000 : 0); }); })
-        .then(next);
+        }, function (e) { failed++; lastErr = e; })
+        .then(function () { return new Promise(function (ok) { setTimeout(ok, 1100); }); })
+        .then(function () { return next(i + 1); });
     }
-    return next();
+    return next(0);
   }
   var osmTok = 0, osmTick = 0;
   function hav(a, b, c, d) { var R = 6371, r = Math.PI / 180, x = (c - a) * r, y = (d - b) * r, h = Math.sin(x / 2) * Math.sin(x / 2) + Math.cos(a * r) * Math.cos(c * r) * Math.sin(y / 2) * Math.sin(y / 2); return 2 * R * Math.asin(Math.sqrt(h)); }
@@ -2661,7 +2676,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var q0 = [cityIn, region, country].filter(Boolean).join(', ');
     var outN = Math.min(500, lim * 3), minWant = Math.min(12, lim);
     var terms = [];
-    cats.forEach(function (c) { if (c.all) { terms.push('shop'); return; } [c.label.toLowerCase()].concat((c.alias || []).slice(0, 1)).forEach(function (t) { if (terms.indexOf(t) < 0 && terms.length < 2) terms.push(t); }); });
+    cats.forEach(function (c) { if (c.all) { terms.push('shop'); return; } [c.label.toLowerCase()].concat((c.alias || []).slice(0, 2)).forEach(function (t) { if (terms.indexOf(t) < 0 && terms.length < 3) terms.push(t); }); });
     busy(true);
     osmTick = setInterval(function () { if (tok === osmTok && base) $('sMsg').textContent = base + ' (' + Math.round((Date.now() - t0) / 1000) + 's)'; }, 1000);
     say('Finding the place...');
@@ -2696,12 +2711,12 @@ window.HD_CONFIG = window.HD_CONFIG || {
         return go(0).then(function () {
           if (order.length) return result({});
           say('Nothing tagged that way. Trying a text search...');
-          return quickOsm(terms, q0).then(function (qj) { add(qj); return result({ quick: true }); });
+          return quickOsm(terms, q0, sc0, say).then(function (qj) { add(qj); return result({ quick: true }); });
         }, function (e) {
           if (e && e.message === 'cancelled') throw e;
           if (order.length) return result({});
           say('OpenStreetMap servers did not answer. Trying a text search...');
-          return quickOsm(terms, q0).then(function (qj) { add(qj); return result({ quick: true, slow: true }); }).catch(function () { return result({ failed: true }); });
+          return quickOsm(terms, q0, sc0, say).then(function (qj) { add(qj); return result({ quick: true, slow: true }); }).catch(function () { return result({ failed: true }); });
         });
       })
       .then(function (j) {
