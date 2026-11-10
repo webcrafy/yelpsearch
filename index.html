@@ -185,6 +185,12 @@ td.mono { white-space: nowrap; }
 .pill { align-self: flex-start; font-size: 12px; border-radius: 999px; padding: 2px 8px; font-weight: 500; }
 .pill.ok { background: var(--accent-soft); color: var(--accent); }
 .pill.no { background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
+.fu { color: var(--muted); }
+.fu.late { color: #C0502F; font-weight: 500; }
+.fu.now { color: var(--accent); font-weight: 500; }
+.rowwa { margin-top: 4px; font-family: var(--font-body); font-size: 12px; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; }
+.rowwa a, .rowwa .linkbtn { color: var(--accent); font-size: 12px; }
+.rowwa .pill { font-size: 11px; }
 .watest { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .siteIn { margin-top: 6px; padding: 4px 6px; font-size: 13px; }
 .panel .hint, .panel .note { padding-inline: 0; }
@@ -1177,6 +1183,7 @@ td .chip { white-space: nowrap; }
     <div>
       <h2 id="dName"></h2>
       <div class="sub" id="dSub"></div>
+      <div class="sub" id="dStatus"></div>
     </div>
     <button class="btn ghost small" id="dClose" type="button">Close</button>
   </div>
@@ -2834,7 +2841,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     try {
       var d = JSON.parse(t);
       if (!d || d.app !== 'hunting-desk' || !Array.isArray(d.leads)) return null;
-      var keep = ['name','niche','city','state','rating','reviews','phone','website','webStatus','problem','channel','status','followUp','source','owner','address','zip','price','claimed','years','hours','email','wa','waStatus','fb','ig','social','services','notes','folder','cat','country','dial'];
+      var keep = ['name','niche','city','state','rating','reviews','phone','website','webStatus','problem','channel','status','statusAt','followUp','source','owner','address','zip','price','claimed','years','hours','email','wa','waStatus','fb','ig','social','services','notes','folder','cat','country','dial'];
       var items = d.leads.filter(function (x) { return x && x.name; }).map(function (x) { var o = {}; keep.forEach(function (k) { if (x[k] !== undefined && x[k] !== '') o[k] = x[k]; }); return o; });
       return { items: items, list: String(d.list || '').slice(0, 80) };
     } catch (e) { return null; }
@@ -2978,6 +2985,30 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function opts(list, val) {
     return list.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === val ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('');
   }
+  var FU_DAYS = { Messaged: 3, Replied: 2 };
+  function isoOf(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function todayIso() { return isoOf(new Date()); }
+  function isoPlus(n) { var d = new Date(); d.setDate(d.getDate() + n); return isoOf(d); }
+  function dayDiff(iso) { var p = String(iso).split('-'); var a = new Date(+p[0], +p[1] - 1, +p[2]), t = new Date(); t = new Date(t.getFullYear(), t.getMonth(), t.getDate()); return Math.round((a - t) / 86400000); }
+  function relDay(iso) { var n = dayDiff(iso); return n === 0 ? 'today' : n === 1 ? 'tomorrow' : n === -1 ? 'yesterday' : n > 0 ? 'in ' + n + ' days' : Math.abs(n) + ' days ago'; }
+  function fmtDay(iso) { var p = String(iso).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); }
+  function setStatus(l, st) {
+    l.status = st; l.statusAt = Date.now();
+    l.hist = (l.hist || []).concat([{ s: st, t: l.statusAt }]).slice(-20);
+    l.followUp = FU_DAYS[st] ? isoPlus(FU_DAYS[st]) : '';
+  }
+  function statusLine(l) {
+    var out = '';
+    if (l.statusAt) { var d = new Date(l.statusAt), iso = isoOf(d); out += '<div class="sub">' + esc(l.status) + ' on ' + esc(fmtDay(iso)) + ' (' + esc(relDay(iso)) + ')</div>'; }
+    if (l.followUp) { var n = dayDiff(l.followUp); out += '<div class="sub fu' + (n < 0 ? ' late' : n === 0 ? ' now' : '') + '">Follow up ' + esc(fmtDay(l.followUp)) + ' \u00b7 ' + esc(n < 0 ? 'overdue by ' + Math.abs(n) + (n === -1 ? ' day' : ' days') : relDay(l.followUp)) + '</div>'; }
+    return out;
+  }
+  function statusText(l) {
+    var a = [];
+    if (l.statusAt) a.push(l.status + ' on ' + fmtDay(isoOf(new Date(l.statusAt))));
+    if (l.followUp) a.push('follow up ' + fmtDay(l.followUp) + ' (' + relDay(l.followUp) + ')');
+    return a.join(' \u00b7 ');
+  }
   function fmtDate(iso) {
     if (!iso) return '';
     var p = iso.split('-'); var d = new Date(+p[0], +p[1] - 1, +p[2]);
@@ -3097,6 +3128,13 @@ window.HD_CONFIG = window.HD_CONFIG || {
     return out.map(function (b) { return '<div class="sub">' + b + '</div>'; }).join('');
   }
   function domain(u) { return String(u || '').replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/[\/?#].*$/, ''); }
+  function rowWa(l) {
+    var n = waNumber(l);
+    if (!n) return '';
+    var st = l.waStatus === 'yes' ? '<span class="pill ok">On WhatsApp</span> ' : l.waStatus === 'no' ? '<span class="pill no">Not on WhatsApp</span> ' : '';
+    return '<div class="rowwa">' + st + '<a href="https://wa.me/' + n + '" target="_blank" rel="noopener">Test on WhatsApp</a>' +
+      (l.waStatus === 'yes' ? '' : ' <button class="linkbtn" type="button" data-act="wa-yes">Has it</button>') + (l.waStatus === 'no' ? '' : ' <button class="linkbtn" type="button" data-act="wa-no">No</button>') + '</div>';
+  }
   function row(l) {
     var sc = score(l), t = tier(sc);
     var place = [l.cat || l.niche, [l.city, l.state || l.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
@@ -3108,9 +3146,9 @@ window.HD_CONFIG = window.HD_CONFIG || {
       '<td><span class="score ' + t[0] + '" title="' + t[1] + ' lead">' + sc + '</span></td>' +
       '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + '<div class="sub">' + esc(place) + '</div></td>' +
       '<td class="mono">' + (l.rating ? esc(l.rating) + '★' : '–') + (l.reviews ? ' · ' + esc(l.reviews) : '') + '</td>' +
-      '<td class="mono">' + esc(l.phone || '–') + '</td>' +
+      '<td class="mono">' + esc(l.phone || '–') + rowWa(l) + '</td>' +
       '<td>' + web + '</td>' +
-      '<td><select data-f="status" aria-label="Status of ' + esc(l.name) + '">' + opts(STAT, l.status) + '</select>' + (l.followUp ? '<div class="sub">Follow up ' + esc(fmtDate(l.followUp)) + '</div>' : '') + '</td>' +
+      '<td><select data-f="status" aria-label="Status of ' + esc(l.name) + '">' + opts(STAT, l.status) + '</select>' + statusLine(l) + '</td>' +
       '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button>' + (folderOf(l) ? '<button class="btn small saved" type="button" data-act="save" title="Saved in ' + esc(folderOf(l)) + ' - click to remove">Saved &#10003;</button>' : '<button class="btn small ghost" type="button" data-act="save">Save</button>') + '<button class="btn small ghost" type="button" data-act="details">Details</button><button class="btn small ghost" type="button" data-act="del" aria-label="Move ' + esc(l.name) + ' to Drafts">Delete</button></div></td></tr>';
   }
 
@@ -3124,7 +3162,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   }
   function leadLi(l, extra) {
     var sc = score(l), t = tier(sc);
-    var meta = [l.niche, [l.city, l.state].filter(Boolean).join(', '), extra].filter(Boolean).join(' · ');
+    var meta = [l.niche, [l.city, l.state].filter(Boolean).join(', '), extra || (l.statusAt || l.followUp ? statusText(l) : '')].filter(Boolean).join(' · ');
     return '<div class="li"><span class="score ' + t[0] + '">' + sc + '</span><div class="grow"><strong>' + esc(l.name) + '</strong><div class="sub">' + esc(meta) + '</div></div>' +
       '<button class="btn small" type="button" data-open="' + l.id + '">Message</button></div>';
   }
@@ -3144,8 +3182,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var top = leads.filter(function (l) { return l.status === 'New'; }).sort(function (a, b) { return score(b) - score(a); }).slice(0, 5);
     $('topLeads').innerHTML = top.length ? top.map(function (l) { return leadLi(l, ''); }).join('') : '<div class="empty">No new leads. <a href="#import">Import some</a> to see the best ones here.</div>';
     var td = todayIso();
-    var due = leads.filter(function (l) { return l.status === 'Messaged' && l.followUp && l.followUp <= td; }).slice(0, 5);
-    $('dueList').innerHTML = due.length ? due.map(function (l) { return leadLi(l, 'due ' + fmtDate(l.followUp)); }).join('') : '<div class="empty">Nothing due. When you set a lead to Messaged, a follow-up date is added 3 days later.</div>';
+    var due = leads.filter(function (l) { return (l.status === 'Messaged' || l.status === 'Replied') && l.followUp && l.followUp <= td; }).sort(function (a, b) { return a.followUp < b.followUp ? -1 : 1; }).slice(0, 5);
+    $('dueList').innerHTML = due.length ? due.map(function (l) { return leadLi(l, (l.statusAt ? l.status + ' ' + fmtDate(isoOf(new Date(l.statusAt))) + ' \u00b7 ' : '') + 'follow up ' + (dayDiff(l.followUp) < 0 ? 'overdue by ' + Math.abs(dayDiff(l.followUp)) + ' d' : relDay(l.followUp))); }).join('') : '<div class="empty">Nothing due. When you set a lead to Messaged, a follow-up date is added 3 days later.</div>';
   }
 
   /* ---------- drafts (deleted leads) ---------- */
@@ -3206,6 +3244,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var scanBtn = validSite(l.website) ? '<button class="btn small ghost" type="button" data-act="scan">' + (l.scanAt ? 'Recheck site' : 'Check site') + '</button>' : '';
     $('dDetails').innerHTML =
       '<div class="dgrid">' +
+        '<div><label for="d-st">Status</label><select id="d-st" data-f="status">' + opts(STAT, l.status) + '</select></div>' +
+        '<div><label for="d-fu">Next follow-up</label><input id="d-fu" type="date" data-f="followUp" value="' + esc(l.followUp || '') + '"></div>' +
         '<div><label for="d-web">Website status</label><select id="d-web" data-f="webStatus">' + opts(WEB, l.webStatus) + '</select></div>' +
         '<div><label for="d-chan">Reach via</label><select id="d-chan" data-f="channel">' + opts(CHAN, l.channel) + '</select></div>' +
                 '<div class="span"><label for="d-cat">Category</label><input id="d-cat" data-f="cat" list="catOpts" maxlength="60" value="' + esc(l.cat || firstCat(l.niche)) + '" placeholder="e.g. Plumbing"></div>' +
@@ -3223,6 +3263,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var sc = score(l), t = tier(sc);
     $('dName').textContent = l.name;
     $('dSub').textContent = [l.niche, [l.city, l.state].filter(Boolean).join(', '), t[1] + ' lead · ' + sc].filter(Boolean).join(' · ');
+    $('dStatus').innerHTML = statusLine(l);
     [].forEach.call($('dTabs').querySelectorAll('button'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-tab') === dTab)); });
     ['message', 'website', 'details'].forEach(function (x) { $('dp-' + x).hidden = x !== dTab; });
     var ok = validSite(l.website);
@@ -3278,7 +3319,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       return '<div class="cathead">' + esc(c) + '<span>' + items.length + (items.length === 1 ? ' lead' : ' leads') + '</span></div>' +
         items.map(function (l) {
           var t = tier(score(l));
-          var meta = [[l.city, l.state].filter(Boolean).join(', '), l.phone].filter(Boolean).join(' \u00b7 ');
+          var meta = [[l.city, l.state].filter(Boolean).join(', '), l.phone, l.statusAt || l.followUp ? statusText(l) : ''].filter(Boolean).join(' \u00b7 ');
           return '<div class="li" data-id="' + l.id + '"><span class="score ' + t[0] + '">' + score(l) + '</span><div class="grow"><strong>' + esc(l.name) + '</strong><div class="sub">' + esc(meta) + '</div></div>' +
             '<div class="btns"><button class="btn small" type="button" data-sact="message">Message</button><button class="btn small ghost" type="button" data-sact="details">Details</button><button class="btn small ghost" type="button" data-sact="remove">Remove</button></div></div>';
         }).join('');
@@ -3481,12 +3522,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
       if (validSite(l.website) && l.webStatus === 'none') l.webStatus = 'unknown';
       frameSrc = '';
     }
-    if (f === 'status') {
-      if (el.value === 'Messaged') {
-        var d = new Date(); d.setDate(d.getDate() + 3);
-        l.followUp = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
-      } else { l.followUp = ''; }
-    }
+    if (f === 'status') setStatus(l, el.value);
+    if (f === 'followUp') l.followUp = /^\d{4}-\d{2}-\d{2}$/.test(el.value) ? el.value : '';
     save(); render(); renderDraft();
   }
 
