@@ -188,9 +188,22 @@ td.mono { white-space: nowrap; }
 .fu { color: var(--muted); }
 .fu.late { color: #C0502F; font-weight: 500; }
 .fu.now { color: var(--accent); font-weight: 500; }
-.rowwa { margin-top: 4px; font-family: var(--font-body); font-size: 12px; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; }
-.rowwa a, .rowwa .linkbtn { color: var(--accent); font-size: 12px; }
-.rowwa .pill { font-size: 11px; }
+.ctc { min-width: 150px; }
+.inl { width: 100%; min-width: 0; box-sizing: border-box; margin: 3px 0 0 -7px; padding: 3px 7px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--ink); font: inherit; font-size: 12.5px; text-overflow: ellipsis; }
+.inl::placeholder { color: var(--muted); opacity: .75; }
+.inl:hover { border-color: var(--line); }
+.inl:focus { outline: none; border-color: var(--accent); background: var(--panel-2); }
+.wab { display: inline-flex; align-items: stretch; margin-top: 6px; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; font-size: 12px; background: var(--panel); }
+.wab .wa-go { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 8px; color: var(--ink); text-decoration: none; font-weight: 500; white-space: nowrap; }
+.wab .wa-go svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.wab .wa-go:hover { background: var(--panel-2); }
+.wab.yes { border-color: var(--accent); } .wab.yes .wa-go { background: var(--accent-soft); color: var(--accent); }
+.wab.no { opacity: .7; } .wab.no .wa-go span { text-decoration: line-through; }
+.wa-seg { display: inline-flex; border-left: 1px solid var(--line); }
+.wa-seg button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 12px; width: 26px; cursor: pointer; padding: 0; }
+.wa-seg button + button { border-left: 1px solid var(--line); }
+.wa-seg button:hover { background: var(--panel-2); color: var(--ink); }
+.wa-seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent, #fff); }
 .watest { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .siteIn { margin-top: 6px; padding: 4px 6px; font-size: 13px; }
 .panel .hint, .panel .note { padding-inline: 0; }
@@ -1073,7 +1086,7 @@ td .chip { white-space: nowrap; }
           <table>
             <thead><tr>
               <th><input type="checkbox" id="pickAll" aria-label="Select all leads in this list"></th>
-              <th>Score</th><th>Business</th><th>Rating</th><th>Phone</th><th>Website</th><th>Status</th><th></th>
+              <th>Score</th><th>Business</th><th>Rating</th><th>Contact</th><th>Website</th><th>Status</th><th></th>
             </tr></thead>
             <tbody id="rows"></tbody>
           </table>
@@ -3128,12 +3141,13 @@ window.HD_CONFIG = window.HD_CONFIG || {
     return out.map(function (b) { return '<div class="sub">' + b + '</div>'; }).join('');
   }
   function domain(u) { return String(u || '').replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/[\/?#].*$/, ''); }
+  var WA_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-4.2A8 8 0 1 1 8.4 19L4 20z"/><path d="M9.3 8.6c-.3 2.4 2.9 5.6 5.4 5.4l1-1.4-1.9-1-.9.7a4 4 0 0 1-1.6-1.6l.7-.9-1-1.9-1.7.7z"/></svg>';
   function rowWa(l) {
     var n = waNumber(l);
     if (!n) return '';
-    var st = l.waStatus === 'yes' ? '<span class="pill ok">On WhatsApp</span> ' : l.waStatus === 'no' ? '<span class="pill no">Not on WhatsApp</span> ' : '';
-    return '<div class="rowwa">' + st + '<a href="https://wa.me/' + n + '" target="_blank" rel="noopener">Test on WhatsApp</a>' +
-      (l.waStatus === 'yes' ? '' : ' <button class="linkbtn" type="button" data-act="wa-yes">Has it</button>') + (l.waStatus === 'no' ? '' : ' <button class="linkbtn" type="button" data-act="wa-no">No</button>') + '</div>';
+    var y = l.waStatus === 'yes', no = l.waStatus === 'no';
+    return '<div class="wab' + (y ? ' yes' : no ? ' no' : '') + '"><a class="wa-go" href="https://wa.me/' + n + '" target="_blank" rel="noopener" title="Open a WhatsApp chat with this number to check it">' + WA_SVG + '<span>' + (y ? 'On WhatsApp' : no ? 'No WhatsApp' : 'Check') + '</span></a>' +
+      '<span class="wa-seg" role="group" aria-label="Does this number have WhatsApp?"><button type="button" data-act="wa-yes" aria-pressed="' + y + '" title="It has WhatsApp">&#10003;</button><button type="button" data-act="wa-no" aria-pressed="' + no + '" title="Not on WhatsApp">&#10005;</button></span></div>';
   }
   function row(l) {
     var sc = score(l), t = tier(sc);
@@ -3144,9 +3158,9 @@ window.HD_CONFIG = window.HD_CONFIG || {
     return '<tr data-id="' + l.id + '"' + (picked[l.id] ? ' class="sel"' : '') + '>' +
       '<td><input type="checkbox" data-pick aria-label="Select ' + esc(l.name) + '"' + (picked[l.id] ? ' checked' : '') + '></td>' +
       '<td><span class="score ' + t[0] + '" title="' + t[1] + ' lead">' + sc + '</span></td>' +
-      '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + '<div class="sub">' + esc(place) + '</div></td>' +
+      '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + '<div class="sub">' + esc(place) + '</div><input class="inl" data-f="owner" maxlength="80" autocomplete="off" placeholder="+ Owner name" aria-label="Owner name of ' + esc(l.name) + '" value="' + esc(l.owner || '') + '"></td>' +
       '<td class="mono">' + (l.rating ? esc(l.rating) + '★' : '–') + (l.reviews ? ' · ' + esc(l.reviews) : '') + '</td>' +
-      '<td class="mono">' + esc(l.phone || '–') + rowWa(l) + '</td>' +
+      '<td class="ctc"><div class="mono">' + esc(l.phone || '–') + '</div><input class="inl" data-f="email" type="email" maxlength="120" autocomplete="off" placeholder="+ Email" aria-label="Email of ' + esc(l.name) + '" value="' + esc(l.email || '') + '">' + rowWa(l) + '</td>' +
       '<td>' + web + '</td>' +
       '<td><select data-f="status" aria-label="Status of ' + esc(l.name) + '">' + opts(STAT, l.status) + '</select>' + statusLine(l) + '</td>' +
       '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button>' + (folderOf(l) ? '<button class="btn small saved" type="button" data-act="save" title="Saved in ' + esc(folderOf(l)) + ' - click to remove">Saved &#10003;</button>' : '<button class="btn small ghost" type="button" data-act="save">Save</button>') + '<button class="btn small ghost" type="button" data-act="details">Details</button><button class="btn small ghost" type="button" data-act="del" aria-label="Move ' + esc(l.name) + ' to Drafts">Delete</button></div></td></tr>';
@@ -3244,6 +3258,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var scanBtn = validSite(l.website) ? '<button class="btn small ghost" type="button" data-act="scan">' + (l.scanAt ? 'Recheck site' : 'Check site') + '</button>' : '';
     $('dDetails').innerHTML =
       '<div class="dgrid">' +
+        '<div><label for="d-owner">Owner name</label><input id="d-owner" data-f="owner" maxlength="80" value="' + esc(l.owner || '') + '" placeholder="e.g. Maria"></div>' +
+        '<div><label for="d-email">Email</label><input id="d-email" type="email" data-f="email" maxlength="120" value="' + esc(l.email || '') + '" placeholder="name@business.com"></div>' +
         '<div><label for="d-st">Status</label><select id="d-st" data-f="status">' + opts(STAT, l.status) + '</select></div>' +
         '<div><label for="d-fu">Next follow-up</label><input id="d-fu" type="date" data-f="followUp" value="' + esc(l.followUp || '') + '"></div>' +
         '<div><label for="d-web">Website status</label><select id="d-web" data-f="webStatus">' + opts(WEB, l.webStatus) + '</select></div>' +
@@ -3505,8 +3521,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
       scanLead(l).then(function () { selected = id; save(); render(); renderDraft(); });
       return;
     }
-    if (act === 'wa-yes') { l.waStatus = 'yes'; if (!l.wa) l.wa = '+' + waNumber(l); l.channel = 'WhatsApp'; }
-    else if (act === 'wa-no') { l.waStatus = 'no'; if (l.channel === 'WhatsApp') l.channel = ''; }
+    if (act === 'wa-yes') { if (l.waStatus === 'yes') { l.waStatus = ''; if (l.channel === 'WhatsApp') l.channel = ''; } else { l.waStatus = 'yes'; if (!l.wa) l.wa = '+' + waNumber(l); l.channel = 'WhatsApp'; } }
+    else if (act === 'wa-no') { if (l.waStatus === 'no') l.waStatus = ''; else { l.waStatus = 'no'; if (l.channel === 'WhatsApp') l.channel = ''; } }
     else return;
     selected = id; save(); render(); renderDraft();
   }
@@ -3516,6 +3532,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var f = el.getAttribute('data-f');
     l[f] = el.value;
     if (f === 'cat') l.cat = el.value.trim().slice(0, 60);
+    if (f === 'owner') l.owner = el.value.trim().slice(0, 80);
+    if (f === 'email') l.email = el.value.trim().slice(0, 120);
     if (f === 'folder') { l.folder = el.value.trim().slice(0, 60); if (l.folder) lastFolder = l.folder; }
     if (f === 'website') {
       l.website = el.value.trim(); l.scanAt = 0; l.scanMsg = ''; l.scanFail = '';
