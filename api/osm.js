@@ -36,7 +36,7 @@ module.exports = async (req, res) => {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
   const q = body && typeof body.q === 'string' ? body.q : '';
-  if (!/^\[out:json\]/.test(q) || q.length > 6000) { res.status(400).json({ error: 'bad query' }); return; }
+  if (!/^\[out:json\]/.test(q) || q.length > 12000) { res.status(400).json({ error: 'bad query' }); return; }
   const seen = {}, elements = [], errs = [];
   let ok = 0, hits = 0;
   await new Promise((resolve) => {
