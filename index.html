@@ -2459,7 +2459,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var r = parseSearchUrl(v);
     if (!r.ok) { $('sUrlMsg').textContent = 'That does not look like a Yelp search link.'; return null; }
     var info = [r.niche, [r.city, r.state].filter(Boolean).join(', '), 'page ' + r.page].filter(Boolean).join(' · ');
-    $('sUrlMsg').innerHTML = esc(info) + '. <a href="' + esc(r.url) + '" target="_blank" rel="noopener">Open this search on Yelp</a>, then copy the results page text.';
+    var nx = ''; try { var u2 = new URL(r.url); u2.searchParams.set('start', String(r.page * 10)); nx = u2.href; } catch (e) {}
+    $('sUrlMsg').innerHTML = esc(info) + '. <a href="' + esc(r.url) + '" target="_blank" rel="noopener">Open this search on Yelp</a>' + (nx ? ' or <a href="' + esc(nx) + '" target="_blank" rel="noopener">page ' + (r.page + 1) + '</a>' : '') + ', press Ctrl+A, Ctrl+C on the Yelp page, then paste it below. The businesses are found as soon as you paste.';
     return r;
   }
   function yelpFind() {
@@ -2932,6 +2933,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
 
   $('srcTabs').addEventListener('click', function (e) { var b = e.target.closest('button[data-src]'); if (b) showSource(b.getAttribute('data-src')); });
   $('s-url').addEventListener('input', onSearchUrl);
+  $('s-paste').addEventListener('paste', function () { setTimeout(function () { if ($('s-paste').value.length > 200) yelpFind(); }, 60); });
   $('s-find').addEventListener('click', yelpFind);
   $('s-sample').addEventListener('click', function () { $('s-url').value = S_URL; $('s-paste').value = S_SAMPLE; yelpFind(); });
   $('g-search').addEventListener('click', googleSearch);
