@@ -485,6 +485,9 @@ td.mono { white-space: nowrap; }
 .listbar input { flex: 1 1 220px; min-width: 0; }
 .listbar .lb-l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 .listsave { margin-bottom: 12px; }
+.cchips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.cchips button { font: inherit; font-size: 12.5px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+.cchips button:hover, .cchips button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
 .ownform { margin: 0 0 16px; }
 .ownform .og { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin: 12px 0; }
 .ownform .og .wide { grid-column: 1 / -1; }
@@ -775,8 +778,15 @@ td.mono { white-space: nowrap; }
 
     <div id="src-google" class="srcpane" hidden>
       <div class="grid2">
-        <div><label for="g-query">Search, as you would type in Google Maps</label><input id="g-query" autocomplete="off" placeholder="plumber in Houston, TX"></div>
+        <div><label for="g-cat">Category (any business type)</label><input id="g-cat" list="osmCats" autocomplete="off" placeholder="Roofing, Dentist, Hotel..."></div>
+        <div><label for="g-country">Country (worldwide)</label><input id="g-country" list="countryOpts" autocomplete="off" placeholder="United States, Spain, Mexico..."><div class="cchips" data-for="g-country"></div></div>
+        <div><label for="g-city">City</label><input id="g-city" autocomplete="off" placeholder="Houston, TX  or  Madrid  or  Ciudad de M\u00e9xico"></div>
       </div>
+      <label class="check" id="g-langRow" hidden><input type="checkbox" id="g-lang" checked> Search with Spanish business names (finds more in this country)</label>
+      <div class="grid2">
+        <div><label for="g-query">Google Maps search (made from the boxes above, you can edit it)</label><input id="g-query" autocomplete="off" placeholder="plumber in Houston, TX"></div>
+      </div>
+      <div class="row" style="margin-bottom: 6px"><button class="btn ghost" id="g-open" type="button">Open this search in Google Maps</button></div>
       <div class="sect">Option 1 · Google Places API</div>
       <p class="hint">Returns name, phone, website, rating and reviews directly. You need an API key with Places API (New) enabled and a billing account in Google Cloud. Restrict the key to your site's address. This option works on the deployed site, not in the Claude preview.</p>
       <div class="grid2">
@@ -789,7 +799,7 @@ td.mono { white-space: nowrap; }
       <label class="check"><input type="checkbox" id="g-remember"> Remember the key in this browser</label>
       <div class="row"><button class="btn" id="g-search" type="button">Search Google</button></div>
       <div class="sect">Option 2 · Paste from Google Maps, no key</div>
-      <p class="hint">Search on Google Maps, press Ctrl+A and Ctrl+C on the results list, and paste it here. Fill the search box above with the same search so the city and category are set.</p>
+      <p class="hint">Press "Open this search in Google Maps" above, scroll the results list so the businesses load, press Ctrl+A and Ctrl+C on the list, and paste it here. Works for English and Spanish Google Maps (USA, UK, Spain, Mexico and elsewhere).</p>
       <textarea id="g-paste" rows="4" placeholder="Paste the Google Maps results text here"></textarea>
       <div class="row">
         <button class="btn" id="g-find" type="button">Find businesses</button>
@@ -798,10 +808,11 @@ td.mono { white-space: nowrap; }
     </div>
 
     <div id="src-osm" class="srcpane" hidden>
-      <p class="hint">Free, no key and no card. OpenStreetMap lists many businesses with phone and website, but coverage is patchy and there are no ratings. If a business shows no website here, check Google before you assume it has none. This works on the deployed site, not in the Claude preview.</p>
+      <p class="hint">Works in any country and any city. Type any business type (a list of 70+ is built in, anything else is searched by name), or several separated by commas. Pick "Everything" to get all businesses with a phone or website. Free, no key and no card. OpenStreetMap lists many businesses with phone and website, but coverage is patchy and there are no ratings. If a business shows no website here, check Google before you assume it has none. This works on the deployed site, not in the Claude preview.</p>
       <div class="grid2">
-        <div><label for="o-cat">Category</label><input id="o-cat" list="niches" autocomplete="off" placeholder="Plumbing, HVAC, Barber, or craft=plumber"></div>
-        <div><label for="o-city">City</label><input id="o-city" autocomplete="off" placeholder="Houston, TX"></div>
+        <div><label for="o-cat">Category (any business type)</label><input id="o-cat" list="osmCats" autocomplete="off" placeholder="Roofing, Dentist, Hotel... or several: Roofing, Plumbing"></div>
+        <div><label for="o-country">Country (anywhere in the world)</label><input id="o-country" list="countryOpts" autocomplete="off" placeholder="United States, Bangladesh, UK..."><div class="cchips" data-for="o-country"></div></div>
+        <div><label for="o-city">City</label><input id="o-city" autocomplete="off" placeholder="Houston, TX  or  Dhaka  or  London"></div>
         <div>
           <label for="o-limit">Max results</label>
           <select id="o-limit"><option>50</option><option selected>100</option><option>200</option></select>
@@ -913,6 +924,8 @@ td.mono { white-space: nowrap; }
         <button class="btn ghost" id="clearForm" type="button">Clear form</button>
         <span class="status" id="formMsg" role="status"></span>
       </div>
+      <datalist id="osmCats"></datalist>
+      <datalist id="countryOpts"></datalist>
       <datalist id="niches">
         <option value="Plumbing"><option value="HVAC"><option value="Electrician"><option value="Restaurant">
         <option value="Barber"><option value="Hair Salon"><option value="Dentist"><option value="Auto Repair">
@@ -1704,17 +1717,17 @@ window.HD_CONFIG = window.HD_CONFIG || {
   }
   function parseGooglePaste(raw) {
     var lines = raw.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
-    var ratingRe = /^([1-5]\.\d)(?:\s*\(?([\d.,]+[kK]?)\)?)?$/;
+    var ratingRe = /^([1-5][.,]\d)(?:\s*\(?([\d.,]+[kK]?)\)?)?$/;
     var idx = [];
     for (var i = 1; i < lines.length; i++) { if (ratingRe.test(lines[i])) idx.push(i); }
     var out = [], seen = {};
     idx.forEach(function (i, k) {
       var name = lines[i - 1];
-      if (/^(sponsored|ad|results|rating|hours|website|directions)$/i.test(name) || name.length > 90) return;
+      if (/^(sponsored|ad|results|rating|hours|website|directions|patrocinado|anuncio|resultados|sitio web|c[o\u00f3]mo llegar)$/i.test(name) || name.length > 90) return;
       var end = Math.min(k + 1 < idx.length ? idx[k + 1] - 1 : lines.length, i + 9);
       var block = lines.slice(i, end);
       var rm = block[0].match(ratingRe);
-      var rating = rm[1], reviews = rm[2] ? parseCount(rm[2]) : '';
+      var rating = rm[1].replace(',', '.'), reviews = rm[2] ? parseCount(rm[2]) : '';
       var j = 1;
       if (!reviews && block[1] && /^\(?[\d.,]+[kK]?\)?$/.test(block[1])) { reviews = parseCount(block[1].replace(/[()]/g, '')); j = 2; }
       var rest = block.slice(j);
@@ -1727,9 +1740,15 @@ window.HD_CONFIG = window.HD_CONFIG || {
           break;
         }
       }
-      var ph = text.match(/\(?\d{3}\)?[\s.\-]*\d{3}[\s.\-]\d{4}/);
-      var hasSite = rest.some(function (l) { return /^website$/i.test(l); });
-      var hasDir = rest.some(function (l) { return /^directions$/i.test(l); });
+      var tnoa = address ? text.replace(address, ' ') : text;
+      var ph = tnoa.match(/\(?\d{3}\)?[\s.\-]*\d{3}[\s.\-]\d{4}/);
+      if (!ph) { ph = tnoa.match(/\+\d[\d\s().\-]{7,17}\d/); }
+      if (!ph) {
+        var gm = tnoa.match(/\d{2,5}(?:[\s.\-]\d{2,5}){1,4}/g) || [];
+        for (var gi = 0; gi < gm.length; gi++) { var dn = gm[gi].replace(/\D/g, '').length; if (dn >= 8 && dn <= 13 && !/^(19|20)\d\d$/.test(gm[gi])) { ph = [gm[gi]]; break; } }
+      }
+      var hasSite = rest.some(function (l) { return /^(website|sitio web)$/i.test(l); });
+      var hasDir = rest.some(function (l) { return /^(directions|c[o\u00f3]mo llegar)$/i.test(l); });
       var key = name.toLowerCase();
       if (seen[key]) return;
       seen[key] = true;
@@ -1760,18 +1779,165 @@ window.HD_CONFIG = window.HD_CONFIG || {
       notes: site ? '' : 'No website in OpenStreetMap, check Google'
     };
   }
-  var OSM = [['plumb', ['craft', 'plumber']], ['hvac', ['craft', 'hvac']], ['heating', ['craft', 'hvac']], ['electric', ['craft', 'electrician']],
-    ['restaurant', ['amenity', 'restaurant']], ['cafe', ['amenity', 'cafe']], ['barber', ['shop', 'hairdresser']], ['hair', ['shop', 'hairdresser']],
-    ['salon', ['shop', 'hairdresser']], ['beauty', ['shop', 'beauty']], ['dent', ['amenity', 'dentist']], ['clinic', ['amenity', 'clinic']],
-    ['auto', ['shop', 'car_repair']], ['car repair', ['shop', 'car_repair']], ['roof', ['craft', 'roofer']], ['landscap', ['craft', 'gardener']],
-    ['garden', ['craft', 'gardener']], ['clean', ['office', 'cleaning']], ['real estate', ['office', 'estate_agent']], ['lawyer', ['office', 'lawyer']],
-    ['gym', ['leisure', 'fitness_centre']]];
-  function osmTag(cat) {
-    var c = (cat || '').trim().toLowerCase();
+  var OSM_CAT_RAW = [
+    'Plumbing|plumber,plumbers,plumbing|craft=plumber|plumb',
+    'HVAC|hvac,heating,air conditioning,ac repair,cooling|craft=hvac;shop=heating|hvac|heating|air.?condition',
+    'Electrician|electrician,electrical|craft=electrician;shop=electrical|electric',
+    'Roofing|roofing,roofer,roofers,roof|craft=roofer|roof',
+    'Landscaping|landscaping,landscaper,gardener,gardening,lawn|craft=gardener;shop=garden_centre|landscap|lawn|garden',
+    'Cleaning Service|cleaning,cleaner,janitorial,maid|office=cleaning;shop=laundry;craft=cleaning|clean|maid|janitor',
+    'Painter|painter,painting,house painter|craft=painter|paint',
+    'Carpenter|carpenter,carpentry,woodwork|craft=carpenter|carpent',
+    'Builder|builder,construction,contractor,general contractor|craft=builder;office=construction_company|construction|builder|contractor',
+    'Locksmith|locksmith|craft=locksmith;shop=locksmith|locksmith',
+    'Pest Control|pest control,exterminator|craft=pest_control;office=pest_control|pest|exterminat',
+    'Flooring|flooring,floor,tiles,tiler|craft=floorer;craft=tiler;shop=flooring;shop=tiles|floor|tile',
+    'Glass & Windows|glass,glazier,window,windows|craft=glaziery;craft=window_construction|glass|window',
+    'Welding & Metal|welder,welding,metal works|craft=welder;craft=metal_construction|weld|metal',
+    'Handyman|handyman,repair services|craft=handyman|handyman',
+    'Moving Company|moving,movers,removals|office=moving_company|moving|movers|removal',
+    'Auto Repair|auto repair,car repair,mechanic,garage|shop=car_repair|auto|mechanic|garage',
+    'Car Dealer|car dealer,car dealership,used cars|shop=car|motors|auto sales|dealer',
+    'Car Wash|car wash|amenity=car_wash|car wash',
+    'Tyres|tyres,tires|shop=tyres|tire|tyre',
+    'Car Parts|car parts,auto parts|shop=car_parts|parts',
+    'Car Rental|car rental,rent a car|amenity=car_rental|rent',
+    'Driving School|driving school|amenity=driving_school|driving',
+    'Restaurant|restaurant,restaurants,dining|amenity=restaurant|restaurant|kitchen|grill',
+    'Cafe|cafe,coffee,coffee shop|amenity=cafe|cafe|coffee',
+    'Fast Food|fast food,takeaway,burger,pizza|amenity=fast_food|pizza|burger',
+    'Bar & Pub|bar,pub,nightclub|amenity=bar;amenity=pub;amenity=nightclub|pub',
+    'Bakery|bakery,bakeries|shop=bakery|bakery',
+    'Butcher|butcher,meat shop|shop=butcher|butcher',
+    'Catering|catering,caterer|craft=caterer;amenity=catering|cater',
+    'Grocery|grocery,supermarket,convenience store|shop=supermarket;shop=convenience;shop=greengrocer|market|grocery',
+    'Hair Salon|hair salon,hairdresser,hair,salon,barber,barbershop,barbers|shop=hairdresser|salon|hair|barber',
+    'Beauty|beauty,beauty salon,nails,nail salon,makeup,cosmetics|shop=beauty;shop=cosmetics|beauty|nail|spa',
+    'Spa & Massage|spa,massage|shop=massage;leisure=spa;amenity=spa|spa|massage',
+    'Tattoo|tattoo|shop=tattoo|tattoo',
+    'Gym & Fitness|gym,fitness,yoga,pilates|leisure=fitness_centre;leisure=sports_centre;sport=yoga|gym|fitness|yoga',
+    'Dentist|dentist,dental,dentists|amenity=dentist;healthcare=dentist|dental|dentist',
+    'Doctor & Clinic|doctor,doctors,clinic,medical|amenity=doctors;amenity=clinic;healthcare=doctor;healthcare=clinic|clinic|medical',
+    'Hospital|hospital|amenity=hospital|hospital',
+    'Pharmacy|pharmacy,chemist|amenity=pharmacy|pharmacy|chemist',
+    'Optician|optician,eye,glasses,optometrist|shop=optician;healthcare=optometrist|optic',
+    'Physiotherapy|physiotherapy,physio,chiropractor|healthcare=physiotherapist;healthcare=chiropractor|physio|chiropract',
+    'Veterinary|vet,veterinary,veterinarian,animal hospital|amenity=veterinary|vet',
+    'Pet Shop|pet shop,pets,pet store,pet grooming|shop=pet;shop=pet_grooming|pet',
+    'Lawyer|lawyer,lawyers,attorney,law firm,legal|office=lawyer|law|legal|attorney',
+    'Accountant|accountant,accounting,tax,bookkeeping|office=accountant;office=tax_advisor|account|tax',
+    'Insurance|insurance|office=insurance|insurance',
+    'Real Estate|real estate,estate agent,realtor,property|office=estate_agent|real estate|realty|propert',
+    'Architect|architect,architecture|office=architect;craft=architect|architect',
+    'Marketing & Advertising|marketing,advertising,agency|office=advertising_agency;office=marketing|marketing|advertis|media',
+    'IT & Software|it,software,web design,computer services|office=it;craft=electronics_repair|software|tech|web|computer',
+    'Photography|photographer,photography,photo studio|craft=photographer;shop=photo|photo',
+    'Printing|printing,print shop,copy shop|craft=printer;shop=copyshop|print|copy',
+    'Travel Agency|travel agency,travel,tours|shop=travel_agency;office=travel_agent|travel|tours',
+    'Hotel|hotel,hotels,motel,guest house,hostel|tourism=hotel;tourism=motel;tourism=guest_house;tourism=hostel|hotel|motel|inn|lodge',
+    'Bank & Finance|bank,finance,loan|amenity=bank;office=financial|bank|finance',
+    'Clothing|clothes,clothing,boutique,fashion|shop=clothes;shop=boutique|cloth|fashion|boutique',
+    'Tailor|tailor,tailoring|craft=tailor;shop=tailor|tailor',
+    'Shoes|shoes,shoe shop,cobbler|shop=shoes;craft=shoemaker|shoe',
+    'Jewelry|jewelry,jeweller,jewellery|shop=jewelry|jewel',
+    'Florist|florist,flowers|shop=florist|flor|flower',
+    'Furniture|furniture,home decor|shop=furniture;shop=interior_decoration|furnitur',
+    'Electronics|electronics,mobile shop,phone shop,computer shop|shop=electronics;shop=mobile_phone;shop=computer|electronic|mobile|phone',
+    'Hardware|hardware,building supplies|shop=hardware;shop=doityourself;shop=paint|hardware',
+    'Bookshop|books,bookshop,stationery|shop=books;shop=stationery|book',
+    'Gift Shop|gift,gifts|shop=gift|gift',
+    'Bicycle|bicycle,bike shop|shop=bicycle|bicycle|bike',
+    'Laundry & Dry Cleaning|laundry,dry cleaning,dry cleaner|shop=laundry;shop=dry_cleaning|laundry|dry.?clean',
+    'School & Tutoring|school,tutor,tutoring,coaching,training|amenity=school;amenity=language_school;amenity=music_school;office=educational_institution|school|academy|institute|tutor',
+    'Daycare|daycare,childcare,kindergarten,nursery|amenity=kindergarten;amenity=childcare|daycare|kindergarten|nursery',
+    'Event & Wedding|wedding,event,events,party|shop=wedding;amenity=events_venue;craft=caterer|wedding|event',
+    'Funeral|funeral|shop=funeral_directors;amenity=funeral_hall|funeral',
+    'Church & Worship|church,mosque,temple|amenity=place_of_worship|church|mosque|temple',
+    'NGO & Organization|ngo,charity,association|office=ngo;office=association;office=charity|foundation|charity'
+  ];
+  var COUNTRIES = ["United States|1","Canada|1","United Kingdom|44","Ireland|353","Australia|61","New Zealand|64","Bangladesh|880","India|91","Pakistan|92","Sri Lanka|94","Nepal|977","Malaysia|60","Singapore|65","Indonesia|62","Philippines|63","Thailand|66","Vietnam|84","Japan|81","South Korea|82","China|86","Hong Kong|852","United Arab Emirates|971","Saudi Arabia|966","Qatar|974","Kuwait|965","Oman|968","Bahrain|973","Turkey|90","Israel|972","Egypt|20","South Africa|27","Nigeria|234","Kenya|254","Ghana|233","Morocco|212","Germany|49","France|33","Spain|34","Italy|39","Portugal|351","Netherlands|31","Belgium|32","Switzerland|41","Austria|43","Sweden|46","Norway|47","Denmark|45","Finland|358","Poland|48","Czechia|420","Greece|30","Romania|40","Hungary|36","Ukraine|380","Russia|7","Mexico|52","Brazil|55","Argentina|54","Chile|56","Colombia|57","Peru|51","Costa Rica|506","Puerto Rico|1"];
+  (function () {
+    var first = ['United States', 'United Kingdom', 'Spain', 'Mexico'];
+    COUNTRIES = first.map(function (n) { return COUNTRIES.filter(function (c) { return c.split('|')[0] === n; })[0]; }).concat(COUNTRIES.filter(function (c) { return first.indexOf(c.split('|')[0]) < 0; }));
+  })();
+  var ES_NAMES = {"Plumbing":"Fontanero","HVAC":"Aire acondicionado","Electrician":"Electricista","Roofing":"Tejados","Landscaping":"Jardinería","Cleaning Service":"Servicio de limpieza","Painter":"Pintor","Carpenter":"Carpintero","Builder":"Empresa de construcción","Locksmith":"Cerrajero","Pest Control":"Control de plagas","Moving Company":"Mudanzas","Auto Repair":"Taller mecánico","Car Dealer":"Concesionario de coches","Car Wash":"Lavado de coches","Restaurant":"Restaurante","Cafe":"Cafetería","Fast Food":"Comida rápida","Bar & Pub":"Bar","Bakery":"Panadería","Butcher":"Carnicería","Grocery":"Supermercado","Hair Salon":"Peluquería","Beauty":"Salón de belleza","Spa & Massage":"Spa","Tattoo":"Tatuajes","Gym & Fitness":"Gimnasio","Dentist":"Dentista","Doctor & Clinic":"Clínica","Hospital":"Hospital","Pharmacy":"Farmacia","Optician":"Óptica","Physiotherapy":"Fisioterapeuta","Veterinary":"Veterinario","Pet Shop":"Tienda de mascotas","Lawyer":"Abogado","Accountant":"Asesoría contable","Insurance":"Seguros","Real Estate":"Inmobiliaria","Architect":"Arquitecto","Marketing & Advertising":"Agencia de marketing","IT & Software":"Informática","Photography":"Fotógrafo","Printing":"Imprenta","Travel Agency":"Agencia de viajes","Hotel":"Hotel","Bank & Finance":"Banco","Clothing":"Tienda de ropa","Florist":"Floristería","Furniture":"Muebles","Electronics":"Electrónica","Hardware":"Ferretería","Laundry & Dry Cleaning":"Lavandería","School & Tutoring":"Academia","Daycare":"Guardería","Event & Wedding":"Bodas y eventos","Funeral":"Funeraria"};
+  var ES_COUNTRIES = ['spain', 'mexico', 'argentina', 'chile', 'colombia', 'peru', 'costa rica', 'puerto rico'];
+  var OSM_CATS = OSM_CAT_RAW.map(function (r) {
+    var p = r.split('|');
+    return { label: p[0], alias: p[1].split(','), tags: p[2].split(';').map(function (t) { return t.split('='); }), kw: p.slice(3).join('|') };
+  });
+  function initOsmLists() {
+    $('osmCats').innerHTML = '<option value="Everything (any business)"></option>' + OSM_CATS.map(function (c) { return '<option value="' + esc(c.label) + '"></option>'; }).join('');
+    [].forEach.call(document.querySelectorAll('.cchips'), function (box) {
+      var tgt = box.getAttribute('data-for');
+      box.innerHTML = ['United States', 'United Kingdom', 'Spain', 'Mexico'].map(function (n) { return '<button type="button" data-c="' + n + '">' + n + '</button>'; }).join('');
+      box.addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-c]'); if (!b) return;
+        $(tgt).value = b.getAttribute('data-c'); $(tgt).dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    });
+    $('countryOpts').innerHTML = COUNTRIES.map(function (c) { return '<option value="' + esc(c.split('|')[0]) + '"></option>'; }).join('');
+  }
+  function dialOf(country) {
+    var c = String(country || '').trim().toLowerCase();
+    if (c === 'usa' || c === 'us' || c === 'america') c = 'united states';
+    if (c === 'uk' || c === 'england' || c === 'britain') c = 'united kingdom';
+    if (c === 'uae') c = 'united arab emirates';
+    for (var i = 0; i < COUNTRIES.length; i++) { var p = COUNTRIES[i].split('|'); if (p[0].toLowerCase() === c) return p[1]; }
+    return '';
+  }
+  function kwClean(w) { return String(w || '').toLowerCase().replace(/[^a-z0-9 .?|]/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function nicen(w) { return String(w || '').replace(/_/g, ' ').replace(/(^|\s)([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); }); }
+  /* one typed term -> {label, tags, kw}; unknown words are searched by business name */
+  function osmResolveOne(term) {
+    var c = String(term || '').trim().toLowerCase();
+    if (!c) return null;
+    if (/^(everything|all|any business|everything \(any business\))$/.test(c)) return { label: 'Everything', tags: [], kw: '', all: true };
     var raw = c.match(/^([a-z_:]+)=([a-z_]+)$/);
-    if (raw) return [raw[1], raw[2]];
-    for (var i = 0; i < OSM.length; i++) { if (c.indexOf(OSM[i][0]) !== -1) return OSM[i][1]; }
-    return null;
+    if (raw) return { label: nicen(raw[2]), tags: [[raw[1], raw[2]]], kw: '' };
+    var best = null, bl = 0, i, j;
+    for (i = 0; i < OSM_CATS.length; i++) {
+      var ent = OSM_CATS[i], names = ent.alias.concat([ent.label.toLowerCase()]);
+      for (j = 0; j < names.length; j++) {
+        var a = names[j];
+        if (a && (c === a || (a.length > 3 && c.indexOf(a) !== -1)) && a.length > bl) { best = ent; bl = a.length; }
+      }
+    }
+    if (best) return { label: best.label, tags: best.tags, kw: best.kw };
+    var k = kwClean(c);
+    return k ? { label: nicen(c), tags: [], kw: k.replace(/ /g, '.?') } : null;
+  }
+  function osmResolve(text) {
+    var out = [], seen = {};
+    String(text || '').split(/[,;\n]+/).forEach(function (t) { var r = osmResolveOne(t); if (r && !seen[r.label]) { seen[r.label] = 1; out.push(r); } });
+    return out;
+  }
+  var NAME_KEYS = '^(shop|craft|office|amenity|healthcare|tourism|leisure)$';
+  function osmQuery(cats, scope, lim) {
+    var st = [];
+    cats.forEach(function (c) {
+      if (c.all) {
+        ['shop', 'craft', 'office', 'healthcare', 'tourism', 'amenity'].forEach(function (k) {
+          st.push('nwr["' + k + '"]["name"]["phone"]' + scope.f + ';', 'nwr["' + k + '"]["name"]["website"]' + scope.f + ';');
+        });
+        return;
+      }
+      c.tags.forEach(function (t) { st.push('nwr["' + t[0] + '"="' + t[1] + '"]["name"]' + scope.f + ';'); });
+      if (c.kw) st.push('nwr["name"~"' + c.kw + '",i][~"' + NAME_KEYS + '"~"."]' + scope.f + ';');
+    });
+    return '[out:json][timeout:40];' + scope.pre + '(' + st.join('') + ');out center tags ' + lim + ';';
+  }
+  function osmLabelFor(el, cats) {
+    var t = el.tags || {}, i, j;
+    for (i = 0; i < cats.length; i++) {
+      for (j = 0; j < cats[i].tags.length; j++) if (t[cats[i].tags[j][0]] === cats[i].tags[j][1]) return cats[i].label;
+    }
+    for (i = 0; i < cats.length; i++) {
+      if (cats[i].kw) { try { if (new RegExp(cats[i].kw, 'i').test(t.name || '')) return cats[i].label; } catch (e) {} }
+    }
+    if (cats.length === 1 && !cats[0].all) return cats[0].label;
+    var key = t.shop || t.craft || t.office || t.healthcare || t.tourism || t.amenity || '';
+    return key && key !== 'yes' ? nicen(key) : (cats[0] ? cats[0].label : '');
   }
   function ctxFromQuery(q) {
     var m = (q || '').match(/^(.*?)\s+(?:in|near)\s+(.+)$/i);
@@ -1844,11 +2010,43 @@ window.HD_CONFIG = window.HD_CONFIG || {
     showFound(items, 'the Yelp text');
     if (!items.length) $('sMsg').textContent = 'No numbered results found. If the Yelp text looks different, send a few lines of it to Claude so the reader can be matched to it.';
   }
+  function isEs(country) { return ES_COUNTRIES.indexOf(String(country || '').trim().toLowerCase()) >= 0; }
+  function gBuild() {
+    var cat = $('g-cat').value.split(/[,;]/)[0].trim(), city = $('g-city').value.trim(), country = $('g-country').value.trim();
+    var es = isEs(country);
+    $('g-langRow').hidden = !es;
+    if (!cat && !city) return;
+    var r = cat ? osmResolveOne(cat) : null, term = cat;
+    if (r && !r.all && es && $('g-lang').checked && ES_NAMES[r.label]) term = ES_NAMES[r.label];
+    else if (r && r.all) term = 'negocios';
+    var loc = [city, country].filter(Boolean).join(', ');
+    $('g-query').value = [term, loc && 'in ' + loc].filter(Boolean).join(' ');
+    if (es && $('g-lang').checked) $('g-query').value = $('g-query').value.replace(/ in /, ' en ');
+  }
+  ['g-cat', 'g-country', 'g-city', 'g-lang'].forEach(function (id) { $(id).addEventListener('input', gBuild); $(id).addEventListener('change', gBuild); });
+  $('g-open').addEventListener('click', function () {
+    gBuild();
+    var q = $('g-query').value.trim();
+    if (!q) { $('sMsg').textContent = 'Fill the category and city first.'; return; }
+    window.open('https://www.google.com/maps/search/' + encodeURIComponent(q), '_blank', 'noopener');
+  });
+  function googleCtx() {
+    var cat = $('g-cat').value.split(/[,;]/)[0].trim(), cityIn = $('g-city').value.trim(), country = $('g-country').value.trim();
+    var ctx = ctxFromQuery($('g-query').value);
+    if (cat || cityIn) {
+      var r = cat ? osmResolveOne(cat) : null;
+      var lm0 = cityIn.match(/^(.*?)(?:,\s*([A-Za-z]{2})|\s+([A-Z]{2}))\s*$/);
+      ctx = { niche: r && !r.all ? r.label : (cat && !r ? cat : ctx.niche), city: lm0 ? lm0[1].trim() : (cityIn.split(',')[0].trim() || ctx.city), state: lm0 ? (lm0[2] || lm0[3]).toUpperCase() : '' };
+    }
+    if (country) { ctx.country = country; ctx.dial = dialOf(country); }
+    else if (ctx.state) { ctx.dial = '1'; }
+    return ctx;
+  }
   function googleSearch() {
     var key = $('g-key').value.trim(), q = $('g-query').value.trim();
     if (!key || !q) { $('sMsg').textContent = 'Enter your API key and a search such as "plumber in Houston, TX".'; return; }
     try { if ($('g-remember').checked) localStorage.setItem(GKEY, key); else localStorage.removeItem(GKEY); } catch (e) {}
-    searchCtx = ctxFromQuery(q);
+    searchCtx = googleCtx();
     var pages = parseInt($('g-pages').value, 10) || 1, all = [], token = '';
     $('sMsg').textContent = 'Searching Google...';
     function next(n) {
@@ -1879,7 +2077,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function googleFind() {
     var raw = $('g-paste').value;
     if (!raw.trim()) { $('sMsg').textContent = 'Paste the Google Maps results text first.'; return; }
-    searchCtx = ctxFromQuery($('g-query').value);
+    searchCtx = googleCtx();
     var items = parseGooglePaste(raw);
     showFound(items, 'the Google Maps text');
     if (!items.length) $('sMsg').textContent = 'No businesses found. If the Google Maps text looks different, send a few lines of it to Claude so the reader can be matched to it.';
@@ -1909,6 +2107,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     return tryNext();
   }
   function quickOsm(term, city) {
+    term = String(term || '').replace(/\s+/g, ' ');
     return fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=40&addressdetails=1&extratags=1&q=' + encodeURIComponent(term + ' in ' + city), {}, 20000)
       .then(function (r) { if (!r.ok) throw new Error('quick search failed (HTTP ' + r.status + ')'); return r.json(); })
       .then(function (arr) {
@@ -1924,29 +2123,41 @@ window.HD_CONFIG = window.HD_CONFIG || {
       });
   }
   function osmSearch() {
-    var cat = $('o-cat').value.trim(), city = $('o-city').value.trim(), lim = parseInt($('o-limit').value, 10) || 100;
-    var tag = osmTag(cat);
-    if (!tag) { $('sMsg').textContent = 'Use a category such as Plumbing, HVAC, Barber, Dentist, Restaurant, or type an OpenStreetMap tag like craft=plumber.'; return; }
-    if (!city) { $('sMsg').textContent = 'Enter a city with its state, such as Houston, TX.'; return; }
-    var lm = city.match(/^(.*?),\s*([A-Za-z]{2})\b/);
-    var nice = /=/.test(cat) ? tag[1] : cat;
-    searchCtx = { niche: nice, city: lm ? lm[1].trim() : city, state: lm ? lm[2].toUpperCase() : '' };
+    var catText = $('o-cat').value.trim(), cityIn = $('o-city').value.trim(), country = $('o-country').value.trim(), lim = parseInt($('o-limit').value, 10) || 100;
     function say(t) { $('sMsg').textContent = t; }
+    var cats = osmResolve(catText);
+    if (!cats.length) { say('Type a business type first, such as Roofing, Dentist, Hotel, or several separated by commas. Or type Everything.'); return; }
+    if (!cityIn) { say('Enter a city. You can add the country in the Country box.'); return; }
+    var lm0 = cityIn.match(/^(.*?)(?:,\s*([A-Za-z]{2})|\s+([A-Z]{2}))\s*$/), lm = lm0 ? [lm0[0], lm0[1], lm0[2] || lm0[3]] : null;
+    var dial = dialOf(country) || (lm && !country ? '1' : '');
+    var single = cats.length === 1 && !cats[0].all;
+    searchCtx = { niche: single ? cats[0].label : '', city: lm ? lm[1].trim() : cityIn.split(',')[0].trim(), state: lm ? lm[2].toUpperCase() : '' };
+    var q0 = [cityIn, country].filter(Boolean).join(', ');
     say('Step 1 of 2: finding the city...');
-    fetchT('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(city), {}, 15000)
+    fetchT('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q0), {}, 15000)
       .then(function (r) { if (!r.ok) throw new Error('city lookup failed (HTTP ' + r.status + ')'); return r.json(); })
       .then(function (g) {
-        if (!g.length) throw new Error('could not find that city, try "Houston, TX"');
-        var b = g[0].boundingbox;
-        var q = '[out:json][timeout:25];nwr["' + tag[0] + '"="' + tag[1] + '"]["name"](' + b[0] + ',' + b[2] + ',' + b[1] + ',' + b[3] + ');out center tags ' + lim + ';';
-        return overpassRun(q, say).catch(function () {
+        if (!g.length) throw new Error('could not find that city. Check the spelling, or add the country');
+        var b = g[0].boundingbox, scope;
+        if (g[0].osm_type === 'relation') scope = { pre: 'area(' + (3600000000 + Number(g[0].osm_id)) + ')->.a;', f: '(area.a)' };
+        else if (g[0].osm_type === 'way') scope = { pre: 'area(' + (2400000000 + Number(g[0].osm_id)) + ')->.a;', f: '(area.a)' };
+        else scope = { pre: '', f: '(' + b[0] + ',' + b[2] + ',' + b[1] + ',' + b[3] + ')' };
+        return overpassRun(osmQuery(cats, scope, lim), say).catch(function () {
           say('The main OpenStreetMap server is slow. Trying the quick search...');
-          return quickOsm(tag[1].replace(/_/g, ' '), city);
+          return quickOsm(cats[0].all ? 'shop' : cats[0].label, q0);
         });
       })
       .then(function (j) {
-        showFound((j.elements || []).map(fromOsm).map(function (o) { o.niche = nice; return o; }), 'OpenStreetMap');
-        if (!sList.length) say('No businesses found. Try another category or a smaller area. OpenStreetMap coverage varies by city.');
+        var ctry = String(country || '').trim();
+        showFound((j.elements || []).map(function (el) {
+          var o = fromOsm(el), lab = osmLabelFor(el, cats);
+          o.niche = lab;
+          if (!single) o.cat = lab;
+          if (ctry) o.country = ctry;
+          if (dial) o.dial = dial;
+          return o;
+        }), 'OpenStreetMap');
+        if (!sList.length) say('No businesses found. OpenStreetMap coverage varies by city. Try a broader category (or Everything), a bigger city, or another spelling of the city.');
         else if (j.quick) say($('sMsg').textContent + ' The main server was slow, so this is the quick search (up to 40 results).');
       })
       .catch(function (e) {
@@ -1961,7 +2172,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     try {
       var d = JSON.parse(t);
       if (!d || d.app !== 'hunting-desk' || !Array.isArray(d.leads)) return null;
-      var keep = ['name','niche','city','state','rating','reviews','phone','website','webStatus','problem','channel','status','followUp','source','owner','address','zip','price','claimed','years','hours','email','wa','waStatus','fb','ig','social','services','notes','folder','cat'];
+      var keep = ['name','niche','city','state','rating','reviews','phone','website','webStatus','problem','channel','status','followUp','source','owner','address','zip','price','claimed','years','hours','email','wa','waStatus','fb','ig','social','services','notes','folder','cat','country','dial'];
       var items = d.leads.filter(function (x) { return x && x.name; }).map(function (x) { var o = {}; keep.forEach(function (k) { if (x[k] !== undefined && x[k] !== '') o[k] = x[k]; }); return o; });
       return { items: items, list: String(d.list || '').slice(0, 80) };
     } catch (e) { return null; }
@@ -2019,6 +2230,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
       if (catIn) l.cat = catIn;
       if (!l.city) l.city = searchCtx.city;
       if (!l.state) l.state = searchCtx.state;
+      if (searchCtx.country && !l.country) l.country = searchCtx.country;
+      if (searchCtx.dial && !l.dial) l.dial = searchCtx.dial;
       var exists = leads.some(function (x) {
         if (x.example) return false;
         var samePhone = digits(l.phone).length >= 7 && digits(x.phone) === digits(l.phone);
@@ -2052,7 +2265,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
   $('s-sample').addEventListener('click', function () { $('s-url').value = S_URL; $('s-paste').value = S_SAMPLE; yelpFind(); });
   $('g-search').addEventListener('click', googleSearch);
   $('g-find').addEventListener('click', googleFind);
-  $('g-sample').addEventListener('click', function () { $('g-query').value = 'plumber in Houston, TX'; $('g-paste').value = G_SAMPLE; googleFind(); });
+  $('g-sample').addEventListener('click', function () { $('g-cat').value = 'Plumbing'; $('g-country').value = 'United States'; $('g-city').value = 'Houston, TX'; gBuild(); $('g-paste').value = G_SAMPLE; googleFind(); });
+  initOsmLists();
   $('o-search').addEventListener('click', osmSearch);
   $('c-read').addEventListener('click', readTable);
   $('c-sample').addEventListener('click', function () { $('c-paste').value = C_SAMPLE; readTable(); });
@@ -2141,6 +2355,10 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function waNumber(l) {
     var n = digits(l.wa || l.phone);
     if (!n) return '';
+    if (l.dial && l.dial !== '1') {
+      if (/^\s*\+/.test(String(l.wa || l.phone)) || (n.indexOf(l.dial) === 0 && n.length >= l.dial.length + 7)) return n;
+      return l.dial + n.replace(/^0+/, '');
+    }
     if (n.length === 10) n = (cc || '1') + n;
     return n;
   }
@@ -2190,7 +2408,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function domain(u) { return String(u || '').replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/[\/?#].*$/, ''); }
   function row(l) {
     var sc = score(l), t = tier(sc);
-    var place = [l.cat || l.niche, [l.city, l.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+    var place = [l.cat || l.niche, [l.city, l.state || l.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
     var web = validSite(l.website)
       ? '<button class="linkbtn" type="button" data-act="view" title="Preview this website">' + esc(domain(l.website).slice(0, 26)) + '</button>'
       : (l.webStatus === 'none' ? '<span class="chip accent">No website</span>' : '<span class="chip">Not added</span>');
@@ -2504,11 +2722,11 @@ window.HD_CONFIG = window.HD_CONFIG || {
     } catch (e) {}
     manual();
   }
-  var COLS = ['Business', 'Source', 'Owner', 'Category', 'Address', 'City', 'State', 'ZIP', 'Rating', 'Reviews', 'Price', 'Yelp page', 'Years in business', 'Hours', 'Phone', 'WhatsApp', 'WhatsApp status', 'Email', 'Facebook', 'Instagram', 'Other social', 'Website', 'Website status', 'Problem note', 'Services', 'Notes', 'Reach via', 'Status', 'Follow-up', 'Score', 'Folder'];
+  var COLS = ['Business', 'Source', 'Owner', 'Category', 'Address', 'City', 'State', 'ZIP', 'Rating', 'Reviews', 'Price', 'Yelp page', 'Years in business', 'Hours', 'Phone', 'WhatsApp', 'WhatsApp status', 'Email', 'Facebook', 'Instagram', 'Other social', 'Website', 'Website status', 'Problem note', 'Services', 'Notes', 'Reach via', 'Status', 'Follow-up', 'Score', 'Folder', 'Country'];
   function rowsData(arr) {
     var wl = { none: 'No website', old: 'Old or slow', ok: 'Looks fine', unknown: 'Not checked' };
     return (arr || visible()).filter(function (l) { return !l.example; }).map(function (l) {
-      return [l.name, SRC_NAMES[l.source] || 'Other', l.owner, (l.cat || l.niche), l.address, l.city, l.state, l.zip, l.rating, l.reviews, l.price, l.claimed, l.years, l.hours, l.phone, l.wa, ({ yes: 'Has WhatsApp', no: 'No WhatsApp' })[l.waStatus] || 'Not tested', l.email, l.fb, l.ig, otherSocial(l), l.website, wl[l.webStatus] || '', l.problem, l.services, l.notes, l.channel, l.status, l.followUp, score(l), l.folder || ''];
+      return [l.name, SRC_NAMES[l.source] || 'Other', l.owner, (l.cat || l.niche), l.address, l.city, l.state, l.zip, l.rating, l.reviews, l.price, l.claimed, l.years, l.hours, l.phone, l.wa, ({ yes: 'Has WhatsApp', no: 'No WhatsApp' })[l.waStatus] || 'Not tested', l.email, l.fb, l.ig, otherSocial(l), l.website, wl[l.webStatus] || '', l.problem, l.services, l.notes, l.channel, l.status, l.followUp, score(l), l.folder || '', l.country || ''];
     });
   }
   function exportText(sep, arr) {
