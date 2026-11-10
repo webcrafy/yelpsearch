@@ -618,6 +618,44 @@ td .chip { white-space: nowrap; }
   td:nth-child(3) { min-width: 270px; }
   .scroll td:last-child { vertical-align: top; padding-top: 18px; }
 }
+
+/* ---- icon actions + copy ---- */
+.gi { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.acts { display: flex; gap: 6px; flex-wrap: nowrap; }
+.ib { width: 38px; height: 38px; flex: none; display: inline-grid; place-items: center; padding: 0; border-radius: 11px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); cursor: pointer; transition: transform .12s, background .15s, border-color .15s, color .15s; }
+.ib:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.ib:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ib.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+.ib.primary:hover { color: var(--on-accent, #fff); filter: brightness(1.08); }
+.ib.saved { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.ib.saved .gi { fill: currentColor; }
+.ib.danger:hover { color: #C0502F; border-color: #C0502F; background: color-mix(in srgb, #C0502F 12%, transparent); }
+.fld { position: relative; }
+@media (min-width: 761px) { td.ctc { min-width: 210px; } td.webc { min-width: 190px; } }
+.fld .inl { padding-right: 36px; }
+.cp { position: absolute; right: 5px; top: calc(50% + 3px); transform: translateY(-50%); margin: 0; width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; opacity: .55; transition: opacity .15s, background .15s, color .15s; }
+.cp .gi { width: 14px; height: 14px; }
+.fld:hover .cp, .cp:focus-visible { opacity: 1; }
+.cp:hover { background: var(--accent-soft); color: var(--accent); }
+.cp.ok { opacity: 1; color: #4A9E6B; background: color-mix(in srgb, #4A9E6B 16%, transparent); }
+@media (max-width: 760px) { .cp { opacity: 1; } .acts { flex-wrap: wrap; } .acts .ib { flex: 1 1 0; width: auto; } }
+
+/* ---- action menu ---- */
+td.mo { z-index: 40 !important; }
+.ib.ibmsg { width: auto; padding: 0 14px 0 12px; gap: 8px; grid-auto-flow: column; font: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.ib.ibmsg .gi { width: 16px; height: 16px; }
+.ib.more { position: relative; }
+.ib.more.has-saved::after { content: ""; position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--panel-2); }
+.ib.more[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.amenu { position: fixed; z-index: 60; width: 210px; padding: 6px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 14px 34px rgba(0,0,0,.28); display: flex; flex-direction: column; gap: 2px; }
+.amenu[hidden] { display: none; }
+.amenu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border: 0; border-radius: 9px; background: transparent; color: var(--ink); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; white-space: normal; }
+.amenu button:hover, .amenu button:focus-visible { background: var(--panel-2); outline: none; }
+.amenu button .gi { flex: none; width: 16px; height: 16px; color: var(--muted); }
+.amenu button small { display: block; font-size: 11.5px; color: var(--muted); }
+.amenu button.saved { color: var(--accent); } .amenu button.saved .gi { color: var(--accent); fill: currentColor; }
+.amenu button.danger:hover { color: #C0502F; background: color-mix(in srgb, #C0502F 12%, transparent); } .amenu button.danger:hover .gi { color: #C0502F; }
+@media (max-width: 760px) { .acts .ib.ibmsg { flex: 1 1 auto; justify-content: center; } .acts .ib.more { flex: none; width: 44px; } }
 </style>
 
 <div id="boot" role="status" aria-live="polite"><i></i><span id="bootMsg">Loading your desk...</span></div>
@@ -3208,22 +3246,30 @@ window.HD_CONFIG = window.HD_CONFIG || {
     return '';
   }
   function locOf(l) { return [l.city, l.state, countryOf(l)].filter(Boolean).join(', '); }
+  function ico(p) { return '<svg class="gi" viewBox="0 0 24 24" aria-hidden="true">' + p + '</svg>'; }
+  var IC_MSG = ico('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'), IC_SAVE = ico('<path d="M6 4h12v17l-6-4-6 4z"/>'), IC_INFO = ico('<path d="M4 6h16M4 12h16M4 18h10"/>'), IC_DEL = ico('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'), IC_MORE = ico('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>'), IC_COPY = ico('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>');
+  function cpb(what) { return '<button class="cp" type="button" data-act="cp" title="Copy ' + what + '" aria-label="Copy ' + what + '">' + IC_COPY + '</button>'; }
   var PIN = '<svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
   function row(l, idx) {
     var sc = score(l), t = tier(sc);
     var place = l.cat || l.niche || '', loc = locOf(l);
     var okSite = validSite(l.website);
-    var web = '<input class="inl" data-f="website" type="url" maxlength="200" autocomplete="off" placeholder="+ Website" aria-label="Website of ' + esc(l.name) + '" value="' + esc(l.website && okSite ? l.website : '') + '">' +
+    var web = '<div class="fld"><input class="inl" data-f="website" type="url" maxlength="200" autocomplete="off" placeholder="+ Website" aria-label="Website of ' + esc(l.name) + '" value="' + esc(l.website && okSite ? l.website : '') + '">' + cpb('website') + '</div>' +
       (okSite ? '<div class="webact"><button class="linkbtn" type="button" data-act="view" title="Preview this website here">Preview</button><a href="' + esc(normUrl(l.website)) + '" target="_blank" rel="noopener">Open &#8599;</a></div>'
         : (l.webStatus === 'none' ? '<span class="chip accent">No website</span>' : ''));
     return '<tr data-id="' + l.id + '"' + (picked[l.id] ? ' class="sel"' : '') + '>' +
       '<td><input type="checkbox" data-pick aria-label="Select ' + esc(l.name) + '"' + (picked[l.id] ? ' checked' : '') + '></td>' +
       '<td><span class="rownum" title="Lead score ' + sc + ' (' + t[1] + ' lead)">' + ((idx || 0) + 1) + '</span></td>' +
       '<td class="bzc"><div class="bz"><span class="av" aria-hidden="true">' + esc((String(l.name || '?').replace(/[^A-Za-z0-9\u00C0-\u024F]/g, '').charAt(0) || '?').toUpperCase()) + '</span><div class="bzt"><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + (place ? '<div class="sub catl">' + esc(place) + '</div>' : '') + '<div class="sub loc" title="Location of this business">' + PIN + (loc ? esc(loc) : '<span class="ph">No location</span>') + '</div><input class="inl" data-f="owner" maxlength="80" autocomplete="off" placeholder="+ Owner name" aria-label="Owner name of ' + esc(l.name) + '" value="' + esc(l.owner || '') + '"></div></div></td>' +
-      '<td class="ctc"><input class="inl mono" data-f="phone" type="tel" inputmode="tel" maxlength="40" autocomplete="off" placeholder="+ Phone" aria-label="Phone of ' + esc(l.name) + '" value="' + esc(l.phone || '') + '"><input class="inl" data-f="email" type="email" maxlength="120" autocomplete="off" placeholder="+ Email" aria-label="Email of ' + esc(l.name) + '" value="' + esc(l.email || '') + '">' + rowWa(l) + '</td>' +
+      '<td class="ctc"><div class="fld"><input class="inl mono" data-f="phone" type="tel" inputmode="tel" maxlength="40" autocomplete="off" placeholder="+ Phone" aria-label="Phone of ' + esc(l.name) + '" value="' + esc(l.phone || '') + '">' + cpb('phone') + '</div><div class="fld"><input class="inl" data-f="email" type="email" maxlength="120" autocomplete="off" placeholder="+ Email" aria-label="Email of ' + esc(l.name) + '" value="' + esc(l.email || '') + '">' + cpb('email') + '</div>' + rowWa(l) + '</td>' +
       '<td class="webc">' + web + '</td>' +
       '<td><select data-f="status" data-st="' + esc(l.status) + '" aria-label="Status of ' + esc(l.name) + '">' + opts(STAT, l.status) + '</select>' + statusLine(l) + '</td>' +
-      '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button>' + (folderOf(l) ? '<button class="btn small saved" type="button" data-act="save" title="Saved in ' + esc(folderOf(l)) + ' - click to remove">Saved &#10003;</button>' : '<button class="btn small ghost" type="button" data-act="save">Save</button>') + '<button class="btn small ghost" type="button" data-act="details">Details</button><button class="btn small ghost" type="button" data-act="del" aria-label="Move ' + esc(l.name) + ' to Drafts">Delete</button></div></td></tr>';
+      '<td><div class="row acts"><button class="ib primary ibmsg" type="button" data-act="draft" title="Write a message to this lead" aria-label="Write message to ' + esc(l.name) + '">' + IC_MSG + '<span>Message</span></button>' +
+      '<button class="ib more' + (folderOf(l) ? ' has-saved' : '') + '" type="button" data-act="menu" aria-haspopup="menu" aria-expanded="false" title="More actions" aria-label="More actions for ' + esc(l.name) + '">' + IC_MORE + '</button>' +
+      '<div class="amenu" role="menu" hidden>' +
+      (folderOf(l) ? '<button type="button" role="menuitem" class="saved" data-act="save">' + IC_SAVE + '<span>Saved in ' + esc(folderOf(l)) + '<small>Click to remove</small></span></button>' : '<button type="button" role="menuitem" data-act="save">' + IC_SAVE + '<span>Save to folder</span></button>') +
+      '<button type="button" role="menuitem" data-act="details">' + IC_INFO + '<span>Details</span></button>' +
+      '<button type="button" role="menuitem" class="danger" data-act="del">' + IC_DEL + '<span>Move to Drafts</span></button></div></div></td></tr>';
   }
 
   /* ---------- overview ---------- */
@@ -3581,9 +3627,34 @@ window.HD_CONFIG = window.HD_CONFIG || {
   });
   $('copyDraft').addEventListener('click', function () { copyText($('draft').value, $('draft')); });
 
+  function closeMenus() {
+    [].forEach.call(document.querySelectorAll('.amenu:not([hidden])'), function (m) { m.hidden = true; var b = m.previousElementSibling; if (b) b.setAttribute('aria-expanded', 'false'); var td = m.closest('td'); if (td) td.classList.remove('mo'); });
+  }
+  var menuAt = 0;
+  function openMenu(btn) {
+    var m = btn.nextElementSibling; if (!m) return;
+    var was = !m.hidden; closeMenus(); if (was) return;
+    m.hidden = false; btn.setAttribute('aria-expanded', 'true'); menuAt = Date.now(); var tdo = btn.closest('td'); if (tdo) tdo.classList.add('mo');
+    var r = btn.getBoundingClientRect(), w = m.offsetWidth, h = m.offsetHeight;
+    var left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8));
+    var top = r.bottom + 6; if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+    m.style.left = left + 'px'; m.style.top = top + 'px';
+    var first = m.querySelector('button'); if (first) first.focus({ preventScroll: true });
+  }
+  document.addEventListener('click', function (e) { if (!e.target.closest('.amenu') && !e.target.closest('[data-act=menu]')) closeMenus(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenus(); });
+  window.addEventListener('resize', closeMenus);
+  window.addEventListener('scroll', function (e) { if (Date.now() - menuAt < 400) return; if (!(e.target && e.target.closest && e.target.closest('.amenu'))) closeMenus(); }, true);
   function doAct(id, act, btn) {
     var l = leadById(id);
     if (!l) return;
+    if (act === 'menu') { openMenu(btn); return; }
+    closeMenus();
+    if (act === 'cp') {
+      var inp = btn.parentNode.querySelector('input'), v = inp ? (inp.value || '').trim() : '';
+      if (!v) { toast('Nothing to copy yet'); return; }
+      copyText(v, inp); btn.classList.add('ok'); setTimeout(function () { btn.classList.remove('ok'); }, 1100); return;
+    }
     if (act === 'del') { moveToDrafts([id]); return; }
     if (act === 'save') {
       if (folderOf(l)) { l.folder = ''; save(); render(); toast('Removed from folder'); }
