@@ -1828,7 +1828,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     'Builder|builder,construction,contractor,general contractor|craft=builder;office=construction_company|construction|builder|contractor',
     'Locksmith|locksmith|craft=locksmith;shop=locksmith|locksmith',
     'Pest Control|pest control,exterminator|craft=pest_control;office=pest_control|pest|exterminat',
-    'Flooring|flooring,floor,tiles,tiler|craft=floorer;craft=tiler;shop=flooring;shop=tiles|floor|tile',
+    'Flooring|flooring,floor,floors,tiles,tiler,carpet|craft=floorer;craft=tiler;craft=carpet_layer;shop=flooring;shop=tiles;shop=carpet|floor|tile|carpet|hardwood|laminate|vinyl',
     'Glass & Windows|glass,glazier,window,windows|craft=glaziery;craft=window_construction|glass|window',
     'Welding & Metal|welder,welding,metal works|craft=welder;craft=metal_construction|weld|metal',
     'Handyman|handyman,repair services|craft=handyman|handyman',
@@ -2328,7 +2328,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
         if (a && (c === a || (a.length > 3 && c.indexOf(a) !== -1)) && a.length > bl) { best = ent; bl = a.length; }
       }
     }
-    if (best) return { label: best.label, tags: best.tags, kw: best.kw };
+    if (best) return { label: best.label, tags: best.tags, kw: best.kw, alias: best.alias };
     var k = kwClean(c);
     return k ? { label: nicen(c), tags: [], kw: k.replace(/ /g, '.?') } : null;
   }
@@ -2337,7 +2337,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     String(text || '').split(/[,;\n]+/).forEach(function (t) { var r = osmResolveOne(t); if (r && !seen[r.label]) { seen[r.label] = 1; out.push(r); } });
     return out;
   }
-  var NAME_KEYS = '^(shop|craft|office|amenity|healthcare|tourism|leisure)$';
+  var NAME_KEYS_LIST = ['shop', 'craft', 'office', 'amenity', 'healthcare', 'tourism', 'leisure'];
   function osmQuery(cats, scope, lim) {
     var st = [];
     cats.forEach(function (c) {
@@ -2348,9 +2348,21 @@ window.HD_CONFIG = window.HD_CONFIG || {
         return;
       }
       c.tags.forEach(function (t) { st.push('nwr["' + t[0] + '"="' + t[1] + '"]["name"]' + scope.f + ';'); });
-      if (c.kw) st.push('nwr["name"~"' + c.kw + '",i][~"' + NAME_KEYS + '"~"."]' + scope.f + ';');
+      if (c.kw) NAME_KEYS_LIST.forEach(function (k) { st.push('nwr["' + k + '"]["name"~"' + c.kw + '",i]' + scope.f + ';'); });
     });
-    return '[out:json][timeout:40];' + scope.pre + '(' + st.join('') + ');out center tags ' + lim + ';';
+    return '[out:json][timeout:55];' + scope.pre + '(' + st.join('') + ');out center tags ' + lim + ';';
+  }
+  function pickGeo(g) {
+    var best = null, bs = -99;
+    g.forEach(function (x, i) {
+      var sc = 0, c = x.category || x['class'], t = x.type;
+      if (x.osm_type === 'relation') sc += 4; else if (x.osm_type === 'way') sc += 2;
+      if (c === 'boundary' || c === 'place') sc += 3;
+      if (/^(city|town|municipality|administrative|village|suburb|county|state_district|district|borough|hamlet|island|region|state|neighbourhood|quarter)$/.test(t)) sc += 2;
+      sc -= i * 0.1;
+      if (sc > bs) { bs = sc; best = x; }
+    });
+    return best;
   }
   function osmLabelFor(el, cats) {
     var t = el.tags || {}, i, j;
@@ -2503,7 +2515,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     showFound(items, 'the Google Maps text');
     if (!items.length) $('sMsg').textContent = 'No businesses found. If the Google Maps text looks different, send a few lines of it to Claude so the reader can be matched to it.';
   }
-  var OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+  var OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://overpass.openstreetmap.fr/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
   function fetchT(url, opts, ms) {
     var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms);
@@ -2520,28 +2532,37 @@ window.HD_CONFIG = window.HD_CONFIG || {
     function tryNext() {
       if (i >= OVERPASS.length) return Promise.reject(lastErr || new Error('all OpenStreetMap servers are busy'));
       var url = OVERPASS[i++];
-      say('Searching OpenStreetMap, server ' + i + ' of ' + OVERPASS.length + '. This can take up to 30 seconds...');
-      return fetchT(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q) }, 30000)
+      say('Searching OpenStreetMap, server ' + i + ' of ' + OVERPASS.length + '. This can take up to 45 seconds...');
+      return fetchT(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q) }, 45000)
         .then(function (r) { if (!r.ok) throw new Error('server busy (HTTP ' + r.status + ')'); return r.json(); })
         .catch(function (e) { lastErr = e; return tryNext(); });
     }
     return tryNext();
   }
-  function quickOsm(term, city) {
-    term = String(term || '').replace(/\s+/g, ' ');
-    return fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=40&addressdetails=1&extratags=1&q=' + encodeURIComponent(term + ' in ' + city), {}, 20000)
-      .then(function (r) { if (!r.ok) throw new Error('quick search failed (HTTP ' + r.status + ')'); return r.json(); })
-      .then(function (arr) {
-        return { quick: true, elements: arr.filter(function (x) { return x.name; }).map(function (x) {
-          var t = {}, ex = x.extratags || {}, a = x.address || {};
-          for (var k in ex) t[k] = ex[k];
-          t.name = x.name;
-          if (a.house_number) t['addr:housenumber'] = a.house_number;
-          if (a.road) t['addr:street'] = a.road;
-          if (a.postcode) t['addr:postcode'] = a.postcode;
-          return { tags: t };
-        }) };
-      });
+  function quickOsm(terms, place) {
+    var out = [], seen = {}, i = 0;
+    function next() {
+      if (i >= terms.length) return Promise.resolve({ quick: true, elements: out });
+      var term = String(terms[i++] || '').replace(/\s+/g, ' ');
+      return fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=40&addressdetails=1&extratags=1&q=' + encodeURIComponent(term + ' in ' + place), {}, 20000)
+        .then(function (r) { if (!r.ok) throw new Error('quick search failed (HTTP ' + r.status + ')'); return r.json(); })
+        .then(function (arr) {
+          arr.forEach(function (x) {
+            if (!x.name || seen[x.osm_type + x.osm_id]) return;
+            seen[x.osm_type + x.osm_id] = 1;
+            var t = {}, ex = x.extratags || {}, a = x.address || {};
+            for (var k in ex) t[k] = ex[k];
+            t.name = x.name;
+            if (a.house_number) t['addr:housenumber'] = a.house_number;
+            if (a.road) t['addr:street'] = a.road;
+            if (a.postcode) t['addr:postcode'] = a.postcode;
+            out.push({ type: x.osm_type, id: x.osm_id, tags: t });
+          });
+        })
+        .then(function () { return new Promise(function (ok) { setTimeout(ok, 1100); }); })
+        .then(next);
+    }
+    return next();
   }
   function osmSearch() {
     var catText = $('o-cat').value.trim(), cityIn = $('o-city').value.trim(), country = $('o-country').value.trim(), lim = parseInt($('o-limit').value, 10) || 100;
@@ -2553,39 +2574,81 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var lm0 = (region || !cityIn) ? null : cityIn.match(/^(.*?)(?:,\s*([A-Za-z]{2})|\s+([A-Z]{2}))\s*$/), lm = lm0 ? [lm0[0], lm0[1], lm0[2] || lm0[3]] : null;
     var dial = dialOf(country) || (lm && !country ? '1' : '');
     var single = cats.length === 1 && !cats[0].all;
-    searchCtx = { niche: single ? cats[0].label : '', city: cityIn ? (lm ? lm[1].trim() : cityIn.split(',')[0].trim()) : '', state: regCode || (lm ? lm[2].toUpperCase() : region) };
+    var cityName = cityIn ? (lm ? lm[1].trim() : cityIn.split(',')[0].trim()) : '';
+    searchCtx = { niche: single ? cats[0].label : '', city: cityName, state: regCode || (lm ? lm[2].toUpperCase() : region) };
     var q0 = [cityIn, region, country].filter(Boolean).join(', ');
-    say('Step 1 of 2: finding the city...');
-    fetchT('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q0), {}, 15000)
-      .then(function (r) { if (!r.ok) throw new Error('city lookup failed (HTTP ' + r.status + ')'); return r.json(); })
+    var outN = Math.min(800, lim * 4), minWant = Math.min(10, lim);
+    var terms = [];
+    cats.forEach(function (c) { if (c.all) { terms.push('shop'); return; } [c.label.toLowerCase()].concat((c.alias || []).slice(0, 2)).forEach(function (t) { if (terms.indexOf(t) < 0 && terms.length < 4) terms.push(t); }); });
+    say('Step 1 of 2: finding the place...');
+    fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=' + encodeURIComponent(q0), {}, 15000)
+      .then(function (r) { if (!r.ok) throw new Error('place lookup failed (HTTP ' + r.status + ')'); return r.json(); })
       .then(function (g) {
-        if (!g.length) throw new Error('could not find that city. Check the spelling, or add the country');
-        var b = g[0].boundingbox, scope;
-        if (g[0].osm_type === 'relation') scope = { pre: 'area(' + (3600000000 + Number(g[0].osm_id)) + ')->.a;', f: '(area.a)' };
-        else if (g[0].osm_type === 'way') scope = { pre: 'area(' + (2400000000 + Number(g[0].osm_id)) + ')->.a;', f: '(area.a)' };
-        else scope = { pre: '', f: '(' + b[0] + ',' + b[2] + ',' + b[1] + ',' + b[3] + ')' };
-        return overpassRun(osmQuery(cats, scope, lim), say).catch(function () {
-          say('The main OpenStreetMap server is slow. Trying the quick search...');
-          return quickOsm(cats[0].all ? 'shop' : cats[0].label, q0);
+        if (!g.length) throw new Error('could not find that place. Check the spelling, or add the country');
+        var best = pickGeo(g), lat = +best.lat, lon = +best.lon, stages = [];
+        if (best.osm_type === 'relation') stages.push({ name: 'the whole city', scope: { pre: 'area(' + (3600000000 + Number(best.osm_id)) + ')->.a;', f: '(area.a)' } });
+        else if (best.osm_type === 'way') stages.push({ name: 'the whole city', scope: { pre: 'area(' + (2400000000 + Number(best.osm_id)) + ')->.a;', f: '(area.a)' } });
+        if (cityIn || !stages.length) {
+          stages.push({ name: '15 km around', scope: { pre: '', f: '(around:15000,' + lat + ',' + lon + ')' } });
+          stages.push({ name: '40 km around', scope: { pre: '', f: '(around:40000,' + lat + ',' + lon + ')' } });
+        }
+        var all = {}, order = [], used = 0;
+        function add(j) { (j.elements || []).forEach(function (el) { if (!el.tags || !el.tags.name) return; var k = (el.type || '') + ':' + (el.id || el.tags.name); if (!all[k]) { all[k] = el; order.push(k); } }); }
+        function go(i) {
+          return overpassRun(osmQuery(cats, stages[i].scope, outN), say).then(function (j) {
+            add(j); used = i;
+            if (order.length >= minWant || i === stages.length - 1) return;
+            say('Found ' + order.length + ' so far. Widening the search to ' + stages[i + 1].name + '...');
+            return go(i + 1);
+          });
+        }
+        function result(extra) { var r = { elements: order.map(function (k) { return all[k]; }), stage: stages[used].name, used: used }; for (var k in extra) r[k] = extra[k]; return r; }
+        return go(0).catch(function (e) {
+          if (stages.length < 2) throw e;
+          say('The whole-city search took too long. Trying a smaller area...');
+          return go(1);
+        }).then(function () {
+          if (order.length) return result({});
+          say('Nothing tagged that way. Trying the quick text search...');
+          return quickOsm(terms, q0).then(function (qj) { add(qj); return result({ quick: true }); });
+        }, function () {
+          if (order.length) return result({});
+          say('The main OpenStreetMap servers are slow. Trying the quick search...');
+          return quickOsm(terms, q0).then(function (qj) { add(qj); return result({ quick: true, slow: true }); }).catch(function () { return result({ failed: true }); });
         });
       })
       .then(function (j) {
-        var ctry = String(country || '').trim();
-        showFound((j.elements || []).map(function (el) {
+        var ctry = String(country || '').trim(), seen = {};
+        var items = (j.elements || []).map(function (el) {
           var o = fromOsm(el), lab = osmLabelFor(el, cats);
           o.niche = lab;
           if (!single) o.cat = lab;
           if (ctry) o.country = ctry;
           if (dial) o.dial = dial;
           return o;
-        }), 'OpenStreetMap');
-        if (!sList.length) say('No businesses found. OpenStreetMap coverage varies by city. Try a broader category (or Everything), a bigger city, or another spelling of the city.');
-        else if (j.quick) say($('sMsg').textContent + ' The main server was slow, so this is the quick search (up to 40 results).');
+        }).filter(function (o) {
+          var k = (o.name + '|' + o.address).toLowerCase();
+          if (seen[k]) return false; seen[k] = 1; return true;
+        });
+        function rank(o) { return (digits(o.phone).length >= 7 ? 2 : 0) + (o.website ? 0 : 1); }
+        items.sort(function (a, b) { return rank(b) - rank(a); });
+        showFound(items.slice(0, lim), 'OpenStreetMap');
+        if (!sList.length) {
+          say(j.failed
+            ? 'OpenStreetMap did not answer (its servers are busy, or an ad blocker is in the way). Wait a minute and press Search again.'
+            : 'Nothing is mapped on OpenStreetMap for this search within 40 km of ' + (cityName || region) + '. Try the category "Everything", a related category, or use the Google tab for this city.');
+        } else {
+          var note = '';
+          if (j.used > 0 && !j.quick) note = ' The city itself had few, so the search was widened to ' + j.stage + '.';
+          if (j.quick) note = ' This came from the quick text search' + (j.slow ? ' because the main servers were slow' : '') + ', so it may be missing some businesses.';
+          if (items.length > lim) note += ' Showing the best ' + lim + ' of ' + items.length + ' (phone numbers and missing websites first).';
+          $('sMsg').textContent += note;
+        }
       })
       .catch(function (e) {
         var blocked = e && e.name === 'TypeError';
         say('OpenStreetMap search failed: ' + (blocked ? 'the browser could not reach the server' : e.message) +
-          '. On the Claude preview page this is expected, so use your Vercel site. On Vercel, turn off ad blockers or privacy extensions for the site and try again, or try a smaller area.');
+          '. On the Claude preview page this is expected, so use your Vercel site. On Vercel, turn off ad blockers or privacy extensions for the site and try again.');
       });
   }
   function parseBackup(raw) {
