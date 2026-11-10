@@ -189,7 +189,13 @@ td.mono { white-space: nowrap; }
 .fu { color: var(--muted); }
 .fu.late { color: #C0502F; font-weight: 500; }
 .fu.now { color: var(--accent); font-weight: 500; }
+.sub.loc { display: flex; align-items: center; gap: 4px; }
+.sub.loc .ph { opacity: .6; font-style: italic; }
+.pin { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .ctc { min-width: 150px; }
+.webact { display: flex; gap: 10px; margin-top: 4px; font-size: 12px; }
+.webact a { color: var(--accent); }
+td.webc { min-width: 150px; }
 .inl { width: 100%; min-width: 0; box-sizing: border-box; margin: 3px 0 0 -7px; padding: 3px 7px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--ink); font: inherit; font-size: 12.5px; text-overflow: ellipsis; }
 .inl::placeholder { color: var(--muted); opacity: .75; }
 .inl:hover { border-color: var(--line); }
@@ -1087,7 +1093,7 @@ td .chip { white-space: nowrap; }
           <table>
             <thead><tr>
               <th><input type="checkbox" id="pickAll" aria-label="Select all leads in this list"></th>
-              <th>#</th><th>Business</th><th>Rating</th><th>Contact</th><th>Website</th><th>Status</th><th></th>
+              <th>#</th><th>Business</th><th>Contact</th><th>Website</th><th>Status</th><th></th>
             </tr></thead>
             <tbody id="rows"></tbody>
           </table>
@@ -2897,7 +2903,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('sFoundWrap').hidden = !sList.length;
     $('sFound').innerHTML = sList.map(function (f, i) {
       var web = f.webStatus === 'none' ? 'No website listed' : f.website ? 'Has website' : '';
-      var meta = [f.rating ? f.rating + '★' : '', f.reviews ? f.reviews + ' reviews' : '', f.niche || searchCtx.niche, web, f.noContact ? 'No phone, email or website' : ''].filter(Boolean).join(' · ');
+      var meta = [f.niche || searchCtx.niche, web, f.noContact ? 'No phone, email or website' : ''].filter(Boolean).join(' · ');
       var line2 = [f.phone, f.address].filter(Boolean).join(' · ');
       var dupe = isKnown(f);
       if (dupe) meta = 'Already in your leads · ' + meta;
@@ -3034,7 +3040,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       if (ledgerSrc !== 'all' && (l.source || 'yelp') !== ledgerSrc) return false;
       if (curCat !== 'all' && catOf(l) !== curCat) return false;
       var q = ($('q').value || '').trim().toLowerCase();
-      if (q && [l.name, l.niche, l.cat, l.city, l.state, l.phone, l.website].join(' ').toLowerCase().indexOf(q) === -1) return false;
+      if (q && [l.name, l.niche, l.cat, l.city, l.state, countryOf(l), l.owner, l.phone, l.website].join(' ').toLowerCase().indexOf(q) === -1) return false;
       if (f === 'all') return true;
       if (f === 'fo:saved') return !!folderOf(l);
       if (f === 'fo:none') return !folderOf(l);
@@ -3150,19 +3156,28 @@ window.HD_CONFIG = window.HD_CONFIG || {
     return '<div class="wab' + (y ? ' yes' : no ? ' no' : '') + '"><a class="wa-go" href="https://wa.me/' + n + '" target="_blank" rel="noopener" title="Open a WhatsApp chat with this number to check it">' + WA_SVG + '<span>' + (y ? 'On WhatsApp' : no ? 'No WhatsApp' : 'Check') + '</span></a>' +
       '<span class="wa-seg" role="group" aria-label="Does this number have WhatsApp?"><button type="button" data-act="wa-yes" aria-pressed="' + y + '" title="It has WhatsApp">&#10003;</button><button type="button" data-act="wa-no" aria-pressed="' + no + '" title="Not on WhatsApp">&#10005;</button></span></div>';
   }
+  var US_ST = /^(AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)$/i;
+  function countryOf(l) {
+    if (l.country) return l.country;
+    if (l.state && US_ST.test(String(l.state).trim())) return 'United States';
+    if (l.dial === '1' && !l.state) return '';
+    return '';
+  }
+  function locOf(l) { return [l.city, l.state, countryOf(l)].filter(Boolean).join(', '); }
+  var PIN = '<svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
   function row(l, idx) {
     var sc = score(l), t = tier(sc);
-    var place = [l.cat || l.niche, [l.city, l.state || l.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
-    var web = validSite(l.website)
-      ? '<button class="linkbtn" type="button" data-act="view" title="Preview this website">' + esc(domain(l.website).slice(0, 26)) + '</button>'
-      : (l.webStatus === 'none' ? '<span class="chip accent">No website</span>' : '<span class="chip">Not added</span>');
+    var place = l.cat || l.niche || '', loc = locOf(l);
+    var okSite = validSite(l.website);
+    var web = '<input class="inl" data-f="website" type="url" maxlength="200" autocomplete="off" placeholder="+ Website" aria-label="Website of ' + esc(l.name) + '" value="' + esc(l.website && okSite ? l.website : '') + '">' +
+      (okSite ? '<div class="webact"><button class="linkbtn" type="button" data-act="view" title="Preview this website here">Preview</button><a href="' + esc(normUrl(l.website)) + '" target="_blank" rel="noopener">Open &#8599;</a></div>'
+        : (l.webStatus === 'none' ? '<span class="chip accent">No website</span>' : ''));
     return '<tr data-id="' + l.id + '"' + (picked[l.id] ? ' class="sel"' : '') + '>' +
       '<td><input type="checkbox" data-pick aria-label="Select ' + esc(l.name) + '"' + (picked[l.id] ? ' checked' : '') + '></td>' +
       '<td><span class="rownum" title="Lead score ' + sc + ' (' + t[1] + ' lead)">' + ((idx || 0) + 1) + '</span></td>' +
-      '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + '<div class="sub">' + esc(place) + '</div><input class="inl" data-f="owner" maxlength="80" autocomplete="off" placeholder="+ Owner name" aria-label="Owner name of ' + esc(l.name) + '" value="' + esc(l.owner || '') + '"></td>' +
-      '<td class="mono">' + (l.rating ? esc(l.rating) + '★' : '–') + (l.reviews ? ' · ' + esc(l.reviews) : '') + '</td>' +
+      '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + (place ? '<div class="sub">' + esc(place) + '</div>' : '') + '<div class="sub loc" title="Location of this business">' + PIN + (loc ? esc(loc) : '<span class="ph">No location</span>') + '</div><input class="inl" data-f="owner" maxlength="80" autocomplete="off" placeholder="+ Owner name" aria-label="Owner name of ' + esc(l.name) + '" value="' + esc(l.owner || '') + '"></td>' +
       '<td class="ctc"><input class="inl mono" data-f="phone" type="tel" inputmode="tel" maxlength="40" autocomplete="off" placeholder="+ Phone" aria-label="Phone of ' + esc(l.name) + '" value="' + esc(l.phone || '') + '"><input class="inl" data-f="email" type="email" maxlength="120" autocomplete="off" placeholder="+ Email" aria-label="Email of ' + esc(l.name) + '" value="' + esc(l.email || '') + '">' + rowWa(l) + '</td>' +
-      '<td>' + web + '</td>' +
+      '<td class="webc">' + web + '</td>' +
       '<td><select data-f="status" aria-label="Status of ' + esc(l.name) + '">' + opts(STAT, l.status) + '</select>' + statusLine(l) + '</td>' +
       '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button>' + (folderOf(l) ? '<button class="btn small saved" type="button" data-act="save" title="Saved in ' + esc(folderOf(l)) + ' - click to remove">Saved &#10003;</button>' : '<button class="btn small ghost" type="button" data-act="save">Save</button>') + '<button class="btn small ghost" type="button" data-act="details">Details</button><button class="btn small ghost" type="button" data-act="del" aria-label="Move ' + esc(l.name) + ' to Drafts">Delete</button></div></td></tr>';
   }
@@ -3259,6 +3274,9 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var scanBtn = validSite(l.website) ? '<button class="btn small ghost" type="button" data-act="scan">' + (l.scanAt ? 'Recheck site' : 'Check site') + '</button>' : '';
     $('dDetails').innerHTML =
       '<div class="dgrid">' +
+        '<div><label for="d-city">City</label><input id="d-city" data-f="city" maxlength="80" value="' + esc(l.city || '') + '"></div>' +
+        '<div><label for="d-state">State / region</label><input id="d-state" data-f="state" maxlength="40" value="' + esc(l.state || '') + '"></div>' +
+        '<div class="span"><label for="d-country">Country</label><input id="d-country" data-f="country" list="countryOpts" maxlength="60" value="' + esc(countryOf(l)) + '" placeholder="United States, Spain..."></div>' +
         '<div><label for="d-phone">Phone / WhatsApp</label><input id="d-phone" type="tel" data-f="phone" maxlength="40" value="' + esc(l.phone || '') + '" placeholder="+1 713 555 0100"></div>' +
         '<div><label for="d-owner">Owner name</label><input id="d-owner" data-f="owner" maxlength="80" value="' + esc(l.owner || '') + '" placeholder="e.g. Maria"></div>' +
         '<div><label for="d-email">Email</label><input id="d-email" type="email" data-f="email" maxlength="120" value="' + esc(l.email || '') + '" placeholder="name@business.com"></div>' +
@@ -3332,13 +3350,26 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('fClear').textContent = confirmClear ? 'Tap again to confirm' : 'Empty folder';
     var cats = groupCount(arr, catOf);
     var cn = Object.keys(cats).sort(function (a, b) { return cats[b] - cats[a] || a.localeCompare(b); });
+    var savedN = 0;
     $('fList').innerHTML = cn.map(function (c) {
       var items = arr.filter(function (l) { return catOf(l) === c; }).sort(function (a, b) { return score(b) - score(a); });
       return '<div class="cathead">' + esc(c) + '<span>' + items.length + (items.length === 1 ? ' lead' : ' leads') + '</span></div>' +
         items.map(function (l) {
-          var t = tier(score(l));
-          var meta = [[l.city, l.state].filter(Boolean).join(', '), l.phone, l.statusAt || l.followUp ? statusText(l) : ''].filter(Boolean).join(' \u00b7 ');
-          return '<div class="li" data-id="' + l.id + '"><span class="score ' + t[0] + '">' + score(l) + '</span><div class="grow"><strong>' + esc(l.name) + '</strong><div class="sub">' + esc(meta) + '</div></div>' +
+          savedN++;
+          var place = [l.address, locOf(l)].filter(Boolean).join(' \u00b7 ');
+          var wn = waNumber(l);
+          var lines = [];
+          if (place) lines.push(esc(place));
+          var c1 = [];
+          if (l.phone) c1.push('<span class="mono">' + esc(l.phone) + '</span>' + (l.waStatus === 'yes' ? ' <span class="pill ok">WhatsApp</span>' : l.waStatus === 'no' ? ' <span class="pill no">No WhatsApp</span>' : wn ? ' <a href="https://wa.me/' + wn + '" target="_blank" rel="noopener">Check WhatsApp</a>' : ''));
+          if (l.email) c1.push('<a href="mailto:' + esc(l.email) + '">' + esc(l.email) + '</a>');
+          if (l.owner) c1.push('Owner: ' + esc(l.owner));
+          if (c1.length) lines.push(c1.join(' \u00b7 '));
+          if (validSite(l.website)) lines.push('<a href="' + esc(normUrl(l.website)) + '" target="_blank" rel="noopener">' + esc(domain(l.website)) + '</a>');
+          else if (l.webStatus === 'none') lines.push('No website');
+          var st = statusText(l); if (st) lines.push(esc(st));
+          if (l.notes) lines.push('Note: ' + esc(l.notes));
+          return '<div class="li" data-id="' + l.id + '"><span class="rownum" title="Lead score ' + score(l) + '">' + savedN + '</span><div class="grow"><strong>' + esc(l.name) + '</strong>' + lines.map(function (x) { return '<div class="sub">' + x + '</div>'; }).join('') + '</div>' +
             '<div class="btns"><button class="btn small" type="button" data-sact="message">Message</button><button class="btn small ghost" type="button" data-sact="details">Details</button><button class="btn small ghost" type="button" data-sact="remove">Remove</button></div></div>';
         }).join('');
     }).join('');
@@ -3355,7 +3386,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     }).join('');
     Object.keys(picked).forEach(function (id) { if (!leadById(id)) delete picked[id]; });
     var list = visible();
-    $('rows').innerHTML = list.length ? list.map(function (l, i) { return row(l, i); }).join('') : '<tr><td colspan="8" class="empty">No leads match. Import leads or change the search and filters.</td></tr>';
+    $('rows').innerHTML = list.length ? list.map(function (l, i) { return row(l, i); }).join('') : '<tr><td colspan="7" class="empty">No leads match. Import leads or change the search and filters.</td></tr>';
     var heads = [].map.call(document.querySelectorAll('thead th'), function (th) { return th.textContent; });
     [].forEach.call($('rows').querySelectorAll('tr[data-id]'), function (tr) {
       [].forEach.call(tr.children, function (td, i) { if (heads[i]) td.setAttribute('data-label', heads[i]); });
@@ -3467,7 +3498,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function rowsData(arr) {
     var wl = { none: 'No website', old: 'Old or slow', ok: 'Looks fine', unknown: 'Not checked' };
     return (arr || visible()).filter(function (l) { return !l.example; }).map(function (l) {
-      return [l.name, SRC_NAMES[l.source] || 'Other', l.owner, (l.cat || l.niche), l.address, l.city, l.state, l.zip, l.rating, l.reviews, l.price, l.claimed, l.years, l.hours, l.phone, l.wa, ({ yes: 'Has WhatsApp', no: 'No WhatsApp' })[l.waStatus] || 'Not tested', l.email, l.fb, l.ig, otherSocial(l), l.website, wl[l.webStatus] || '', l.problem, l.services, l.notes, l.channel, l.status, l.followUp, score(l), l.folder || '', l.country || ''];
+      return [l.name, SRC_NAMES[l.source] || 'Other', countryOf(l), l.owner, (l.cat || l.niche), l.address, l.city, l.state, l.zip, l.rating, l.reviews, l.price, l.claimed, l.years, l.hours, l.phone, l.wa, ({ yes: 'Has WhatsApp', no: 'No WhatsApp' })[l.waStatus] || 'Not tested', l.email, l.fb, l.ig, otherSocial(l), l.website, wl[l.webStatus] || '', l.problem, l.services, l.notes, l.channel, l.status, l.followUp, score(l), l.folder || '', l.country || ''];
     });
   }
   function exportText(sep, arr) {
@@ -3535,6 +3566,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     l[f] = el.value;
     if (f === 'cat') l.cat = el.value.trim().slice(0, 60);
     if (f === 'phone') { l.phone = el.value.trim().slice(0, 40); l.waStatus = ''; if (digits(l.phone).length >= 7 && !l.channel) l.channel = ''; }
+    if (f === 'city' || f === 'state' || f === 'country') l[f] = el.value.trim().slice(0, 80);
     if (f === 'owner') l.owner = el.value.trim().slice(0, 80);
     if (f === 'email') l.email = el.value.trim().slice(0, 120);
     if (f === 'folder') { l.folder = el.value.trim().slice(0, 60); if (l.folder) lastFolder = l.folder; }
