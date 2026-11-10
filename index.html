@@ -2555,7 +2555,10 @@ window.HD_CONFIG = window.HD_CONFIG || {
     function score(u) { var r = st[u] || { ok: 0, fail: 0, ms: 4000 }; return r.ms + r.fail * 6000; }
     return OVERPASS.map(function (u, i) { return { u: u, s: score(u) + i }; }).sort(function (x, y) { return x.s - y.s; }).map(function (x) { return x.u; });
   }
+  function ovBlocked() { try { return Date.now() - (+localStorage.getItem('hd-ovfail') || 0) < 1800000; } catch (e) { return false; } }
+  function ovMark(bad) { try { if (bad) localStorage.setItem('hd-ovfail', String(Date.now())); else localStorage.removeItem('hd-ovfail'); } catch (e) {} }
   function overpassRun(q, say, ms) {
+    if (ovBlocked()) ms = 5000;
     function attempt(list) {
       return new Promise(function (resolve, reject) {
         var pending = list.length, done = false, ctrls = [], lastErr = null, hits = [], graceT = null, empties = 0;
@@ -2595,11 +2598,17 @@ window.HD_CONFIG = window.HD_CONFIG || {
     }
     function hasEl(j) { return j && j.elements && j.elements.length; }
     var ord = srvOrder();
+    var fast = ovBlocked();
     return attempt([PROXY].concat(relays(q).slice(0, 2), ord.slice(0, 3))).then(function (j) {
-      if (hasEl(j)) return j;
+      ovMark(false);
+      if (hasEl(j) || fast) return j;
       say('Double-checking with more servers...');
       return attempt(relays(q).slice(2).concat(ord.slice(3))).then(function (k) { return hasEl(k) ? k : j; }, function () { return j; });
-    }, function () { say('Trying more servers...'); return attempt(relays(q).slice(2).concat(ord.slice(3))); });
+    }, function (e) {
+      if (fast) { ovMark(true); throw e; }
+      say('Trying more servers...');
+      return attempt(relays(q).slice(2).concat(ord.slice(3))).then(function (r) { ovMark(false); return r; }, function (e2) { ovMark(true); throw e2; });
+    });
   }
   function quickOsm(terms, place, box, say) {
     var out = [], seen = {}, jobs = [], n = 0, failed = 0, lastErr = null;
@@ -2608,13 +2617,14 @@ window.HD_CONFIG = window.HD_CONFIG || {
     terms.forEach(function (t) { jobs.push({ q: t, v: m ? vb(S, W, N, E) : '', tag: t }); });
     if (m) {
       var mh = (S + N) / 2, mw = (W + E) / 2;
-      terms.slice(0, 2).forEach(function (t) {
-        [[S, W, mh, mw], [S, mw, mh, E], [mh, W, N, mw], [mh, mw, N, E]].forEach(function (c) { jobs.push({ q: t, v: vb(c[0], c[1], c[2], c[3]), tile: 1 }); });
+      var dy = (N - S) / 3, dx = (E - W) / 3;
+      terms.slice(0, 2).forEach(function (t, ti) {
+        for (var yy = 0; yy < 3; yy++) for (var xx = 0; xx < 3; xx++) { if (ti && (xx + yy) % 2) continue; jobs.push({ q: t, v: vb(S + yy * dy, W + xx * dx, S + (yy + 1) * dy, W + (xx + 1) * dx), tile: 1 }); }
       });
     } else jobs.push({ q: terms[0] + ' in ' + place, v: '' });
     var SKIP = /^(highway|boundary|place|landuse|natural|waterway|railway|route)$/;
     function next(i) {
-      if (i >= jobs.length || i >= 11 || failed >= 2 || out.length >= 80) return Promise.resolve({ quick: true, elements: out, err: lastErr });
+      if (i >= jobs.length || i >= 17 || failed >= 2 || out.length >= 80) return Promise.resolve({ quick: true, elements: out, err: lastErr });
       var jb = jobs[i];
       if (jb.tile && out.length >= 40) return next(i + 1);
       if (say && i > 0) say('Searching OpenStreetMap another way... ' + out.length + ' found');
