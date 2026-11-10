@@ -178,6 +178,7 @@ td.mono { white-space: nowrap; }
 .tag { margin-left: 6px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
 .chip { display: inline-block; font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; color: var(--muted); background: var(--panel-2); }
 .chip.accent { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.rownum { display: inline-block; min-width: 30px; text-align: center; font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .score { display: inline-block; min-width: 46px; text-align: center; font-family: var(--font-mono); font-weight: 500; border-radius: 8px; padding: 3px 8px; font-variant-numeric: tabular-nums; }
 .score.hot { background: var(--accent); color: var(--on-accent); }
 .score.warm { background: var(--accent-soft); color: var(--accent); }
@@ -1086,7 +1087,7 @@ td .chip { white-space: nowrap; }
           <table>
             <thead><tr>
               <th><input type="checkbox" id="pickAll" aria-label="Select all leads in this list"></th>
-              <th>Score</th><th>Business</th><th>Rating</th><th>Contact</th><th>Website</th><th>Status</th><th></th>
+              <th>#</th><th>Business</th><th>Rating</th><th>Contact</th><th>Website</th><th>Status</th><th></th>
             </tr></thead>
             <tbody id="rows"></tbody>
           </table>
@@ -3089,7 +3090,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   }
   function waNumber(l) {
     var n = digits(l.wa || l.phone);
-    if (!n) return '';
+    if (n.length < 7) return '';
     if (l.dial && l.dial !== '1') {
       if (/^\s*\+/.test(String(l.wa || l.phone)) || (n.indexOf(l.dial) === 0 && n.length >= l.dial.length + 7)) return n;
       return l.dial + n.replace(/^0+/, '');
@@ -3149,7 +3150,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     return '<div class="wab' + (y ? ' yes' : no ? ' no' : '') + '"><a class="wa-go" href="https://wa.me/' + n + '" target="_blank" rel="noopener" title="Open a WhatsApp chat with this number to check it">' + WA_SVG + '<span>' + (y ? 'On WhatsApp' : no ? 'No WhatsApp' : 'Check') + '</span></a>' +
       '<span class="wa-seg" role="group" aria-label="Does this number have WhatsApp?"><button type="button" data-act="wa-yes" aria-pressed="' + y + '" title="It has WhatsApp">&#10003;</button><button type="button" data-act="wa-no" aria-pressed="' + no + '" title="Not on WhatsApp">&#10005;</button></span></div>';
   }
-  function row(l) {
+  function row(l, idx) {
     var sc = score(l), t = tier(sc);
     var place = [l.cat || l.niche, [l.city, l.state || l.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
     var web = validSite(l.website)
@@ -3157,10 +3158,10 @@ window.HD_CONFIG = window.HD_CONFIG || {
       : (l.webStatus === 'none' ? '<span class="chip accent">No website</span>' : '<span class="chip">Not added</span>');
     return '<tr data-id="' + l.id + '"' + (picked[l.id] ? ' class="sel"' : '') + '>' +
       '<td><input type="checkbox" data-pick aria-label="Select ' + esc(l.name) + '"' + (picked[l.id] ? ' checked' : '') + '></td>' +
-      '<td><span class="score ' + t[0] + '" title="' + t[1] + ' lead">' + sc + '</span></td>' +
+      '<td><span class="rownum" title="Lead score ' + sc + ' (' + t[1] + ' lead)">' + ((idx || 0) + 1) + '</span></td>' +
       '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + '<div class="sub">' + esc(place) + '</div><input class="inl" data-f="owner" maxlength="80" autocomplete="off" placeholder="+ Owner name" aria-label="Owner name of ' + esc(l.name) + '" value="' + esc(l.owner || '') + '"></td>' +
       '<td class="mono">' + (l.rating ? esc(l.rating) + '★' : '–') + (l.reviews ? ' · ' + esc(l.reviews) : '') + '</td>' +
-      '<td class="ctc"><div class="mono">' + esc(l.phone || '–') + '</div><input class="inl" data-f="email" type="email" maxlength="120" autocomplete="off" placeholder="+ Email" aria-label="Email of ' + esc(l.name) + '" value="' + esc(l.email || '') + '">' + rowWa(l) + '</td>' +
+      '<td class="ctc"><input class="inl mono" data-f="phone" type="tel" inputmode="tel" maxlength="40" autocomplete="off" placeholder="+ Phone" aria-label="Phone of ' + esc(l.name) + '" value="' + esc(l.phone || '') + '"><input class="inl" data-f="email" type="email" maxlength="120" autocomplete="off" placeholder="+ Email" aria-label="Email of ' + esc(l.name) + '" value="' + esc(l.email || '') + '">' + rowWa(l) + '</td>' +
       '<td>' + web + '</td>' +
       '<td><select data-f="status" aria-label="Status of ' + esc(l.name) + '">' + opts(STAT, l.status) + '</select>' + statusLine(l) + '</td>' +
       '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button>' + (folderOf(l) ? '<button class="btn small saved" type="button" data-act="save" title="Saved in ' + esc(folderOf(l)) + ' - click to remove">Saved &#10003;</button>' : '<button class="btn small ghost" type="button" data-act="save">Save</button>') + '<button class="btn small ghost" type="button" data-act="details">Details</button><button class="btn small ghost" type="button" data-act="del" aria-label="Move ' + esc(l.name) + ' to Drafts">Delete</button></div></td></tr>';
@@ -3258,6 +3259,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var scanBtn = validSite(l.website) ? '<button class="btn small ghost" type="button" data-act="scan">' + (l.scanAt ? 'Recheck site' : 'Check site') + '</button>' : '';
     $('dDetails').innerHTML =
       '<div class="dgrid">' +
+        '<div><label for="d-phone">Phone / WhatsApp</label><input id="d-phone" type="tel" data-f="phone" maxlength="40" value="' + esc(l.phone || '') + '" placeholder="+1 713 555 0100"></div>' +
         '<div><label for="d-owner">Owner name</label><input id="d-owner" data-f="owner" maxlength="80" value="' + esc(l.owner || '') + '" placeholder="e.g. Maria"></div>' +
         '<div><label for="d-email">Email</label><input id="d-email" type="email" data-f="email" maxlength="120" value="' + esc(l.email || '') + '" placeholder="name@business.com"></div>' +
         '<div><label for="d-st">Status</label><select id="d-st" data-f="status">' + opts(STAT, l.status) + '</select></div>' +
@@ -3353,7 +3355,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     }).join('');
     Object.keys(picked).forEach(function (id) { if (!leadById(id)) delete picked[id]; });
     var list = visible();
-    $('rows').innerHTML = list.length ? list.map(row).join('') : '<tr><td colspan="8" class="empty">No leads match. Import leads or change the search and filters.</td></tr>';
+    $('rows').innerHTML = list.length ? list.map(function (l, i) { return row(l, i); }).join('') : '<tr><td colspan="8" class="empty">No leads match. Import leads or change the search and filters.</td></tr>';
     var heads = [].map.call(document.querySelectorAll('thead th'), function (th) { return th.textContent; });
     [].forEach.call($('rows').querySelectorAll('tr[data-id]'), function (tr) {
       [].forEach.call(tr.children, function (td, i) { if (heads[i]) td.setAttribute('data-label', heads[i]); });
@@ -3532,6 +3534,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var f = el.getAttribute('data-f');
     l[f] = el.value;
     if (f === 'cat') l.cat = el.value.trim().slice(0, 60);
+    if (f === 'phone') { l.phone = el.value.trim().slice(0, 40); l.waStatus = ''; if (digits(l.phone).length >= 7 && !l.channel) l.channel = ''; }
     if (f === 'owner') l.owner = el.value.trim().slice(0, 80);
     if (f === 'email') l.email = el.value.trim().slice(0, 120);
     if (f === 'folder') { l.folder = el.value.trim().slice(0, 60); if (l.folder) lastFolder = l.folder; }
