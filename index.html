@@ -2534,13 +2534,18 @@ window.HD_CONFIG = window.HD_CONFIG || {
   }
   var osmErrs = [];
   var PROXY = '/api/osm';
-  function hostOf(u) { return u === PROXY ? 'your Vercel server' : (String(u).split('/')[2] || u); }
+  function hostOf(u) { return u === PROXY ? 'your Vercel server' : /^GET:/.test(u) ? 'relay ' + (String(u).slice(4).split('/')[2] || '') : (String(u).split('/')[2] || u); }
+  function relays(q) {
+    var d = encodeURIComponent('?data=' + encodeURIComponent(q));
+    return ['GET:https://corsproxy.io/?url=' + encodeURIComponent(OVERPASS[0] + '?data=' + encodeURIComponent(q)), 'GET:https://api.allorigins.win/raw?url=' + encodeURIComponent(OVERPASS[2] + '?data=' + encodeURIComponent(q))];
+  }
   function errText() { var seen = {}, out = []; osmErrs.forEach(function (e) { if (!seen[e]) { seen[e] = 1; out.push(e); } }); return out.slice(0, 5).join('; '); }
   function srvStats() { try { return JSON.parse(localStorage.getItem('hd-srv') || '{}') || {}; } catch (e) { return {}; } }
   function srvNote(url, ok, ms) {
     try {
       var st = srvStats(), r = st[url] || { ok: 0, fail: 0, ms: 4000 };
       if (ok) { r.ok++; r.ms = Math.round(r.ms * 0.6 + ms * 0.4); r.fail = Math.max(0, r.fail - 1); } else r.fail++;
+      if (/^GET:/.test(url)) return;
       st[url] = r; localStorage.setItem('hd-srv', JSON.stringify(st));
     } catch (e) {}
   }
@@ -2565,7 +2570,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
           var c = typeof AbortController === 'function' ? new AbortController() : null, t1 = Date.now();
           ctrls[i] = c;
           var timer = setTimeout(function () { if (c) c.abort(); }, ms || 14000);
-          (url === PROXY
+          (/^GET:/.test(url) ? fetch(url.slice(4), { signal: c ? c.signal : undefined }) : url === PROXY
             ? fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: q }), signal: c ? c.signal : undefined })
             : fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q), signal: c ? c.signal : undefined })
               .catch(function (e) { if (e && e.name === 'AbortError') throw e; return fetch(url + '?data=' + encodeURIComponent(q), { signal: c ? c.signal : undefined }); }))
@@ -2589,11 +2594,11 @@ window.HD_CONFIG = window.HD_CONFIG || {
     }
     function hasEl(j) { return j && j.elements && j.elements.length; }
     var ord = srvOrder();
-    return attempt([PROXY].concat(ord.slice(0, 3))).then(function (j) {
+    return attempt([PROXY].concat(relays(q).slice(0, 1), ord.slice(0, 3))).then(function (j) {
       if (hasEl(j)) return j;
       say('Double-checking with more servers...');
-      return attempt(ord.slice(3)).then(function (k) { return hasEl(k) ? k : j; }, function () { return j; });
-    }, function () { say('Trying more servers...'); return attempt(ord.slice(3)); });
+      return attempt(relays(q).slice(1).concat(ord.slice(3))).then(function (k) { return hasEl(k) ? k : j; }, function () { return j; });
+    }, function () { say('Trying more servers...'); return attempt(relays(q).slice(1).concat(ord.slice(3))); });
   }
   function quickOsm(terms, place) {
     var out = [], seen = {}, i = 0;
