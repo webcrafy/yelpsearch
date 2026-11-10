@@ -855,7 +855,7 @@ td .chip { white-space: nowrap; }
           <select id="o-limit"><option>50</option><option selected>100</option><option>200</option></select>
         </div>
       </div>
-      <div class="row"><button class="btn" id="o-search" type="button">Search OpenStreetMap</button></div>
+      <div class="row"><button class="btn" id="o-search" type="button">Search OpenStreetMap</button> <button class="btn ghost" id="o-test" type="button">Test servers</button></div>
     </div>
 
     <div id="src-file" class="srcpane" hidden>
@@ -2532,6 +2532,9 @@ window.HD_CONFIG = window.HD_CONFIG || {
       throw e;
     });
   }
+  var osmErrs = [];
+  function hostOf(u) { return String(u).split('/')[2] || u; }
+  function errText() { var seen = {}, out = []; osmErrs.forEach(function (e) { if (!seen[e]) { seen[e] = 1; out.push(e); } }); return out.slice(0, 5).join('; '); }
   function srvStats() { try { return JSON.parse(localStorage.getItem('hd-srv') || '{}') || {}; } catch (e) { return {}; } }
   function srvNote(url, ok, ms) {
     try {
@@ -2562,6 +2565,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
           ctrls[i] = c;
           var timer = setTimeout(function () { if (c) c.abort(); }, ms || 14000);
           fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q), signal: c ? c.signal : undefined })
+            .catch(function (e) { if (e && e.name === 'AbortError') throw e; return fetch(url + '?data=' + encodeURIComponent(q), { signal: c ? c.signal : undefined }); })
             .then(function (r) { if (!r.ok) throw new Error('server busy (HTTP ' + r.status + ')'); return r.json(); })
             .then(function (j) {
               clearTimeout(timer);
@@ -2574,6 +2578,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
             .catch(function (e) {
               clearTimeout(timer); lastErr = e; if (done) return;
               srvNote(url, false, 0);
+              osmErrs.push(hostOf(url) + ': ' + (e && e.name === 'AbortError' ? 'no answer in time' : (e && e.name === 'TypeError' ? 'blocked or unreachable' : (e && e.message) || 'error')));
               if (--pending === 0) { if (hits.length || empties) finish(); else { done = true; clearTimeout(graceT); reject(lastErr); } }
             });
         });
@@ -2631,6 +2636,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function osmSearch() {
     var catText = $('o-cat').value.trim(), cityIn = $('o-city').value.trim(), country = $('o-country').value.trim(), lim = parseInt($('o-limit').value, 10) || 100;
     var tok = ++osmTok, t0 = Date.now(), base = '';
+    osmErrs = [];
     clearInterval(osmTick);
     function busy(on) { $('o-search').disabled = !!on; $('o-search').textContent = on ? 'Searching...' : 'Search OpenStreetMap'; }
     function say(t) { if (tok !== osmTok) return; base = t; $('sMsg').textContent = t; }
@@ -2661,7 +2667,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
         if (!g.length) throw new Error('could not find that place. Check the spelling, or add the country');
         var best = pickGeo(g), lat = +best.lat, lon = +best.lon;
         var stages = [{ name: 'the city', scope: bboxOf(best, 0.16, 0.02, 0.9) }, { name: 'about 40 km around', scope: bboxOf(best, 0.7, 0.2, 1.2) }];
-        var all = {}, order = [], used = 0, hasNames = cats.some(function (c) { return !c.all && c.kw; });
+        var sc0 = stages[0].scope.f, all = {}, order = [], used = 0, hasNames = cats.some(function (c) { return !c.all && c.kw; });
         function add(j) { (j.elements || []).forEach(function (el) { if (!el.tags || !el.tags.name) return; var k = (el.type || '') + ':' + (el.id || el.tags.name); if (!all[k]) { all[k] = el; el._d = hav(lat, lon, el.lat != null ? el.lat : (el.center ? el.center.lat : lat), el.lon != null ? el.lon : (el.center ? el.center.lon : lon)); order.push(k); } }); }
         function go(i) {
           say(i === 0 ? 'Searching OpenStreetMap...' : 'Only ' + order.length + ' found, searching a wider area...');
@@ -2678,7 +2684,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
             return go(i + 1);
           });
         }
-        function result(extra) { var r = { elements: order.map(function (k) { return all[k]; }), stage: stages[used].name, used: used }; for (var k in extra) r[k] = extra[k]; return r; }
+        function result(extra) { var r = { area: sc0 + (best.display_name ? ' · ' + String(best.display_name).split(',').slice(0, 2).join(',') : ''), elements: order.map(function (k) { return all[k]; }), stage: stages[used].name, used: used }; for (var k in extra) r[k] = extra[k]; return r; }
         return go(0).then(function () {
           if (order.length) return result({});
           say('Nothing tagged that way. Trying a text search...');
@@ -2686,7 +2692,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
         }, function (e) {
           if (e && e.message === 'cancelled') throw e;
           if (order.length) return result({});
-          say('OpenStreetMap servers are slow. Trying a text search...');
+          say('OpenStreetMap servers did not answer. Trying a text search...');
           return quickOsm(terms, q0).then(function (qj) { add(qj); return result({ quick: true, slow: true }); }).catch(function () { return result({ failed: true }); });
         });
       })
@@ -2718,14 +2724,15 @@ window.HD_CONFIG = window.HD_CONFIG || {
         var secs = Math.round((Date.now() - t0) / 1000);
         if (!sList.length) {
           say(j.failed
-            ? 'OpenStreetMap did not answer (its servers are busy, or an ad blocker is in the way). Wait a minute and press Search again.'
+            ? 'OpenStreetMap did not answer (' + (errText() || 'servers busy') + '). Press "Test servers" below to see which one is blocked, or turn off ad blockers for this site.'
+            : (j.quick && j.slow) ? 'The main OpenStreetMap servers failed (' + (errText() || 'no answer') + ') and the text search found nothing. Press "Test servers" below to see which one is blocked.'
             : inLedger ? 'All ' + inLedger + ' businesses found are already in your leads. Try another city, area or category.'
-            : 'Nothing is mapped on OpenStreetMap for this search around ' + (cityName || region) + '. Try the category "Everything", a related category, or the Google tab for this city.');
+            : 'The OpenStreetMap servers answered but nothing matched around ' + (cityName || region) + ' (area searched: ' + (j.area || 'n/a') + '). Try the category "Everything", a related category, or the Google tab for this city.');
         } else {
           var withPhone = shown.filter(function (o) { return digits(o.phone).length >= 7; }).length, noSite = shown.filter(function (o) { return !o.website; }).length;
           var note = ' ' + withPhone + ' have a phone number, ' + noSite + ' have no website listed.';
           if (j.used > 0 && !j.quick) note += ' The city had few, so the search covered ' + j.stage + '.';
-          if (j.quick) note += ' Found with the text search' + (j.slow ? ' because the main servers were slow' : '') + ', so some businesses may be missing.';
+          if (j.quick) note += ' Found with the text search' + (j.slow ? ' because the main servers failed (' + (errText() || 'no answer') + ')' : '') + ', so many businesses may be missing.';
           if (inLedger) note += ' ' + inLedger + ' already in your leads were left out.';
           if (items.length > lim) note += ' Showing the best ' + lim + ' of ' + items.length + '.';
           var left = shown.filter(function (o) { return o.noContact; }).length;
@@ -2846,6 +2853,23 @@ window.HD_CONFIG = window.HD_CONFIG || {
   initOsmLists();
   geoInit('o'); geoInit('g'); comboInit();
   $('o-search').addEventListener('click', osmSearch);
+  $('o-test').addEventListener('click', function () {
+    var b = $('o-test'); b.disabled = true; b.textContent = 'Testing...';
+    var q = '[out:json][timeout:10];node["amenity"="cafe"](27.94,-82.48,27.97,-82.44);out 2;', rows = [];
+    var jobs = OVERPASS.map(function (u) {
+      var t1 = Date.now();
+      return fetchT(u + '?data=' + encodeURIComponent(q), {}, 12000).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function (j) { rows.push(hostOf(u) + ': OK ' + Math.round((Date.now() - t1) / 100) / 10 + 's, ' + ((j.elements || []).length) + ' results' + (j.remark ? ' (' + j.remark.slice(0, 40) + ')' : '')); },
+        function (e) { rows.push(hostOf(u) + ': ' + (e && e.name === 'TypeError' ? 'BLOCKED (ad blocker, network or CORS)' : e.message)); });
+    });
+    var nom = fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=Tampa,Florida', {}, 12000).then(function (r) { return r.json(); }).then(function (g) { rows.push('nominatim: OK, ' + (g[0] ? String(g[0].display_name).slice(0, 40) : 'no result')); }, function (e) { rows.push('nominatim: ' + (e.name === 'TypeError' ? 'BLOCKED' : e.message)); });
+    Promise.all(jobs.concat([nom])).then(function () {
+      b.disabled = false; b.textContent = 'Test servers';
+      $('sMsg').textContent = 'Server check: ' + rows.join(' | ');
+    });
+  });
   $('c-read').addEventListener('click', readTable);
   $('c-sample').addEventListener('click', function () { $('c-paste').value = C_SAMPLE; readTable(); });
   $('c-file').addEventListener('change', function () {
