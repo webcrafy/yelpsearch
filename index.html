@@ -485,9 +485,44 @@ td.mono { white-space: nowrap; }
 .listbar input { flex: 1 1 220px; min-width: 0; }
 .listbar .lb-l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 .listsave { margin-bottom: 12px; }
-.cchips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-.cchips button { font: inherit; font-size: 12.5px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
-.cchips button:hover, .cchips button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.cb-src { display: none !important; }
+.cb { position: relative; }
+.cb-btn { width: 100%; display: flex; align-items: center; gap: 8px; text-align: left; font: inherit; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 38px; cursor: pointer; }
+.cb-btn:hover { border-color: var(--accent); }
+.cb-btn[aria-expanded="true"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.cb-val { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cb-val.ph { color: var(--muted); }
+.cb-x { flex: 0 0 auto; width: 20px; height: 20px; line-height: 18px; text-align: center; border-radius: 50%; color: var(--muted); font-size: 16px; }
+.cb-x:hover { background: var(--line); color: var(--ink); }
+.cb-chev { flex: 0 0 auto; width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cb-pop { position: absolute; left: 0; top: calc(100% + 6px); z-index: 35; width: max(100%, 280px); max-width: calc(100vw - 32px); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 36px rgba(0,0,0,.2); padding: 8px; }
+.cb-pop { scroll-margin-bottom: 84px; scroll-margin-top: 12px; }
+.cb-sw { position: relative; }
+.cb-sw svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; }
+.cb-q { padding-left: 34px !important; }
+.cb-list { list-style: none; margin: 8px 0 0; padding: 0; max-height: 260px; overflow-y: auto; overscroll-behavior: contain; }
+.cb-o { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+.cb-o.on { background: var(--panel-2); }
+.cb-o[aria-selected="true"] { color: var(--accent); font-weight: 600; }
+.cb-o svg { width: 16px; height: 16px; fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+.cb-o.custom { color: var(--accent); }
+.cb-h { padding: 8px 10px 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.cb-e { padding: 12px 10px; font-size: 13px; color: var(--muted); }
+@media (max-width: 760px) { .cb-pop { width: 100%; max-width: none; } .cb-list { max-height: 220px; } }
+td .chip { white-space: nowrap; }
+.more { position: relative; }
+.more > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.more > summary::-webkit-details-marker { display: none; }
+.more .pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; width: 270px; max-width: calc(100vw - 32px); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.18); display: flex; flex-direction: column; gap: 6px; }
+.more .pop .btn { width: 100%; justify-content: flex-start; text-align: left; }
+.more .pop .pl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 6px 2px 0; }
+.more .pop .ph { font-size: 12px; color: var(--muted); margin: 4px 2px 0; line-height: 1.4; }
+.tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.tools .f { min-width: 150px; flex: 0 1 190px; }
+.tools .grow { flex: 1 1 220px; min-width: 180px; }
+.srcrow { padding: 14px 18px 0; }
+@media (max-width: 760px) { .more .pop { right: auto; left: 0; } .tools { padding: 12px; } .srcrow { padding: 12px 12px 0; } .tools .f { flex: 1 1 140px; } .tools > .more { flex: 1 1 100%; } .tools > .more > summary { width: 100%; justify-content: center; } }
+#src-osm .grid2, #src-google .grid2 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
 .ownform { margin: 0 0 16px; }
 .ownform .og { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin: 12px 0; }
 .ownform .og .wide { grid-column: 1 / -1; }
@@ -726,7 +761,10 @@ td.mono { white-space: nowrap; }
         <a class="btn" href="#import">Import leads</a>
       </header>
       <div class="kpis" id="kpis"></div>
-      <section class="panel acct-panel" id="acctCard"></section>
+      <div class="grid-2">
+        <section class="panel"><h2>Best leads to contact first</h2><div class="list" id="topLeads"></div></section>
+        <section class="panel"><h2>Follow-ups due</h2><div class="list" id="dueList"></div></section>
+      </div>
       <div class="grid-2">
         <section class="panel"><h2>Pipeline</h2><div class="bars" id="pipe"></div></section>
         <section class="panel"><h2>Sources</h2><div class="bars" id="srcBars"></div></section>
@@ -735,10 +773,7 @@ td.mono { white-space: nowrap; }
         <section class="panel"><h2>By industry</h2><div class="bars" id="catBars"></div></section>
         <section class="panel"><h2>Saved folders</h2><div class="bars" id="folBars"></div></section>
       </div>
-      <div class="grid-2">
-        <section class="panel"><h2>Best leads to contact first</h2><div class="list" id="topLeads"></div></section>
-        <section class="panel"><h2>Follow-ups due</h2><div class="list" id="dueList"></div></section>
-      </div>
+      <section class="panel acct-panel" id="acctCard"></section>
     </section>
 
     <section id="view-import" hidden>
@@ -779,8 +814,9 @@ td.mono { white-space: nowrap; }
     <div id="src-google" class="srcpane" hidden>
       <div class="grid2">
         <div><label for="g-cat">Category (any business type)</label><input id="g-cat" list="osmCats" autocomplete="off" placeholder="Roofing, Dentist, Hotel..."></div>
-        <div><label for="g-country">Country (worldwide)</label><input id="g-country" list="countryOpts" autocomplete="off" placeholder="United States, Spain, Mexico..."><div class="cchips" data-for="g-country"></div></div>
-        <div><label for="g-city">City</label><input id="g-city" autocomplete="off" placeholder="Houston, TX  or  Madrid  or  Ciudad de M\u00e9xico"></div>
+        <div><label for="g-country">Country (worldwide)</label><input id="g-country" list="countryOpts" autocomplete="off" placeholder="United States, Spain, Mexico..."></div>
+        <div id="g-regionWrap" hidden><label for="g-region">State / region / division</label><select id="g-region"></select></div>
+        <div><label for="g-city">City or district</label><input id="g-city" autocomplete="off" placeholder="Pick one, or type any city"></div>
       </div>
       <label class="check" id="g-langRow" hidden><input type="checkbox" id="g-lang" checked> Search with Spanish business names (finds more in this country)</label>
       <div class="grid2">
@@ -808,11 +844,12 @@ td.mono { white-space: nowrap; }
     </div>
 
     <div id="src-osm" class="srcpane" hidden>
-      <p class="hint">Works in any country and any city. Type any business type (a list of 70+ is built in, anything else is searched by name), or several separated by commas. Pick "Everything" to get all businesses with a phone or website. Free, no key and no card. OpenStreetMap lists many businesses with phone and website, but coverage is patchy and there are no ratings. If a business shows no website here, check Google before you assume it has none. This works on the deployed site, not in the Claude preview.</p>
+      <p class="hint">Any country, any city. Pick a country, then a state or division and a city or district, or type any city. Free, no key. OpenStreetMap has phones and websites but no ratings, and coverage varies by city, so check Google before you assume a business has no website. Works on the deployed site, not in the Claude preview.</p>
       <div class="grid2">
         <div><label for="o-cat">Category (any business type)</label><input id="o-cat" list="osmCats" autocomplete="off" placeholder="Roofing, Dentist, Hotel... or several: Roofing, Plumbing"></div>
-        <div><label for="o-country">Country (anywhere in the world)</label><input id="o-country" list="countryOpts" autocomplete="off" placeholder="United States, Bangladesh, UK..."><div class="cchips" data-for="o-country"></div></div>
-        <div><label for="o-city">City</label><input id="o-city" autocomplete="off" placeholder="Houston, TX  or  Dhaka  or  London"></div>
+        <div><label for="o-country">Country (anywhere in the world)</label><input id="o-country" list="countryOpts" autocomplete="off" placeholder="United States, Bangladesh, UK..."></div>
+        <div id="o-regionWrap" hidden><label for="o-region">State / region / division</label><select id="o-region"></select></div>
+        <div><label for="o-city">City or district</label><input id="o-city" autocomplete="off" placeholder="Pick one, or type any city"></div>
         <div>
           <label for="o-limit">Max results</label>
           <select id="o-limit"><option>50</option><option selected>100</option><option>200</option></select>
@@ -836,10 +873,8 @@ td.mono { white-space: nowrap; }
       <div class="listsave">
         <label for="sCat">Category for these leads</label>
         <input id="sCat" list="catOpts" maxlength="60" autocomplete="off" placeholder="e.g. Plumbing">
-        <p class="hint" style="margin:6px 0 12px">Every lead you add below is saved under this category. Pick one you already use, or type your own.</p>
-        <label for="sListName">Save into list</label>
-        <input id="sListName" list="listOpts" maxlength="80" autocomplete="off">
-        <p class="hint" style="margin:6px 0 0">Named by source, industry and city. Change it, or pick an existing list to add to it.</p>
+        <p class="hint" style="margin:6px 0 10px">Every lead you add below is saved under this category. Pick one you already use, or type your own.</p>
+        <p class="hint" style="margin:0">These leads are kept under their source (Yelp, Google or OpenStreetMap), and you can search them by industry later.</p>
       </div>
       <div class="found" id="sFound"></div>
       <div class="row" style="margin-top: 12px">
@@ -939,8 +974,9 @@ td.mono { white-space: nowrap; }
       <header class="page-head">
         <div>
           <h1>Leads</h1>
-          <p class="lede">Score = website gap (35) + rating (15) + review count (20) + a known contact route (15) + claimed Yelp page (10) + years in business (5).</p>
+          <p class="lede">Pick where the leads came from, then an industry. Highest score first.</p>
         </div>
+        <div class="row"><button class="btn" id="addOwn" type="button">+ Add my own lead</button></div>
       </header>
       <section class="panel ownform" id="ownForm" hidden aria-label="Add your own lead">
         <h2>Add your own lead</h2>
@@ -961,13 +997,10 @@ td.mono { white-space: nowrap; }
         <p class="status" id="ownMsg" role="status"></p>
       </section>
       <section class="panel flush" aria-label="Lead list">
-        <div class="toolbar">
-          <div class="grow"><label for="q">Search</label><input id="q" type="search" autocomplete="off" placeholder="Name, city, category or phone"></div>
-          <div class="f"><label for="sort">Sort</label>
-            <select id="sort"><option value="score">Highest score</option><option value="new">Newest</option><option value="name">Name</option></select>
-          </div>
+        <div class="srcrow"><div class="seg" id="srcFilter" role="group" aria-label="Lead source"></div></div>
+        <div class="tools">
+          <div class="grow"><label for="q">Search</label><input id="q" type="search" autocomplete="off" placeholder="Name, city, industry or phone"></div>
           <div class="f"><label for="catSel">Industry</label><select id="catSel"><option value="all">All industries</option></select></div>
-          <div class="f"><label for="listSel">List</label><select id="listSel"><option value="all">All lists</option></select></div>
           <div class="f"><label for="filter">Show</label>
             <select id="filter">
               <option value="all">All leads</option>
@@ -978,27 +1011,31 @@ td.mono { white-space: nowrap; }
               <option value="wa:yes">WhatsApp: has it</option><option value="wa:untested">WhatsApp: not tested</option><option value="wa:no">WhatsApp: no</option>
             </select>
           </div>
-          <div class="f" style="min-width: 120px; flex: 0 0 120px"><label for="cc" style="white-space: nowrap">Country code</label><input id="cc" inputmode="numeric" maxlength="3" autocomplete="off"></div>
-          <button class="btn" id="addOwn" type="button">+ Add my own lead</button>
-          <button class="btn ghost" id="scanAll" type="button">Check all sites</button>
-          <button class="btn ghost" id="copySheets" type="button">Copy for Google Sheets</button>
-          <button class="btn ghost" id="copyCsv" type="button">Copy CSV</button>
-          <button class="btn ghost" id="clearEx" type="button" hidden>Remove examples</button>
-        </div>
-        <div class="subbar"><div class="seg" id="srcFilter" role="group" aria-label="Lead source"></div></div>
-        <div class="listbar" id="listBar" hidden>
-          <span class="lb-l">List name</span>
-          <input id="listName" maxlength="80" aria-label="Rename this list" autocomplete="off">
-          <button class="btn small ghost" id="listCsv" type="button">Download .csv</button>
-          <button class="btn small ghost" id="listJson" type="button">Download backup</button>
-          <button class="btn small ghost" id="listDel" type="button">Move list to Drafts</button>
+          <div class="f"><label for="sort">Sort</label>
+            <select id="sort"><option value="score">Highest score</option><option value="new">Newest</option><option value="name">Name</option></select>
+          </div>
+          <details class="more" id="moreMenu">
+            <summary class="btn ghost">More &#9662;</summary>
+            <div class="pop">
+              <div class="pl">Export what is shown</div>
+              <button class="btn small ghost" id="dlCsv" type="button">Download .csv</button>
+              <button class="btn small ghost" id="dlJson" type="button">Download backup</button>
+              <button class="btn small ghost" id="copySheets" type="button">Copy for Google Sheets</button>
+              <button class="btn small ghost" id="copyCsv" type="button">Copy CSV</button>
+              <div class="pl">Tools</div>
+              <button class="btn small ghost" id="scanAll" type="button">Check all websites</button>
+              <button class="btn small ghost" id="clearEx" type="button" hidden>Remove examples</button>
+              <div class="pl">WhatsApp country code</div>
+              <input id="cc" inputmode="numeric" maxlength="3" autocomplete="off" aria-label="WhatsApp country code">
+              <div class="ph">Used for local phone numbers without a country code. Score = website gap 35, rating 15, reviews 20, contact route 15, claimed page 10, years 5.</div>
+            </div>
+          </details>
         </div>
         <div class="listbar" id="catBar" hidden>
-          <span class="lb-l">Category name</span>
-          <input id="catName" maxlength="60" aria-label="Rename this category" autocomplete="off">
-          <span class="sub">Rename it to change the category of all these leads.</span>
+          <span class="lb-l">Industry name</span>
+          <input id="catName" maxlength="60" aria-label="Rename this industry" autocomplete="off">
+          <span class="sub">Rename it to change the industry of all these leads.</span>
         </div>
-        <datalist id="listOpts"></datalist>
         <datalist id="catOpts"></datalist>
         <datalist id="folderOpts"></datalist>
         <div class="bulkbar" id="bulkbar" hidden>
@@ -1860,6 +1897,402 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var first = ['United States', 'United Kingdom', 'Spain', 'Mexico'];
     COUNTRIES = first.map(function (n) { return COUNTRIES.filter(function (c) { return c.split('|')[0] === n; })[0]; }).concat(COUNTRIES.filter(function (c) { return first.indexOf(c.split('|')[0]) < 0; }));
   })();
+  var GEO_RAW = [
+    '@United States|us',
+    'Alabama|AL|Birmingham,Montgomery,Huntsville,Mobile,Tuscaloosa',
+    'Alaska|AK|Anchorage,Fairbanks,Juneau',
+    'Arizona|AZ|Phoenix,Tucson,Mesa,Chandler,Scottsdale,Glendale,Tempe,Gilbert',
+    'Arkansas|AR|Little Rock,Fayetteville,Fort Smith,Springdale,Jonesboro',
+    'California|CA|Los Angeles,San Diego,San Jose,San Francisco,Fresno,Sacramento,Long Beach,Oakland,Bakersfield,Anaheim,Riverside,Irvine,Santa Ana,Stockton',
+    'Colorado|CO|Denver,Colorado Springs,Aurora,Fort Collins,Boulder,Lakewood',
+    'Connecticut|CT|Bridgeport,New Haven,Stamford,Hartford,Waterbury',
+    'Delaware|DE|Wilmington,Dover,Newark',
+    'District of Columbia|DC|Washington',
+    'Florida|FL|Jacksonville,Miami,Tampa,Orlando,St. Petersburg,Fort Lauderdale,Tallahassee,Hialeah,Cape Coral,Fort Myers,Naples,West Palm Beach',
+    'Georgia|GA|Atlanta,Savannah,Augusta,Columbus,Macon,Athens',
+    'Hawaii|HI|Honolulu,Hilo,Kailua',
+    'Idaho|ID|Boise,Meridian,Nampa,Idaho Falls',
+    'Illinois|IL|Chicago,Aurora,Naperville,Joliet,Rockford,Springfield,Peoria',
+    'Indiana|IN|Indianapolis,Fort Wayne,Evansville,South Bend,Carmel',
+    'Iowa|IA|Des Moines,Cedar Rapids,Davenport,Sioux City,Iowa City',
+    'Kansas|KS|Wichita,Overland Park,Kansas City,Topeka,Olathe',
+    'Kentucky|KY|Louisville,Lexington,Bowling Green,Owensboro',
+    'Louisiana|LA|New Orleans,Baton Rouge,Shreveport,Lafayette,Lake Charles',
+    'Maine|ME|Portland,Lewiston,Bangor',
+    'Maryland|MD|Baltimore,Columbia,Germantown,Silver Spring,Frederick',
+    'Massachusetts|MA|Boston,Worcester,Springfield,Cambridge,Lowell',
+    'Michigan|MI|Detroit,Grand Rapids,Warren,Sterling Heights,Ann Arbor,Lansing',
+    'Minnesota|MN|Minneapolis,Saint Paul,Rochester,Duluth',
+    'Mississippi|MS|Jackson,Gulfport,Southaven,Biloxi',
+    'Missouri|MO|Kansas City,Saint Louis,Springfield,Columbia',
+    'Montana|MT|Billings,Missoula,Bozeman',
+    'Nebraska|NE|Omaha,Lincoln,Bellevue',
+    'Nevada|NV|Las Vegas,Henderson,Reno,North Las Vegas',
+    'New Hampshire|NH|Manchester,Nashua,Concord',
+    'New Jersey|NJ|Newark,Jersey City,Paterson,Elizabeth,Trenton',
+    'New Mexico|NM|Albuquerque,Las Cruces,Santa Fe,Rio Rancho',
+    'New York|NY|New York,Buffalo,Rochester,Yonkers,Syracuse,Albany',
+    'North Carolina|NC|Charlotte,Raleigh,Greensboro,Durham,Winston-Salem,Fayetteville',
+    'North Dakota|ND|Fargo,Bismarck,Grand Forks',
+    'Ohio|OH|Columbus,Cleveland,Cincinnati,Toledo,Akron,Dayton',
+    'Oklahoma|OK|Oklahoma City,Tulsa,Norman,Broken Arrow',
+    'Oregon|OR|Portland,Salem,Eugene,Gresham,Bend',
+    'Pennsylvania|PA|Philadelphia,Pittsburgh,Allentown,Erie,Reading,Scranton',
+    'Rhode Island|RI|Providence,Warwick,Cranston',
+    'South Carolina|SC|Charleston,Columbia,North Charleston,Greenville,Myrtle Beach',
+    'South Dakota|SD|Sioux Falls,Rapid City',
+    'Tennessee|TN|Nashville,Memphis,Knoxville,Chattanooga,Clarksville',
+    'Texas|TX|Houston,San Antonio,Dallas,Austin,Fort Worth,El Paso,Arlington,Corpus Christi,Plano,Laredo,Lubbock,Irving,Garland,Frisco,McKinney,Amarillo,Katy,Sugar Land,Pasadena,The Woodlands',
+    'Utah|UT|Salt Lake City,West Valley City,Provo,Orem,St. George',
+    'Vermont|VT|Burlington,Montpelier',
+    'Virginia|VA|Virginia Beach,Norfolk,Chesapeake,Richmond,Arlington,Alexandria',
+    'Washington|WA|Seattle,Spokane,Tacoma,Vancouver,Bellevue',
+    'West Virginia|WV|Charleston,Huntington,Morgantown',
+    'Wisconsin|WI|Milwaukee,Madison,Green Bay,Kenosha',
+    'Wyoming|WY|Cheyenne,Casper,Laramie',
+    '@United Kingdom|gb',
+    'England||London,Birmingham,Manchester,Liverpool,Leeds,Sheffield,Bristol,Newcastle upon Tyne,Nottingham,Leicester,Southampton,Brighton,Oxford,Cambridge,Reading,Coventry,Bradford,Hull,Plymouth,Norwich,Portsmouth,Derby,Stoke-on-Trent,Wolverhampton,Exeter,York,Bournemouth,Milton Keynes',
+    'Scotland||Glasgow,Edinburgh,Aberdeen,Dundee,Inverness,Stirling',
+    'Wales||Cardiff,Swansea,Newport,Wrexham',
+    'Northern Ireland||Belfast,Derry,Lisburn,Newry',
+    '@Spain|es',
+    'Andalucía||Sevilla,Málaga,Córdoba,Granada,Cádiz,Almería,Marbella,Jerez de la Frontera',
+    'Cataluña||Barcelona,Girona,Tarragona,Lleida,Sabadell,Badalona',
+    'Comunidad de Madrid||Madrid,Alcalá de Henares,Getafe,Móstoles,Alcobendas',
+    'Comunidad Valenciana||Valencia,Alicante,Elche,Castellón de la Plana,Benidorm',
+    'País Vasco||Bilbao,San Sebastián,Vitoria-Gasteiz',
+    'Galicia||Vigo,A Coruña,Santiago de Compostela,Ourense,Lugo',
+    'Castilla y León||Valladolid,Burgos,Salamanca,León,Segovia',
+    'Castilla-La Mancha||Toledo,Albacete,Guadalajara,Ciudad Real',
+    'Aragón||Zaragoza,Huesca,Teruel',
+    'Islas Baleares||Palma,Ibiza,Mahón',
+    'Canarias||Las Palmas de Gran Canaria,Santa Cruz de Tenerife,Arona',
+    'Región de Murcia||Murcia,Cartagena,Lorca',
+    'Asturias||Oviedo,Gijón,Avilés',
+    'Navarra||Pamplona,Tudela',
+    'Cantabria||Santander,Torrelavega',
+    'La Rioja||Logroño',
+    'Extremadura||Badajoz,Cáceres,Mérida',
+    '@Mexico|mx',
+    'Aguascalientes||Aguascalientes',
+    'Baja California||Tijuana,Mexicali,Ensenada',
+    'Baja California Sur||La Paz,Los Cabos',
+    'Campeche||Campeche,Ciudad del Carmen',
+    'Chiapas||Tuxtla Gutiérrez,Tapachula,San Cristóbal de las Casas',
+    'Chihuahua||Ciudad Juárez,Chihuahua',
+    'Ciudad de México||Ciudad de México',
+    'Coahuila||Saltillo,Torreón,Monclova',
+    'Colima||Colima,Manzanillo',
+    'Durango||Durango,Gómez Palacio',
+    'Estado de México||Toluca,Ecatepec,Naucalpan,Nezahualcóyotl,Tlalnepantla',
+    'Guanajuato||León,Irapuato,Celaya,Guanajuato,San Miguel de Allende',
+    'Guerrero||Acapulco,Chilpancingo',
+    'Hidalgo||Pachuca',
+    'Jalisco||Guadalajara,Zapopan,Tlaquepaque,Puerto Vallarta',
+    'Michoacán||Morelia,Uruapan',
+    'Morelos||Cuernavaca',
+    'Nayarit||Tepic',
+    'Nuevo León||Monterrey,San Nicolás de los Garza,Guadalupe,San Pedro Garza García',
+    'Oaxaca||Oaxaca de Juárez',
+    'Puebla||Puebla,Tehuacán',
+    'Querétaro||Querétaro',
+    'Quintana Roo||Cancún,Playa del Carmen,Chetumal,Tulum',
+    'San Luis Potosí||San Luis Potosí',
+    'Sinaloa||Culiacán,Mazatlán,Los Mochis',
+    'Sonora||Hermosillo,Ciudad Obregón,Nogales',
+    'Tabasco||Villahermosa',
+    'Tamaulipas||Reynosa,Matamoros,Tampico,Nuevo Laredo',
+    'Tlaxcala||Tlaxcala',
+    'Veracruz||Veracruz,Xalapa,Coatzacoalcos',
+    'Yucatán||Mérida',
+    'Zacatecas||Zacatecas',
+    '@Bangladesh|bd',
+    'Dhaka Division||Dhaka,Faridpur,Gazipur,Gopalganj,Kishoreganj,Madaripur,Manikganj,Munshiganj,Narayanganj,Narsingdi,Rajbari,Shariatpur,Tangail',
+    'Chattogram Division||Chattogram,Bandarban,Brahmanbaria,Chandpur,Cumilla,Cox\'s Bazar,Feni,Khagrachhari,Lakshmipur,Noakhali,Rangamati',
+    'Rajshahi Division||Rajshahi,Bogura,Joypurhat,Naogaon,Natore,Chapainawabganj,Pabna,Sirajganj',
+    'Khulna Division||Khulna,Bagerhat,Chuadanga,Jashore,Jhenaidah,Kushtia,Magura,Meherpur,Narail,Satkhira',
+    'Barishal Division||Barishal,Barguna,Bhola,Jhalokati,Patuakhali,Pirojpur',
+    'Sylhet Division||Sylhet,Habiganj,Moulvibazar,Sunamganj',
+    'Rangpur Division||Rangpur,Dinajpur,Gaibandha,Kurigram,Lalmonirhat,Nilphamari,Panchagarh,Thakurgaon',
+    'Mymensingh Division||Mymensingh,Jamalpur,Netrokona,Sherpur',
+    '@Canada|ca',
+    'Ontario|ON|Toronto,Ottawa,Mississauga,Hamilton,London',
+    'Quebec|QC|Montreal,Quebec City,Laval',
+    'British Columbia|BC|Vancouver,Victoria,Surrey',
+    'Alberta|AB|Calgary,Edmonton',
+    'Manitoba|MB|Winnipeg',
+    'Saskatchewan|SK|Saskatoon,Regina',
+    'Nova Scotia|NS|Halifax',
+    'New Brunswick|NB|Moncton,Saint John',
+    'Newfoundland and Labrador|NL|St. John\'s',
+    '@Australia|au',
+    'New South Wales||Sydney,Newcastle,Wollongong',
+    'Victoria||Melbourne,Geelong',
+    'Queensland||Brisbane,Gold Coast,Cairns',
+    'Western Australia||Perth',
+    'South Australia||Adelaide',
+    'Tasmania||Hobart',
+    'Australian Capital Territory||Canberra',
+    'Northern Territory||Darwin',
+    '@India|in',
+    'Maharashtra||Mumbai,Pune,Nagpur',
+    'Delhi||New Delhi',
+    'Karnataka||Bengaluru,Mysuru',
+    'Tamil Nadu||Chennai,Coimbatore,Madurai',
+    'Telangana||Hyderabad',
+    'West Bengal||Kolkata',
+    'Gujarat||Ahmedabad,Surat,Vadodara',
+    'Rajasthan||Jaipur,Jodhpur',
+    'Uttar Pradesh||Lucknow,Kanpur,Noida',
+    'Kerala||Kochi,Thiruvananthapuram',
+    'Punjab||Ludhiana,Amritsar',
+    'Haryana||Gurugram,Faridabad',
+    '@Pakistan|pk',
+    'Punjab||Lahore,Faisalabad,Rawalpindi',
+    'Sindh||Karachi,Hyderabad',
+    'Khyber Pakhtunkhwa||Peshawar',
+    'Islamabad Capital Territory||Islamabad',
+    'Balochistan||Quetta',
+    '@United Arab Emirates|ae|Dubai,Abu Dhabi,Sharjah,Ajman,Ras Al Khaimah',
+    '@Ireland|ie|Dublin,Cork,Galway,Limerick',
+    '@New Zealand|nz|Auckland,Wellington,Christchurch,Hamilton',
+    '@Sri Lanka|lk|Colombo,Kandy,Galle',
+    '@Nepal|np|Kathmandu,Pokhara',
+    '@Malaysia|my|Kuala Lumpur,George Town,Johor Bahru',
+    '@Singapore|sg|Singapore',
+    '@Indonesia|id|Jakarta,Surabaya,Bandung,Denpasar',
+    '@Philippines|ph|Manila,Cebu City,Davao',
+    '@Thailand|th|Bangkok,Chiang Mai,Phuket',
+    '@Vietnam|vn|Ho Chi Minh City,Hanoi,Da Nang',
+    '@Japan|jp|Tokyo,Osaka,Kyoto,Yokohama',
+    '@South Korea|kr|Seoul,Busan',
+    '@China|cn|Shanghai,Beijing,Shenzhen,Guangzhou',
+    '@Hong Kong|hk|Hong Kong',
+    '@Saudi Arabia|sa|Riyadh,Jeddah,Dammam',
+    '@Qatar|qa|Doha',
+    '@Kuwait|kw|Kuwait City',
+    '@Oman|om|Muscat',
+    '@Bahrain|bh|Manama',
+    '@Turkey|tr|Istanbul,Ankara,Izmir',
+    '@Israel|il|Tel Aviv,Jerusalem',
+    '@Egypt|eg|Cairo,Alexandria',
+    '@South Africa|za|Johannesburg,Cape Town,Durban',
+    '@Nigeria|ng|Lagos,Abuja',
+    '@Kenya|ke|Nairobi',
+    '@Ghana|gh|Accra',
+    '@Morocco|ma|Casablanca,Marrakesh',
+    '@Germany|de|Berlin,Munich,Hamburg,Frankfurt,Cologne',
+    '@France|fr|Paris,Lyon,Marseille,Toulouse,Nice',
+    '@Italy|it|Rome,Milan,Naples,Turin',
+    '@Portugal|pt|Lisbon,Porto',
+    '@Netherlands|nl|Amsterdam,Rotterdam',
+    '@Belgium|be|Brussels,Antwerp',
+    '@Switzerland|ch|Zurich,Geneva',
+    '@Austria|at|Vienna',
+    '@Sweden|se|Stockholm',
+    '@Norway|no|Oslo',
+    '@Denmark|dk|Copenhagen',
+    '@Finland|fi|Helsinki',
+    '@Poland|pl|Warsaw,Kraków',
+    '@Czechia|cz|Prague',
+    '@Greece|gr|Athens',
+    '@Romania|ro|Bucharest',
+    '@Hungary|hu|Budapest',
+    '@Ukraine|ua|Kyiv',
+    '@Russia|ru|Moscow,Saint Petersburg',
+    '@Brazil|br|São Paulo,Rio de Janeiro',
+    '@Argentina|ar|Buenos Aires,Córdoba',
+    '@Chile|cl|Santiago',
+    '@Colombia|co|Bogotá,Medellín',
+    '@Peru|pe|Lima',
+    '@Costa Rica|cr|San José',
+    '@Puerto Rico|pr|San Juan'
+  ];
+  var GEO = {};
+  (function () {
+    var cur = null;
+    GEO_RAW.forEach(function (l) {
+      if (l.charAt(0) === '@') { var a = l.slice(1).split('|'); cur = GEO[a[0]] = { cc: a[1], regions: [], flat: a[2] ? a[2].split(',') : [] }; }
+      else { var q = l.split('|'); cur.regions.push({ name: q[0], code: q[1], cities: q[2].split(',') }); }
+    });
+  })();
+  function geoCanon(c) {
+    var l = String(c || '').trim().toLowerCase();
+    var al = { usa: 'united states', us: 'united states', america: 'united states', uk: 'united kingdom', britain: 'united kingdom', 'great britain': 'united kingdom', uae: 'united arab emirates' };
+    if (al[l]) l = al[l];
+    for (var k in GEO) if (k.toLowerCase() === l) return k;
+    return '';
+  }
+  function geoRegion(pre) {
+    var sel = $(pre + '-region'), o = sel.selectedOptions && sel.selectedOptions[0];
+    return { name: sel.value || '', code: o ? (o.getAttribute('data-code') || '') : '' };
+  }
+  function geoCities(pre) {
+    var ct = geoCanon($(pre + '-country').value), g = ct && GEO[ct], rg = geoRegion(pre).name, out = [], seen = {};
+    if (!g) return [];
+    function add(c) { if (!seen[c]) { seen[c] = 1; out.push(c); } }
+    if (rg) g.regions.forEach(function (r) { if (r.name === rg) r.cities.forEach(add); });
+    else { g.regions.forEach(function (r) { r.cities.forEach(add); }); g.flat.forEach(add); }
+    return out;
+  }
+  function comboSyncPre(pre) { ['country', 'region', 'city', 'cat'].forEach(function (k) { comboSync(pre + '-' + k); }); }
+  function geoRefresh(pre) {
+    var ct = geoCanon($(pre + '-country').value), g = ct && GEO[ct], sel = $(pre + '-region');
+    if (g && g.regions.length) {
+      $(pre + '-regionWrap').hidden = false;
+      if (sel.getAttribute('data-ct') !== ct) {
+        sel.innerHTML = '<option value="">Any state / region</option>' + g.regions.map(function (r) { return '<option value="' + esc(r.name) + '" data-code="' + esc(r.code || '') + '">' + esc(r.name) + '</option>'; }).join('');
+        sel.setAttribute('data-ct', ct); sel.value = '';
+      }
+    } else {
+      $(pre + '-regionWrap').hidden = true; sel.innerHTML = '<option value=""></option>'; sel.removeAttribute('data-ct');
+    }
+    comboSyncPre(pre);
+  }
+  function geoRemote(pre, v) {
+    var ct = geoCanon($(pre + '-country').value), g = ct && GEO[ct], rg = geoRegion(pre).name;
+    var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=8&addressdetails=1&q=' + encodeURIComponent([v, rg].filter(Boolean).join(', ')) + (g ? '&countrycodes=' + g.cc : '');
+    return fetchT(url, {}, 8000).then(function (r) { return r.ok ? r.json() : []; }).then(function (arr) {
+      var names = [];
+      arr.forEach(function (a) { if (a['class'] && a['class'] !== 'place' && a['class'] !== 'boundary') return; var n = a.name || (a.address && (a.address.city || a.address.town || a.address.village)); if (n && names.indexOf(n) < 0) names.push(n); });
+      return names;
+    }).catch(function () { return []; });
+  }
+  function geoInit(pre) {
+    var prev = geoCanon($(pre + '-country').value);
+    function again() { var now = geoCanon($(pre + '-country').value); if (now !== prev) { prev = now; $(pre + '-city').value = ''; } geoRefresh(pre); }
+    $(pre + '-country').addEventListener('input', again);
+    $(pre + '-country').addEventListener('change', again);
+    $(pre + '-region').addEventListener('change', function () { $(pre + '-city').value = ''; geoRefresh(pre); $(pre + '-city').dispatchEvent(new Event('input', { bubbles: true })); });
+    geoRefresh(pre);
+  }
+  /* searchable dropdowns that sit on top of the hidden inputs */
+  var COMBOS = {}, comboOpen = null;
+  function cbNorm(x) { x = String(x || '').toLowerCase(); try { x = x.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (e) {} return x; }
+  function comboSync(id) { if (COMBOS[id]) COMBOS[id].sync(); }
+  function comboSyncAll() { Object.keys(COMBOS).forEach(comboSync); }
+  function comboMake(cfg) {
+    var src = $(cfg.id);
+    if (!src || COMBOS[cfg.id]) return;
+    src.classList.add('cb-src'); src.tabIndex = -1;
+    var wrap = document.createElement('div'); wrap.className = 'cb';
+    wrap.innerHTML = '<button type="button" class="cb-btn" id="' + cfg.id + '-btn" aria-haspopup="listbox" aria-expanded="false"><span class="cb-val"></span><span class="cb-x" role="button" aria-label="Clear" hidden>&times;</span><svg class="cb-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' +
+      '<div class="cb-pop" hidden><div class="cb-sw"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input class="cb-q" type="text" autocomplete="off" aria-label="Search" placeholder="' + esc(cfg.search || 'Search...') + '"></div><ul class="cb-list" role="listbox"></ul></div>';
+    src.parentNode.insertBefore(wrap, src.nextSibling);
+    var lab = document.querySelector('label[for="' + cfg.id + '"]'); if (lab) lab.setAttribute('for', cfg.id + '-btn');
+    var btn = wrap.querySelector('.cb-btn'), val = wrap.querySelector('.cb-val'), x = wrap.querySelector('.cb-x'), pop = wrap.querySelector('.cb-pop'), q = wrap.querySelector('.cb-q'), ul = wrap.querySelector('.cb-list');
+    var st = { wrap: wrap, items: [], active: 0, extra: [], timer: 0 };
+    COMBOS[cfg.id] = st;
+    function sel() { return cfg.multi ? String(src.value || '').split(',').map(function (t) { return t.trim(); }).filter(Boolean) : (src.value ? [src.value] : []); }
+    function labelText() {
+      if (src.tagName === 'SELECT') { var o = src.selectedOptions && src.selectedOptions[0]; return src.value && o ? o.textContent : ''; }
+      return cfg.multi ? sel().join(', ') : String(src.value || '');
+    }
+    st.sync = function () {
+      var t = labelText();
+      val.textContent = t || cfg.placeholder; val.classList.toggle('ph', !t);
+      x.hidden = !t || src.tagName === 'SELECT';
+    };
+    function fire() { src.dispatchEvent(new Event('input', { bubbles: true })); src.dispatchEvent(new Event('change', { bubbles: true })); }
+    function build() {
+      var raw = q.value.trim(), qq = cbNorm(raw), base = cfg.items(raw), seen = {}, list = [], out = [], i;
+      base.concat(st.extra.map(function (n) { return { v: n, l: n }; })).forEach(function (it) {
+        if (it.h) { list.push(it); return; }
+        if (seen[it.v]) return; seen[it.v] = 1;
+        if (!qq || cbNorm(it.l || it.v).indexOf(qq) >= 0) list.push(it);
+      });
+      for (i = 0; i < list.length; i++) { if (list[i].h && (i + 1 >= list.length || list[i + 1].h)) continue; out.push(list[i]); }
+      var count = 0, cut = [];
+      out.forEach(function (it) { if (it.h) { cut.push(it); return; } if (count < 90) { cut.push(it); count++; } });
+      var more = out.filter(function (it) { return !it.h; }).length > 90;
+      if (cfg.custom && raw && !seen[raw] && !list.some(function (it) { return !it.h && cbNorm(it.v) === qq; })) cut.push({ v: raw, l: 'Use "' + raw + '"', custom: true });
+      st.items = cut; st.more = more;
+    }
+    function render() {
+      build();
+      var cur = sel(), html = '', k = 0, firstSel = -1;
+      st.items.forEach(function (it, i) {
+        if (it.h) { html += '<li class="cb-h" role="presentation">' + esc(it.h) + '</li>'; return; }
+        var on = cur.indexOf(it.v) >= 0;
+        if (on && firstSel < 0) firstSel = i;
+        html += '<li class="cb-o' + (it.custom ? ' custom' : '') + '" role="option" data-i="' + i + '" aria-selected="' + on + '"><span>' + esc(it.l || it.v) + '</span>' + (on ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>' : '') + '</li>';
+      });
+      if (!st.items.some(function (it) { return !it.h; })) html += '<li class="cb-e">' + esc(cfg.empty || 'No matches') + '</li>';
+      if (st.more) html += '<li class="cb-e">Type to narrow the list</li>';
+      ul.innerHTML = html;
+      var first = -1; st.items.forEach(function (it, i) { if (first < 0 && !it.h) first = i; });
+      if (st.active < 0 || !st.items[st.active] || st.items[st.active].h) st.active = firstSel >= 0 ? firstSel : first;
+      mark();
+    }
+    function mark() {
+      [].forEach.call(ul.querySelectorAll('.cb-o'), function (li) {
+        var on = +li.getAttribute('data-i') === st.active; li.classList.toggle('on', on);
+        if (on) { var t = li.offsetTop, h = li.offsetHeight; if (t < ul.scrollTop) ul.scrollTop = t - 4; else if (t + h > ul.scrollTop + ul.clientHeight) ul.scrollTop = t + h - ul.clientHeight + 4; }
+      });
+    }
+    function move(d) {
+      var i = st.active + d;
+      while (i >= 0 && i < st.items.length && st.items[i].h) i += d;
+      if (i >= 0 && i < st.items.length) { st.active = i; mark(); }
+    }
+    function pick(it) {
+      if (!it || it.h) return;
+      if (cfg.multi) {
+        var a = sel(), i = a.indexOf(it.v);
+        if (i >= 0) a.splice(i, 1); else a.push(it.v);
+        src.value = a.join(', '); fire(); st.sync(); q.value = ''; render(); q.focus();
+      } else {
+        src.value = it.v; fire(); st.sync(); close(); btn.focus();
+      }
+    }
+    function open() {
+      if (comboOpen && comboOpen !== st) comboOpen.close();
+      comboOpen = st; pop.hidden = false; btn.setAttribute('aria-expanded', 'true');
+      q.value = ''; st.extra = []; st.active = -1; render(); q.focus({ preventScroll: true });
+      setTimeout(function () { try { pop.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }, 30);
+    }
+    function close() { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); if (comboOpen === st) comboOpen = null; }
+    st.close = close;
+    btn.addEventListener('click', function (e) { if (e.target.closest('.cb-x')) return; if (pop.hidden) open(); else close(); });
+    btn.addEventListener('keydown', function (e) { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (pop.hidden) open(); } });
+    x.addEventListener('click', function (e) { e.stopPropagation(); src.value = ''; fire(); st.sync(); });
+    q.addEventListener('input', function () {
+      st.active = -1; render();
+      if (cfg.remote) {
+        clearTimeout(st.timer);
+        var v = q.value.trim();
+        if (v.length >= 3) st.timer = setTimeout(function () {
+          cfg.remote(v).then(function (names) { if (q.value.trim() === v && !pop.hidden) { st.extra = names; render(); } });
+        }, 500);
+      }
+    });
+    q.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+      else if (e.key === 'Enter') { e.preventDefault(); pick(st.items[st.active]); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); btn.focus(); }
+      else if (e.key === 'Tab') close();
+    });
+    ul.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    ul.addEventListener('click', function (e) { var li = e.target.closest('.cb-o'); if (li) pick(st.items[+li.getAttribute('data-i')]); });
+    ul.addEventListener('mousemove', function (e) { var li = e.target.closest('.cb-o'); if (li && +li.getAttribute('data-i') !== st.active) { st.active = +li.getAttribute('data-i'); mark(); } });
+    st.sync();
+  }
+  document.addEventListener('mousedown', function (e) { if (comboOpen && !comboOpen.wrap.contains(e.target)) comboOpen.close(); });
+  function comboInit() {
+    function mk(n) { return { v: n, l: n }; }
+    var pri = ['United States', 'United Kingdom', 'Spain', 'Mexico'];
+    function countryItems() {
+      var rest = COUNTRIES.map(function (c) { return c.split('|')[0]; }).filter(function (n) { return pri.indexOf(n) < 0; }).sort();
+      return [{ h: 'Popular' }].concat(pri.map(mk), [{ h: 'All countries' }], rest.map(mk));
+    }
+    ['o', 'g'].forEach(function (pre) {
+      comboMake({ id: pre + '-country', items: countryItems, custom: true, placeholder: 'Select country', search: 'Search countries...' });
+      comboMake({ id: pre + '-region', items: function () { return [].map.call($(pre + '-region').options, function (o) { return { v: o.value, l: o.textContent || 'Any state / region' }; }); }, placeholder: 'Any state / region', search: 'Search states or regions...', empty: 'Pick a country first' });
+      comboMake({ id: pre + '-city', items: function () { return geoCities(pre).map(mk); }, custom: true, remote: function (v) { return geoRemote(pre, v); }, placeholder: 'Select city or district', search: 'Search, or type any city...', empty: 'Pick a country first, or type any city name' });
+      comboMake({ id: pre + '-cat', items: function () { return [mk('Everything (any business)')].concat(OSM_CATS.map(function (c) { return mk(c.label); })); }, custom: true, multi: pre === 'o', placeholder: 'Select business type', search: 'Search business types...' });
+    });
+  }
   var ES_NAMES = {"Plumbing":"Fontanero","HVAC":"Aire acondicionado","Electrician":"Electricista","Roofing":"Tejados","Landscaping":"Jardinería","Cleaning Service":"Servicio de limpieza","Painter":"Pintor","Carpenter":"Carpintero","Builder":"Empresa de construcción","Locksmith":"Cerrajero","Pest Control":"Control de plagas","Moving Company":"Mudanzas","Auto Repair":"Taller mecánico","Car Dealer":"Concesionario de coches","Car Wash":"Lavado de coches","Restaurant":"Restaurante","Cafe":"Cafetería","Fast Food":"Comida rápida","Bar & Pub":"Bar","Bakery":"Panadería","Butcher":"Carnicería","Grocery":"Supermercado","Hair Salon":"Peluquería","Beauty":"Salón de belleza","Spa & Massage":"Spa","Tattoo":"Tatuajes","Gym & Fitness":"Gimnasio","Dentist":"Dentista","Doctor & Clinic":"Clínica","Hospital":"Hospital","Pharmacy":"Farmacia","Optician":"Óptica","Physiotherapy":"Fisioterapeuta","Veterinary":"Veterinario","Pet Shop":"Tienda de mascotas","Lawyer":"Abogado","Accountant":"Asesoría contable","Insurance":"Seguros","Real Estate":"Inmobiliaria","Architect":"Arquitecto","Marketing & Advertising":"Agencia de marketing","IT & Software":"Informática","Photography":"Fotógrafo","Printing":"Imprenta","Travel Agency":"Agencia de viajes","Hotel":"Hotel","Bank & Finance":"Banco","Clothing":"Tienda de ropa","Florist":"Floristería","Furniture":"Muebles","Electronics":"Electrónica","Hardware":"Ferretería","Laundry & Dry Cleaning":"Lavandería","School & Tutoring":"Academia","Daycare":"Guardería","Event & Wedding":"Bodas y eventos","Funeral":"Funeraria"};
   var ES_COUNTRIES = ['spain', 'mexico', 'argentina', 'chile', 'colombia', 'peru', 'costa rica', 'puerto rico'];
   var OSM_CATS = OSM_CAT_RAW.map(function (r) {
@@ -1868,14 +2301,6 @@ window.HD_CONFIG = window.HD_CONFIG || {
   });
   function initOsmLists() {
     $('osmCats').innerHTML = '<option value="Everything (any business)"></option>' + OSM_CATS.map(function (c) { return '<option value="' + esc(c.label) + '"></option>'; }).join('');
-    [].forEach.call(document.querySelectorAll('.cchips'), function (box) {
-      var tgt = box.getAttribute('data-for');
-      box.innerHTML = ['United States', 'United Kingdom', 'Spain', 'Mexico'].map(function (n) { return '<button type="button" data-c="' + n + '">' + n + '</button>'; }).join('');
-      box.addEventListener('click', function (e) {
-        var b = e.target.closest('button[data-c]'); if (!b) return;
-        $(tgt).value = b.getAttribute('data-c'); $(tgt).dispatchEvent(new Event('input', { bubbles: true }));
-      });
-    });
     $('countryOpts').innerHTML = COUNTRIES.map(function (c) { return '<option value="' + esc(c.split('|')[0]) + '"></option>'; }).join('');
   }
   function dialOf(country) {
@@ -1974,15 +2399,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var nice = String(searchCtx.niche || bn || '').trim();
     $('sCat').value = own ? '' : (sList.length ? nice.replace(/\s+/g, ' ').replace(/(^|[\s\/-])([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); }) : '');
     $('sCat').placeholder = own ? "Keep each lead's own category" : 'e.g. Plumbing';
-    lastCityGuess = bc;
-    $('sListName').value = sList.length ? autoListName(curSrc, $('sCat').value || bn, bc) : '';
-    autoName = $('sListName').value;
   }
-  var lastCityGuess = '', autoName = '';
-  $('sCat').addEventListener('input', function () {
-    var cur = $('sListName').value;
-    if (cur === autoName || !cur) { autoName = autoListName(curSrc, this.value || '', lastCityGuess); $('sListName').value = autoName; }
-  });
   function netFail(e, what) {
     if (e && e.name !== 'TypeError' && e.message) { $('sMsg').textContent = what + ' said: ' + e.message; return; }
     $('sMsg').textContent = 'Could not reach ' + what + '. This works on the deployed site (Vercel), not inside the Claude preview, because the preview blocks requests to other sites.';
@@ -2013,17 +2430,20 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function isEs(country) { return ES_COUNTRIES.indexOf(String(country || '').trim().toLowerCase()) >= 0; }
   function gBuild() {
     var cat = $('g-cat').value.split(/[,;]/)[0].trim(), city = $('g-city').value.trim(), country = $('g-country').value.trim();
+    var rg = geoRegion('g'), rgl = rg.code || rg.name;
     var es = isEs(country);
     $('g-langRow').hidden = !es;
-    if (!cat && !city) return;
+    if (!cat && !city && !rg.name) return;
     var r = cat ? osmResolveOne(cat) : null, term = cat;
     if (r && !r.all && es && $('g-lang').checked && ES_NAMES[r.label]) term = ES_NAMES[r.label];
     else if (r && r.all) term = 'negocios';
-    var loc = [city, country].filter(Boolean).join(', ');
+    var parts = [];
+    [city, rgl, country].forEach(function (x) { if (x && !parts.some(function (y) { return y.toLowerCase() === x.toLowerCase(); })) parts.push(x); });
+    var loc = parts.join(', ');
     $('g-query').value = [term, loc && 'in ' + loc].filter(Boolean).join(' ');
     if (es && $('g-lang').checked) $('g-query').value = $('g-query').value.replace(/ in /, ' en ');
   }
-  ['g-cat', 'g-country', 'g-city', 'g-lang'].forEach(function (id) { $(id).addEventListener('input', gBuild); $(id).addEventListener('change', gBuild); });
+  ['g-cat', 'g-country', 'g-region', 'g-city', 'g-lang'].forEach(function (id) { $(id).addEventListener('input', gBuild); $(id).addEventListener('change', gBuild); });
   $('g-open').addEventListener('click', function () {
     gBuild();
     var q = $('g-query').value.trim();
@@ -2033,10 +2453,11 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function googleCtx() {
     var cat = $('g-cat').value.split(/[,;]/)[0].trim(), cityIn = $('g-city').value.trim(), country = $('g-country').value.trim();
     var ctx = ctxFromQuery($('g-query').value);
-    if (cat || cityIn) {
+    var rgg = geoRegion('g');
+    if (cat || cityIn || rgg.name) {
       var r = cat ? osmResolveOne(cat) : null;
       var lm0 = cityIn.match(/^(.*?)(?:,\s*([A-Za-z]{2})|\s+([A-Z]{2}))\s*$/);
-      ctx = { niche: r && !r.all ? r.label : (cat && !r ? cat : ctx.niche), city: lm0 ? lm0[1].trim() : (cityIn.split(',')[0].trim() || ctx.city), state: lm0 ? (lm0[2] || lm0[3]).toUpperCase() : '' };
+      ctx = { niche: r && !r.all ? r.label : (cat && !r ? cat : ctx.niche), city: lm0 && !rgg.name ? lm0[1].trim() : (cityIn.split(',')[0].trim() || (rgg.name ? '' : ctx.city)), state: rgg.code || (lm0 && !rgg.name ? (lm0[2] || lm0[3]).toUpperCase() : rgg.name) };
     }
     if (country) { ctx.country = country; ctx.dial = dialOf(country); }
     else if (ctx.state) { ctx.dial = '1'; }
@@ -2127,12 +2548,13 @@ window.HD_CONFIG = window.HD_CONFIG || {
     function say(t) { $('sMsg').textContent = t; }
     var cats = osmResolve(catText);
     if (!cats.length) { say('Type a business type first, such as Roofing, Dentist, Hotel, or several separated by commas. Or type Everything.'); return; }
-    if (!cityIn) { say('Enter a city. You can add the country in the Country box.'); return; }
-    var lm0 = cityIn.match(/^(.*?)(?:,\s*([A-Za-z]{2})|\s+([A-Z]{2}))\s*$/), lm = lm0 ? [lm0[0], lm0[1], lm0[2] || lm0[3]] : null;
+    var rgo = geoRegion('o'), region = rgo.name, regCode = rgo.code;
+    if (!cityIn && !region) { say('Pick a country, then a state/region and a city or district. Or type any city.'); return; }
+    var lm0 = (region || !cityIn) ? null : cityIn.match(/^(.*?)(?:,\s*([A-Za-z]{2})|\s+([A-Z]{2}))\s*$/), lm = lm0 ? [lm0[0], lm0[1], lm0[2] || lm0[3]] : null;
     var dial = dialOf(country) || (lm && !country ? '1' : '');
     var single = cats.length === 1 && !cats[0].all;
-    searchCtx = { niche: single ? cats[0].label : '', city: lm ? lm[1].trim() : cityIn.split(',')[0].trim(), state: lm ? lm[2].toUpperCase() : '' };
-    var q0 = [cityIn, country].filter(Boolean).join(', ');
+    searchCtx = { niche: single ? cats[0].label : '', city: cityIn ? (lm ? lm[1].trim() : cityIn.split(',')[0].trim()) : '', state: regCode || (lm ? lm[2].toUpperCase() : region) };
+    var q0 = [cityIn, region, country].filter(Boolean).join(', ');
     say('Step 1 of 2: finding the city...');
     fetchT('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q0), {}, 15000)
       .then(function (r) { if (!r.ok) throw new Error('city lookup failed (HTTP ' + r.status + ')'); return r.json(); })
@@ -2184,7 +2606,6 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var bk = parseBackup(raw);
     if (bk) {
       showFound(bk.items, 'your backup file');
-      if (bk.list) $('sListName').value = bk.list;
       return;
     }
     var r = parseTable(raw);
@@ -2219,7 +2640,6 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var base = { niche: '', city: '', state: '', rating: '', reviews: '', phone: '', website: '', webStatus: 'unknown', problem: '', channel: '', status: 'New', followUp: '', example: false, owner: '', address: '', zip: '', price: '', claimed: 'unknown', years: '', hours: '', email: '', wa: '', fb: '', ig: '', services: '', notes: '' };
     var added = 0, dup = 0, first = null;
     var catIn = ($('sCat').value || '').trim().slice(0, 60);
-    var listName = ($('sListName').value || '').trim().slice(0, 80) || autoListName(curSrc, catIn || searchCtx.niche, searchCtx.city);
     [].forEach.call(boxes, function (b) {
       if (!b.checked) return;
       var f = sList[+b.getAttribute('data-i')];
@@ -2239,13 +2659,13 @@ window.HD_CONFIG = window.HD_CONFIG || {
       });
       if (exists) { dup++; return; }
       if (!l.channel) l.channel = l.wa ? 'WhatsApp' : l.email ? 'Email' : l.ig ? 'Instagram' : l.fb ? 'Facebook' : '';
-      l.id = uid(); l.added = Date.now() + added; l.source = f.source || curSrc; l.list = listName;
+      l.id = uid(); l.added = Date.now() + added; l.source = f.source || curSrc; l.list = SRC_NAMES[l.source] || 'Other';
       leads.push(l); if (!first) first = l.id; added++;
     });
     if (first) selected = first;
     save(); render(); renderDraft();
-    if (added) { curList = listName; curCat = 'all'; }
-    $('sMsg').textContent = 'Added ' + added + ' to the list "' + listName + '"' + (dup ? ', skipped ' + dup + ' already in your leads' : '') + '. Open a business page to fill in its website and contact details with Add a lead.';
+    if (added) { ledgerSrc = curSrc; curCat = 'all'; }
+    $('sMsg').textContent = 'Added ' + added + ' to ' + (SRC_NAMES[curSrc] || 'your leads') + (catIn ? ' \u203a ' + catIn : '') + (dup ? ', skipped ' + dup + ' already in your leads' : '') + '. Open a business page to fill in its website and contact details with Add a lead.';
     sList = []; renderFound();
   }
   function setAll(v) {
@@ -2265,8 +2685,9 @@ window.HD_CONFIG = window.HD_CONFIG || {
   $('s-sample').addEventListener('click', function () { $('s-url').value = S_URL; $('s-paste').value = S_SAMPLE; yelpFind(); });
   $('g-search').addEventListener('click', googleSearch);
   $('g-find').addEventListener('click', googleFind);
-  $('g-sample').addEventListener('click', function () { $('g-cat').value = 'Plumbing'; $('g-country').value = 'United States'; $('g-city').value = 'Houston, TX'; gBuild(); $('g-paste').value = G_SAMPLE; googleFind(); });
+  $('g-sample').addEventListener('click', function () { $('g-cat').value = 'Plumbing'; $('g-country').value = 'United States'; geoRefresh('g'); $('g-region').value = 'Texas'; geoRefresh('g'); $('g-city').value = 'Houston'; comboSyncAll(); gBuild(); $('g-paste').value = G_SAMPLE; googleFind(); });
   initOsmLists();
+  geoInit('o'); geoInit('g'); comboInit();
   $('o-search').addEventListener('click', osmSearch);
   $('c-read').addEventListener('click', readTable);
   $('c-sample').addEventListener('click', function () { $('c-paste').value = C_SAMPLE; readTable(); });
@@ -2295,7 +2716,6 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var f = $('filter').value, s = $('sort').value;
     var list = leads.filter(function (l) {
       if (ledgerSrc !== 'all' && (l.source || 'yelp') !== ledgerSrc) return false;
-      if (curList !== 'all' && listOf(l) !== curList) return false;
       if (curCat !== 'all' && catOf(l) !== curCat) return false;
       var q = ($('q').value || '').trim().toLowerCase();
       if (q && [l.name, l.niche, l.cat, l.city, l.state, l.phone, l.website].join(' ').toLowerCase().indexOf(q) === -1) return false;
@@ -2513,8 +2933,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       '<div class="dgrid">' +
         '<div><label for="d-web">Website status</label><select id="d-web" data-f="webStatus">' + opts(WEB, l.webStatus) + '</select></div>' +
         '<div><label for="d-chan">Reach via</label><select id="d-chan" data-f="channel">' + opts(CHAN, l.channel) + '</select></div>' +
-        '<div class="span"><label for="d-list">List</label><input id="d-list" data-f="list" list="listOpts" maxlength="80" value="' + esc(listOf(l) === 'Unsorted' ? '' : listOf(l)) + '" placeholder="Unsorted"></div>' +
-        '<div class="span"><label for="d-cat">Category</label><input id="d-cat" data-f="cat" list="catOpts" maxlength="60" value="' + esc(l.cat || firstCat(l.niche)) + '" placeholder="e.g. Plumbing"></div>' +
+                '<div class="span"><label for="d-cat">Category</label><input id="d-cat" data-f="cat" list="catOpts" maxlength="60" value="' + esc(l.cat || firstCat(l.niche)) + '" placeholder="e.g. Plumbing"></div>' +
         '<div class="span"><label for="d-folder">Saved folder (empty = not saved)</label><input id="d-folder" data-f="folder" list="folderOpts" maxlength="60" value="' + esc(folderOf(l)) + '" placeholder="e.g. Shortlist"></div>' +
         '<div class="span"><label for="d-site">Website address</label><input id="d-site" data-f="website" placeholder="paste the website here" value="' + esc(validSite(l.website) ? l.website : '') + '"></div>' +
       '</div>' +
@@ -2541,21 +2960,9 @@ window.HD_CONFIG = window.HD_CONFIG || {
     if (!(document.activeElement && $('dDetails').contains(document.activeElement))) renderDetails(l);
   }
 
-  function renderLists() {
-    var by = {};
-    leads.forEach(function (l) { var n = listOf(l); by[n] = (by[n] || 0) + 1; });
-    var names = Object.keys(by).sort(function (x, y) { return x.localeCompare(y); });
-    if (curList !== 'all' && !by[curList]) curList = 'all';
-    $('listSel').innerHTML = '<option value="all">All lists (' + leads.length + ')</option>' + names.map(function (n) {
-      return '<option value="' + esc(n) + '"' + (n === curList ? ' selected' : '') + '>' + esc(n) + ' (' + by[n] + ')</option>';
-    }).join('');
-    $('listOpts').innerHTML = names.filter(function (n) { return n !== 'Unsorted'; }).map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('');
-    $('listBar').hidden = curList === 'all';
-    if (curList !== 'all' && document.activeElement !== $('listName')) $('listName').value = curList;
-  }
   function groupCount(arr, fn) { var by = {}; arr.forEach(function (l) { var k = fn(l); if (k) by[k] = (by[k] || 0) + 1; }); return by; }
   function renderCats() {
-    var inList = leads.filter(function (l) { return (curList === 'all' || listOf(l) === curList) && (ledgerSrc === 'all' || (l.source || 'yelp') === ledgerSrc); });
+    var inList = leads.filter(function (l) { return (ledgerSrc === 'all' || (l.source || 'yelp') === ledgerSrc); });
     var by = groupCount(inList, catOf);
     var names = Object.keys(by).sort(function (a, b) { return by[b] - by[a] || a.localeCompare(b); });
     if (curCat !== 'all' && !by[curCat]) curCat = 'all';
@@ -2603,8 +3010,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
     }).join('');
   }
   function render() {
-    renderLists(); renderCats();
-    var inList = leads.filter(function (l) { return (curList === 'all' || listOf(l) === curList) && (curCat === 'all' || catOf(l) === curCat); });
+    renderCats();
+    var inList = leads.filter(function (l) { return (curCat === 'all' || catOf(l) === curCat); });
     var counts = { all: inList.length };
     inList.forEach(function (l) { var s = l.source || 'yelp'; counts[s] = (counts[s] || 0) + 1; });
     if (ledgerSrc !== 'all' && !counts[ledgerSrc]) ledgerSrc = 'all';
@@ -2905,7 +3312,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
       toast('Saved ' + name);
     } catch (e) { copyText(text); }
   }
-  function listLeads() { return leads.filter(function (l) { return !l.example && listOf(l) === curList; }); }
+  function viewLabel() { return [ledgerSrc === 'all' ? 'All sources' : (SRC_NAMES[ledgerSrc] || ledgerSrc), curCat === 'all' ? '' : curCat].filter(Boolean).join(' \u203a '); }
+  function viewLeads() { return visible().filter(function (l) { return !l.example; }); }
   function ownOpen(on) {
     $('ownForm').hidden = !on;
     if (on) { $('ownMsg').textContent = ''; $('own-name').focus(); $('ownForm').scrollIntoView({ block: 'nearest' }); }
@@ -2992,36 +3400,17 @@ window.HD_CONFIG = window.HD_CONFIG || {
     confirmClear = false; save(); render(); toast('Folder emptied (leads are still in Leads)');
   });
   window.addEventListener('hashchange', function () { if ((location.hash || '') !== '#saved') { curFolder = ''; confirmClear = false; } renderSaved(); });
-  $('listSel').addEventListener('change', function () { curList = this.value; ledgerSrc = 'all'; picked = {}; render(); });
-  $('listName').addEventListener('change', function () {
-    var nn = this.value.trim().slice(0, 80), old = curList;
-    if (!nn || nn === old || old === 'all') { this.value = old === 'all' ? '' : old; return; }
-    leads.forEach(function (l) { if (listOf(l) === old) l.list = nn; });
-    curList = nn; save(); render(); toast('List renamed');
+  $('dlCsv').addEventListener('click', function () {
+    var t = exportText(',', viewLeads());
+    if (!t) { toast('Nothing to download here'); return; }
+    saveFile(slug(viewLabel()) + '.csv', t, 'text/csv;charset=utf-8');
   });
-  $('listCsv').addEventListener('click', function () {
-    var t = exportText(',', listLeads());
-    if (!t) { toast('This list is empty'); return; }
-    saveFile(slug(curList) + '.csv', t, 'text/csv;charset=utf-8');
+  $('dlJson').addEventListener('click', function () {
+    var arr = viewLeads();
+    if (!arr.length) { toast('Nothing to download here'); return; }
+    saveFile(slug(viewLabel()) + '.hunting-desk.json', JSON.stringify({ app: 'hunting-desk', version: 1, list: viewLabel(), exported: new Date().toISOString(), leads: arr }, null, 1), 'application/json');
   });
-  $('listJson').addEventListener('click', function () {
-    var arr = listLeads();
-    if (!arr.length) { toast('This list is empty'); return; }
-    var data = { app: 'hunting-desk', version: 1, list: curList, exported: new Date().toISOString(), leads: arr };
-    saveFile(slug(curList) + '.hunting-desk.json', JSON.stringify(data, null, 1), 'application/json');
-  });
-  var listDelT = null;
-  $('listDel').addEventListener('click', function () {
-    var b = this;
-    if (b.getAttribute('data-sure') !== '1') {
-      b.setAttribute('data-sure', '1'); b.textContent = 'Click again to confirm';
-      clearTimeout(listDelT); listDelT = setTimeout(function () { b.removeAttribute('data-sure'); b.textContent = 'Move list to Drafts'; }, 3000);
-      return;
-    }
-    clearTimeout(listDelT); b.removeAttribute('data-sure'); b.textContent = 'Move list to Drafts';
-    var ids = listLeads().map(function (l) { return l.id; });
-    curList = 'all'; moveToDrafts(ids);
-  });
+  document.addEventListener('click', function (e) { var m = $('moreMenu'); if (m && m.open && !m.contains(e.target)) m.open = false; });
   $('srcFilter').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-s]'); if (!b) return;
     ledgerSrc = b.getAttribute('data-s'); render();
