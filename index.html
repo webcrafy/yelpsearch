@@ -382,7 +382,7 @@ td.webc { min-width: 150px; }
 .facts { display: flex; gap: 8px 20px; flex-wrap: wrap; margin: 22px 0 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--muted); }
 .facts li { display: flex; gap: 7px; align-items: center; }
 .facts svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-.stage { position: relative; min-width: 0; padding-bottom: 106px; }
+.stage { position: relative; min-width: 0; padding-bottom: 132px; }
 .pv { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
 .pv-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 13px 16px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 14px; }
 .pv-tag { font-family: var(--font-mono); font-size: 11px; font-weight: 400; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
@@ -655,6 +655,69 @@ td.mo { z-index: 40 !important; }
 .amenu button.saved { color: var(--accent); } .amenu button.saved .gi { color: var(--accent); fill: currentColor; }
 .amenu button.danger:hover { color: #C0502F; background: color-mix(in srgb, #C0502F 12%, transparent); } .amenu button.danger:hover .gi { color: #C0502F; }
 @media (max-width: 760px) { .acts .ib.ibmsg { flex: 1 1 auto; justify-content: center; } .acts .ib.more { flex: none; width: 44px; } }
+
+/* ---- name chips + drawer actions ---- */
+.bmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.bmeta .catl, .bmeta .srcl { display: inline-flex; align-items: center; height: 22px; padding: 0 10px; border-radius: 999px; font-size: 11.5px; line-height: 1; white-space: nowrap; }
+.bmeta .catl { background: var(--panel-2); border: 1px solid var(--line); color: var(--ink); max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.bmeta .srcl { background: var(--accent-soft); color: var(--accent); border: 1px solid transparent; font-weight: 500; }
+.watest { margin-top: 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.watest .wab { margin-top: 0; font-size: 13px; }
+.watest .wab .wa-go { padding: 6px 13px 6px 11px; }
+.watest .wa-seg button { width: 34px; font-size: 13px; }
+.dlab { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 500; }
+.dacts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.dacts .btn { display: inline-flex; align-items: center; gap: 7px; border-radius: 10px; padding: 7px 12px; text-decoration: none; }
+.dacts .btn .gi, .dacts .btn .pin { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.dacts .btn.danger { margin-left: auto; }
+.dacts .btn.danger:hover { color: #C0502F; border-color: #C0502F; background: color-mix(in srgb, #C0502F 12%, transparent); }
+@media (max-width: 760px) { .dacts .btn { flex: 1 1 auto; justify-content: center; } .dacts .btn.danger { margin-left: 0; } }
+
+/* ---- landing extras ---- */
+.hp-av { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 15px; }
+.hp-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0 3px; }
+.hp-chips span { font-size: 11px; line-height: 1; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); white-space: nowrap; }
+.hp-chips span.s { background: var(--accent-soft); color: var(--accent); border-color: transparent; font-weight: 500; }
+.hp-st { display: inline-block; font-size: 11.5px; font-weight: 500; color: var(--ink); padding: 3px 9px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--c); margin-bottom: 4px; }
+.hp-lead { color: var(--muted); font-size: 16.5px; max-width: 62ch; margin: 12px 0 0; }
+.hp-ticks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; font-size: 13.5px; }
+.hp-ticks li { display: flex; gap: 8px; align-items: center; }
+.hp-ticks svg { width: 15px; height: 15px; flex: none; stroke: var(--accent); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.hp-src { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+.hp-sc { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px; min-width: 0; }
+.hp-sc h3 { font-size: 18px; }
+.hp-badge { display: inline-block; margin-top: 8px; font-size: 11.5px; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.hp-sc dl { margin: 14px 0 0; display: grid; gap: 10px; }
+.hp-sc dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.hp-sc dd { margin: 2px 0 0; font-size: 14px; }
+.home .bx, .hp-sc { transition: transform .18s ease, border-color .18s ease; }
+.home .bx:hover, .hp-sc:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+@media (max-width: 900px) { .hp-src { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .hp-src { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .home .bx, .hp-sc { transition: none; } .home .bx:hover, .hp-sc:hover { transform: none; } }
+/* ---- overview ---- */
+.ov-today { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.ov-card { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: center; text-align: left; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; transition: border-color .15s, transform .15s; }
+.ov-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.ov-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ov-ic { grid-row: span 3; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.ov-ic svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ov-n { font-family: var(--font-display); font-size: 26px; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.ov-l { font-size: 13.5px; font-weight: 500; }
+.ov-s { font-size: 12.5px; color: var(--muted); }
+.ov-card.warn .ov-ic { background: color-mix(in srgb, #C0502F 16%, transparent); color: #C0502F; }
+.ov-card.warn .ov-s { color: #C0502F; font-weight: 500; }
+.kpi .s { margin-top: 4px; font-size: 12.5px; color: var(--muted); }
+.kpi.hot .s { color: inherit; opacity: .85; }
+.ov-av { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 14px; }
+.ov-start ol { margin: 4px 0 0; padding: 0; list-style: none; counter-reset: os; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.ov-start li { counter-increment: os; display: grid; gap: 4px; align-content: start; }
+.ov-start li::before { content: counter(os); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent, #fff); font-family: var(--font-mono); font-size: 13px; margin-bottom: 4px; }
+.ov-start li span { color: var(--muted); font-size: 14px; }
+.ov-start { margin-bottom: 16px; }
+#pipeNote { margin: 12px 0 0; }
+#pipeNote:empty { display: none; }
+@media (max-width: 760px) { .ov-start ol { grid-template-columns: minmax(0, 1fr); } }
 </style>
 
 <div id="boot" role="status" aria-live="polite"><i></i><span id="bootMsg">Loading your desk...</span></div>
@@ -662,7 +725,7 @@ td.mo { z-index: 40 !important; }
   <header class="home-nav">
     <div class="hw">
       <div class="brand"><span class="mark" aria-hidden="true"></span><span>Hunting Desk</span></div>
-      <nav class="nl" aria-label="Page"><button type="button" data-scroll="h-features">Features</button><button type="button" data-scroll="h-how">How it works</button><button type="button" data-scroll="h-faq">FAQ</button></nav>
+      <nav class="nl" aria-label="Page"><button type="button" data-scroll="h-features">Features</button><button type="button" data-scroll="h-sources">Sources</button><button type="button" data-scroll="h-how">How it works</button><button type="button" data-scroll="h-faq">FAQ</button></nav>
       <button class="btn small ghost hide-sm" data-prefs="1" type="button">Appearance</button>
       <button class="btn small ghost" data-go="in" type="button">Log in</button>
       <button class="btn small" data-go="up" type="button">Sign up</button>
@@ -673,23 +736,24 @@ td.mo { z-index: 40 !important; }
       <div>
         <span class="pill"><i></i>For freelancers and agencies selling websites</span>
         <h1>Find the businesses that need a website. <em>Reach them first.</em></h1>
-        <p class="sub">Hunting Desk turns the lists you collect into a scored, private lead book, with a message ready to send on WhatsApp, email or DM.</p>
+        <p class="sub">Hunting Desk collects local businesses from Yelp, Google Maps and OpenStreetMap in any country, shows which ones have a phone but no website, and gives you a message ready to send on WhatsApp, email or DM.</p>
         <div class="cta">
           <button class="btn" data-go="up" type="button">Create account</button>
           <button class="btn ghost" data-go="in" type="button">Log in</button>
         </div>
         <ul class="facts">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Works in any country</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Map search needs no API key</li>
           <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Private to your account</li>
           <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Phone and desktop</li>
-          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>You stay in control</li>
         </ul>
       </div>
-      <div class="stage" aria-label="Example lead book">
+      <div class="stage" aria-label="Example leads">
         <div class="pv">
-          <div class="pv-head"><span>Lead book</span><span class="pv-tag">Example data</span></div>
-          <div class="pv-row"><span class="pv-score hot" data-v="100">100</span><div><div class="pv-name">Bayou City Plumbing</div><div class="pv-sub">Plumbing, Houston TX &middot; 4.5 stars, 128 reviews</div></div><div class="pv-gap"><b>No website</b><br>Facebook found</div></div>
-          <div class="pv-row"><span class="pv-score hot" data-v="75">75</span><div><div class="pv-name">Westheimer Barber Co.</div><div class="pv-sub">Barber, Houston TX &middot; 4.8 stars, 64 reviews</div></div><div class="pv-gap"><b>Old website</b><br>Instagram found</div></div>
-          <div class="pv-row"><span class="pv-score" data-v="16">16</span><div><div class="pv-name">Sunrise Auto Repair</div><div class="pv-sub">Auto repair, Austin TX &middot; 3.9 stars, 22 reviews</div></div><div class="pv-gap">Site looks fine</div></div>
+          <div class="pv-head"><span>Leads</span><span class="pv-tag">Example data</span></div>
+          <div class="pv-row"><span class="hp-av">B</span><div><div class="pv-name">Bayou City Plumbing</div><div class="hp-chips"><span>Plumbing</span><span class="s">Yelp</span></div><div class="pv-sub">Houston, TX, United States</div></div><div class="pv-gap"><span class="hp-st" style="--c:#6B8FD6">New</span><br><b>No website</b></div></div>
+          <div class="pv-row"><span class="hp-av">P</span><div><div class="pv-name">Peluquer&iacute;a Sol</div><div class="hp-chips"><span>Hair Salon</span><span class="s">Google</span></div><div class="pv-sub">Madrid, Spain</div></div><div class="pv-gap"><span class="hp-st" style="--c:#D6A560">Messaged</span><br><b>On WhatsApp</b></div></div>
+          <div class="pv-row"><span class="hp-av">K</span><div><div class="pv-name">Kings Road Auto Repair</div><div class="hp-chips"><span>Auto Repair</span><span class="s">OpenStreetMap</span></div><div class="pv-sub">Leicester, United Kingdom</div></div><div class="pv-gap"><span class="hp-st" style="--c:#4FA3A5">Replied</span><br>Follow up Fri</div></div>
         </div>
         <div class="msg">
           <div class="t"><b>Drafted message</b><span>WhatsApp, example</span></div>
@@ -699,31 +763,40 @@ td.mo { z-index: 40 !important; }
     </section>
 
     <div class="strip">
-      <div><b>100</b><span>point lead score</span></div>
-      <div><b>5</b><span>ways to import</span></div>
-      <div><b>3</b><span>message channels</span></div>
-      <div><b>3 days</b><span>to follow-up reminder</span></div>
+      <div><b>74</b><span>business categories ready to search</span></div>
+      <div><b>Any</b><span>country, state and city</span></div>
+      <div><b>5</b><span>ways to bring leads in</span></div>
+      <div><b>3</b><span>message channels: WhatsApp, email, DM</span></div>
     </div>
 
     <section class="sec" id="h-features">
       <div class="kick">Features</div>
       <h2>Everything between a list and a reply</h2>
+      <p class="hp-lead">One place to collect businesses, check how to reach them, write to them and remember who to chase.</p>
       <div class="bento">
-        <div class="bx s3"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4 19h16"/></svg></span><h3>Import from anywhere</h3><p>Paste a Yelp page or search results, paste from Google Maps, search OpenStreetMap, use your own Google Places key, or load a CSV.</p>
-          <div class="chips"><span>Yelp</span><span>Google Maps</span><span>OpenStreetMap</span><span>Places API</span><span>CSV</span></div></div>
-        <div class="bx s3"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9"/><path d="M12 19V5"/><path d="M19 19v-7"/></svg></span><h3>Scored for you</h3><p>Every lead gets a score out of 100. Hot leads rise to the top.</p>
-          <div class="fac">
-            <div><span>Website gap</span><i style="width:100%"></i><em>35</em></div>
-            <div><span>Review count</span><i style="width:57%"></i><em>20</em></div>
-            <div><span>Rating</span><i style="width:43%"></i><em>15</em></div>
-            <div><span>Contact route</span><i style="width:43%"></i><em>15</em></div>
-            <div><span>Claimed page</span><i style="width:29%"></i><em>10</em></div>
-            <div><span>Years in business</span><i style="width:14%"></i><em>5</em></div>
-          </div></div>
-        <div class="bx s2"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5c-2.4-2.4-3.6-5.2-3.6-8.5S9.6 5.9 12 3.5z"/></svg></span><h3>Website and social check</h3><p>Look for Facebook, Instagram, WhatsApp links and an email on a business's own site, and preview the site beside the lead.</p></div>
+        <div class="bx s3"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4 19h16"/></svg></span><h3>Import from anywhere</h3><p>Paste a Yelp page or search results, paste from Google Maps, search OpenStreetMap, use your own Google Places key, or load a CSV. You can also type a lead in by hand.</p>
+          <div class="chips"><span>Yelp</span><span>Google Maps</span><span>OpenStreetMap</span><span>Places API</span><span>CSV</span><span>Your own</span></div></div>
+        <div class="bx s3"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></span><h3>Find the ones without a website</h3><p>The map search can return only businesses that list a phone number but no website. Chains and franchises are set aside, and a Facebook page is not counted as a website.</p>
+          <ul class="hp-ticks"><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Phone but no website filter</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Chains and franchises unticked</li><li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Leads you already have are never added twice</li></ul></div>
+        <div class="bx s2"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.3-4.2A8 8 0 1 1 8.4 19L4 20z"/><path d="M9 12.5l2 2 4-4.5"/></svg></span><h3>WhatsApp check in one tap</h3><p>Each number opens straight in WhatsApp with the right country code. Mark it &#10003; or &#10005; and filter your list by who is reachable.</p></div>
         <div class="bx s2"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7l-4 3v-3H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/></svg></span><h3>Messages that fit</h3><p>First message or follow up, for WhatsApp, email or DM. The wording follows the lead's source and what its website is missing.</p></div>
-        <div class="bx s2"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16"/><path d="M9 3v4"/><path d="M15 3v4"/></svg></span><h3>Follow-ups and drafts</h3><p>Mark a lead Messaged and a follow-up date is set for three days later. Deleted leads wait in Drafts until you remove them for good.</p></div>
+        <div class="bx s2"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16"/><path d="M9 3v4"/><path d="M15 3v4"/></svg></span><h3>Status with dates</h3><p>New, Messaged, Replied, Won. Every change is dated, and a follow-up day is set for you so nobody is forgotten.</p></div>
+        <div class="bx s2"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5c-2.4-2.4-3.6-5.2-3.6-8.5S9.6 5.9 12 3.5z"/></svg></span><h3>Website and social check</h3><p>Preview a business's site beside the lead and look for Facebook, Instagram, WhatsApp links and an email on it.</p></div>
+        <div class="bx s2"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v17l-6-4-6 4z"/></svg></span><h3>Saved folders and export</h3><p>Keep the good ones in named folders with every detail, then download them as CSV or copy them into Google Sheets.</p></div>
+        <div class="bx s2"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></span><h3>Edit and copy in place</h3><p>Add a phone, email, owner name or website right in the list, and copy any of them with one click.</p></div>
         <div class="bx s6"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><div><h3>Your own private account</h3><p>Sign up with your email. Your leads are saved to your account, open on any device, and nobody else can see them.</p></div></div>
+      </div>
+    </section>
+
+    <section class="sec" id="h-sources">
+      <div class="kick">Sources</div>
+      <h2>Where the leads come from</h2>
+      <p class="hp-lead">Each source is good at something different. Most people start with the map search, then use Google Maps to confirm the details.</p>
+      <div class="hp-src">
+        <div class="hp-sc"><h3>OpenStreetMap</h3><span class="hp-badge">No key needed</span><dl><dt>You get</dt><dd>Name, phone, website, email, address, opening hours</dd><dt>How</dt><dd>Pick a category, country and city, then press Search</dd><dt>Good to know</dt><dd>Works in any country. Coverage varies by city and there are no ratings</dd></dl></div>
+        <div class="hp-sc"><h3>Google Maps</h3><span class="hp-badge">Paste, or your own key</span><dl><dt>You get</dt><dd>Name, rating, reviews, phone, address</dd><dt>How</dt><dd>Open the search we build for you, copy the results, paste them in</dd><dt>Good to know</dt><dd>The most complete listings. A Places API key is optional</dd></dl></div>
+        <div class="hp-sc"><h3>Yelp</h3><span class="hp-badge">Paste</span><dl><dt>You get</dt><dd>Name, category, rating and review count</dd><dt>How</dt><dd>Open the Yelp search we build, copy the page text, paste it in</dd><dt>Good to know</dt><dd>Strong in the United States. Phone and website come from each business page</dd></dl></div>
+        <div class="hp-sc"><h3>CSV or Sheets</h3><span class="hp-badge">Any list you have</span><dl><dt>You get</dt><dd>Whatever columns your file has</dd><dt>How</dt><dd>Paste rows or load a file. Columns are recognised by name</dd><dt>Good to know</dt><dd>Also restores a Hunting Desk backup file</dd></dl></div>
       </div>
     </section>
 
@@ -731,10 +804,10 @@ td.mo { z-index: 40 !important; }
       <div class="kick">How it works</div>
       <h2>From a list to a conversation</h2>
       <ol class="flow">
-        <li><b>Import</b><span>Bring in businesses from any of the five sources.</span></li>
-        <li><b>Score</b><span>Sort by score and open the best ones first.</span></li>
-        <li><b>Message</b><span>Copy a drafted message and send it yourself.</span></li>
-        <li><b>Follow up</b><span>Track replies and see what is due today.</span></li>
+        <li><b>Import</b><span>Choose a source, a business type and a place. Tick the businesses you want and add them to your leads.</span></li>
+        <li><b>Check</b><span>See each lead's location, phone and website. Open WhatsApp to test the number and mark the result.</span></li>
+        <li><b>Message</b><span>Open a lead, pick first message or follow up, copy the draft and send it yourself.</span></li>
+        <li><b>Follow up</b><span>Set the status. The date is saved and the overview shows who is due today.</span></li>
       </ol>
     </section>
 
@@ -742,8 +815,13 @@ td.mo { z-index: 40 !important; }
       <div class="kick">Questions</div>
       <h2>Before you sign up</h2>
       <div class="faq">
-        <details><summary>Does it scrape Yelp or Google for me?</summary><p>No. You bring the list by pasting page text, running a map search or loading a file. Hunting Desk organizes, scores and drafts from there.</p></details>
-        <details><summary>Can it tell if a number is on WhatsApp?</summary><p>Not from a number alone. It looks for WhatsApp links on a business's own website, and you can mark a lead after you test it yourself.</p></details>
+        <details open><summary>What do I need to start?</summary><p>An email address. Create an account, open Import, pick a business type and a city, and you have a list in a minute.</p></details>
+        <details><summary>Which countries does it work in?</summary><p>Any. Pick a country, then a state or region and a city, or type any place name. Phone numbers get the right country code for WhatsApp.</p></details>
+        <details><summary>Does it cost anything to find leads?</summary><p>The OpenStreetMap search and pasted lists need no key and no payment. Only the optional Google Places search uses your own Google key.</p></details>
+        <details><summary>Does it scrape Yelp or Google for me?</summary><p>No. You bring the list by pasting page text, running a map search or loading a file. Hunting Desk organizes it and drafts from there.</p></details>
+        <details><summary>Can it tell if a number is on WhatsApp?</summary><p>Not from a number alone. It opens the chat for you so you can check in one tap and mark the lead, and it looks for WhatsApp links on a business's own website.</p></details>
+        <details><summary>Will I get the same business twice?</summary><p>No. A business already in your leads shows greyed out in new searches and cannot be added again.</p></details>
+        <details><summary>Can I take my leads out?</summary><p>Yes. Download any list or folder as CSV, copy it for Google Sheets, or save a backup file you can load again later.</p></details>
         <details><summary>Who can see my leads?</summary><p>Only you. Every account is separate, and a new account starts empty.</p></details>
         <details><summary>Does it work on my phone?</summary><p>Yes. The layout adapts to phone and desktop, and you can pick a light or dark look and an accent color under Appearance.</p></details>
       </div>
@@ -870,22 +948,35 @@ td.mo { z-index: 40 !important; }
     <section id="view-overview">
       <header class="page-head">
         <div>
-          <h1>Overview</h1>
-          <p class="lede">Where your outreach stands today.</p>
+          <h1 id="ovHello">Overview</h1>
+          <p class="lede" id="ovSub">Where your outreach stands today.</p>
         </div>
-        <a class="btn" href="#import">Import leads</a>
+        <div class="row"><a class="btn ghost" href="#leads">Open leads</a><a class="btn" href="#import">Import leads</a></div>
       </header>
+      <section class="panel ov-start" id="ovStart" hidden>
+        <h2>Start here</h2>
+        <ol>
+          <li><b>Import businesses</b><span>Open <a href="#import">Import</a>, choose OpenStreetMap, pick a business type and a city, then add the ones you want.</span></li>
+          <li><b>Check how to reach them</b><span>On <a href="#leads">Leads</a>, press Check next to a phone number to test it on WhatsApp.</span></li>
+          <li><b>Send the first message</b><span>Press Message on a lead, copy the draft, send it, and set the status to Messaged.</span></li>
+        </ol>
+      </section>
+      <div class="ov-today" id="ovToday"></div>
       <div class="kpis" id="kpis"></div>
       <div class="grid-2">
         <section class="panel"><h2>Best leads to contact first</h2><div class="list" id="topLeads"></div></section>
         <section class="panel"><h2>Follow-ups due</h2><div class="list" id="dueList"></div></section>
       </div>
       <div class="grid-2">
-        <section class="panel"><h2>Pipeline</h2><div class="bars" id="pipe"></div></section>
-        <section class="panel"><h2>Sources</h2><div class="bars" id="srcBars"></div></section>
+        <section class="panel"><h2>Pipeline</h2><div class="bars" id="pipe"></div><p class="sub" id="pipeNote"></p></section>
+        <section class="panel"><h2>Top locations</h2><div class="bars" id="locBars"></div></section>
       </div>
       <div class="grid-2">
         <section class="panel"><h2>By industry</h2><div class="bars" id="catBars"></div></section>
+        <section class="panel"><h2>Sources</h2><div class="bars" id="srcBars"></div></section>
+      </div>
+      <div class="grid-2">
+        <section class="panel"><h2>Recently added</h2><div class="list" id="recentList"></div></section>
         <section class="panel"><h2>Saved folders</h2><div class="bars" id="folBars"></div></section>
       </div>
       <section class="panel acct-panel" id="acctCard"></section>
@@ -3328,7 +3419,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     return '<tr data-id="' + l.id + '"' + (picked[l.id] ? ' class="sel"' : '') + '>' +
       '<td><input type="checkbox" data-pick aria-label="Select ' + esc(l.name) + '"' + (picked[l.id] ? ' checked' : '') + '></td>' +
       '<td><span class="rownum" title="Lead score ' + sc + ' (' + t[1] + ' lead)">' + ((idx || 0) + 1) + '</span></td>' +
-      '<td class="bzc"><div class="bz"><span class="av" aria-hidden="true">' + esc((String(l.name || '?').replace(/[^A-Za-z0-9\u00C0-\u024F]/g, '').charAt(0) || '?').toUpperCase()) + '</span><div class="bzt"><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + (place ? '<div class="sub catl">' + esc(place) + '</div>' : '') + '<div class="sub loc" title="Location of this business">' + PIN + (loc ? esc(loc) : '<span class="ph">No location</span>') + '</div><input class="inl" data-f="owner" maxlength="80" autocomplete="off" placeholder="+ Owner name" aria-label="Owner name of ' + esc(l.name) + '" value="' + esc(l.owner || '') + '"></div></div></td>' +
+      '<td class="bzc"><div class="bz"><span class="av" aria-hidden="true">' + esc((String(l.name || '?').replace(/[^A-Za-z0-9\u00C0-\u024F]/g, '').charAt(0) || '?').toUpperCase()) + '</span><div class="bzt"><strong>' + esc(l.name) + '</strong>' + ((place || l.example || ledgerSrc === 'all') ? '<div class="bmeta">' + (place ? '<span class="catl">' + esc(place) + '</span>' : '') + (ledgerSrc === 'all' ? '<span class="srcl">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + (l.example ? '<span class="srcl">Example</span>' : '') + '</div>' : '') + '<div class="sub loc" title="Location of this business">' + PIN + (loc ? esc(loc) : '<span class="ph">No location</span>') + '</div><input class="inl" data-f="owner" maxlength="80" autocomplete="off" placeholder="+ Owner name" aria-label="Owner name of ' + esc(l.name) + '" value="' + esc(l.owner || '') + '"></div></div></td>' +
       '<td class="ctc"><div class="fld"><input class="inl mono" data-f="phone" type="tel" inputmode="tel" maxlength="40" autocomplete="off" placeholder="+ Phone" aria-label="Phone of ' + esc(l.name) + '" value="' + esc(l.phone || '') + '">' + cpb('phone') + '</div><div class="fld"><input class="inl" data-f="email" type="email" maxlength="120" autocomplete="off" placeholder="+ Email" aria-label="Email of ' + esc(l.name) + '" value="' + esc(l.email || '') + '">' + cpb('email') + '</div>' + rowWa(l) + '</td>' +
       '<td class="webc">' + web + '</td>' +
       '<td><select data-f="status" data-st="' + esc(l.status) + '" aria-label="Status of ' + esc(l.name) + '">' + opts(STAT, l.status) + '</select>' + statusLine(l) + '</td>' +
@@ -3349,29 +3440,54 @@ window.HD_CONFIG = window.HD_CONFIG || {
     }).join('');
   }
   function leadLi(l, extra) {
-    var sc = score(l), t = tier(sc);
-    var meta = [l.niche, [l.city, l.state].filter(Boolean).join(', '), extra || (l.statusAt || l.followUp ? statusText(l) : '')].filter(Boolean).join(' · ');
-    return '<div class="li"><span class="score ' + t[0] + '">' + sc + '</span><div class="grow"><strong>' + esc(l.name) + '</strong><div class="sub">' + esc(meta) + '</div></div>' +
+    var meta = [l.cat || l.niche, locOf(l), extra || (l.statusAt || l.followUp ? statusText(l) : '')].filter(Boolean).join(' · ');
+    var ini = (String(l.name || '?').replace(/[^A-Za-z0-9\u00C0-\u024F]/g, '').charAt(0) || '?').toUpperCase();
+    return '<div class="li"><span class="ov-av" aria-hidden="true">' + esc(ini) + '</span><div class="grow"><strong>' + esc(l.name) + '</strong><div class="sub">' + esc(meta) + '</div></div>' +
       '<button class="btn small" type="button" data-open="' + l.id + '">Message</button></div>';
   }
+  function pct(a, b) { return b ? Math.round(a / b * 100) + '%' : '0%'; }
   function renderOverview() {
-    var st = {}, srcN = {};
+    var st = {}, srcN = {}, real = leads.filter(function (l) { return !l.example; });
     leads.forEach(function (l) { st[l.status] = (st[l.status] || 0) + 1; var s = l.source || 'yelp'; srcN[s] = (srcN[s] || 0) + 1; });
-    var hot = leads.filter(function (l) { return tier(score(l))[0] === 'hot'; }).length;
-    var noSite = leads.filter(function (l) { return l.webStatus === 'none'; }).length;
-    var kp = [['Total leads', leads.length, ''], ['Hot leads', hot, 'hot'], ['No website', noSite, ''], ['Messaged', st.Messaged || 0, ''], ['Replied', st.Replied || 0, ''], ['Won', st.Won || 0, '']];
-    $('kpis').innerHTML = kp.map(function (k) { return '<div class="kpi ' + k[2] + '"><div class="l">' + k[0] + '</div><div class="n">' + k[1] + '</div></div>'; }).join('');
+    var td = todayIso(), weekAgo = Date.now() - 7 * 86400000;
+    var noSite = leads.filter(function (l) { return l.webStatus === 'none' || !validSite(l.website); }).length;
+    var contacted = leads.length - (st.New || 0), replied = (st.Replied || 0) + (st.Won || 0), won = st.Won || 0;
+    var week = leads.filter(function (l) { return (l.added || 0) >= weekAgo; }).length;
+    var dueAll = leads.filter(function (l) { return (l.status === 'Messaged' || l.status === 'Replied') && l.followUp && l.followUp <= td; });
+    var late = dueAll.filter(function (l) { return l.followUp < td; }).length;
+    var waTodo = leads.filter(function (l) { return !l.waStatus && !!waNumber(l); }).length;
+    var waReady = leads.filter(function (l) { return l.waStatus === 'yes' && l.status === 'New'; }).length;
+    var hr = new Date().getHours(), nm = (dname() || '').split(/\s+/)[0];
+    $('ovHello').textContent = (hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening') + (nm ? ', ' + nm : '');
+    $('ovSub').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) + ' · ' +
+      (leads.length ? leads.length + (leads.length === 1 ? ' lead' : ' leads') + ', ' + (dueAll.length ? dueAll.length + (dueAll.length === 1 ? ' follow-up' : ' follow-ups') + ' due' : 'no follow-ups due') + '.' : 'No leads yet.');
+    $('ovStart').hidden = real.length > 0;
+    var cards = [
+      ['due', dueAll.length, 'Follow-ups due', late ? late + ' overdue' : (dueAll.length ? 'Due today' : 'Nothing waiting'), '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>', late ? ' warn' : ''],
+      ['st:New', st.New || 0, 'New, not contacted yet', (st.New ? 'Send a first message' : 'Import more leads'), '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>', ''],
+      ['wa:untested', waTodo, 'Numbers to check on WhatsApp', waTodo ? 'One tap each' : 'All checked', '<path d="M4 20l1.3-4.2A8 8 0 1 1 8.4 19L4 20z"/>', ''],
+      ['wa:yes', waReady, 'On WhatsApp, not messaged', waReady ? 'Ready to write to' : 'None waiting', '<path d="M5 12.5l4.5 4.5L19 7.5"/>', '']
+    ];
+    $('ovToday').innerHTML = cards.map(function (c) {
+      return '<button class="ov-card' + c[5] + '" type="button" data-ovf="' + c[0] + '"><span class="ov-ic"><svg viewBox="0 0 24 24" aria-hidden="true">' + c[4] + '</svg></span><span class="ov-n">' + c[1] + '</span><span class="ov-l">' + c[2] + '</span><span class="ov-s">' + esc(c[3]) + '</span></button>';
+    }).join('');
+    var kp = [['Total leads', leads.length, week ? '+' + week + ' this week' : 'none added this week', ''], ['No website', noSite, pct(noSite, leads.length) + ' of your leads', 'hot'], ['Contacted', contacted, pct(contacted, leads.length) + ' of your leads', ''], ['Replied', replied, pct(replied, contacted) + ' reply rate', ''], ['Won', won, pct(won, contacted) + ' of contacted', ''], ['Saved', leads.filter(folderOf).length, 'in your folders', '']];
+    $('kpis').innerHTML = kp.map(function (k) { return '<div class="kpi ' + k[3] + '"><div class="l">' + k[0] + '</div><div class="n">' + k[1] + '</div><div class="s">' + esc(k[2]) + '</div></div>'; }).join('');
     $('pipe').innerHTML = bars(STAT.map(function (s) { return [s[1], st[s[0]] || 0]; }), '');
+    $('pipeNote').textContent = contacted ? 'Out of ' + contacted + ' contacted: ' + replied + ' replied (' + pct(replied, contacted) + '), ' + won + ' won (' + pct(won, contacted) + ').' : 'Set a lead to Messaged after you write to it and the numbers start here.';
     $('srcBars').innerHTML = bars(Object.keys(SRC_NAMES).map(function (k) { return [SRC_NAMES[k], srcN[k] || 0]; }), 'n');
+    var lb = groupCount(leads, function (l) { return [l.city, countryOf(l) || l.state].filter(Boolean).join(', '); }), ln = Object.keys(lb).sort(function (a, b) { return lb[b] - lb[a]; }).slice(0, 6);
+    $('locBars').innerHTML = ln.length ? bars(ln.map(function (c) { return [c, lb[c]]; }), 'n') : '<div class="empty">Locations show up here once leads have a city.</div>';
     var cb = groupCount(leads, catOf), cn = Object.keys(cb).sort(function (a, b) { return cb[b] - cb[a]; }).slice(0, 6);
     $('catBars').innerHTML = cn.length ? bars(cn.map(function (c) { return [c, cb[c]]; }), 'n') : '<div class="empty">Import leads to see them grouped by industry.</div>';
     var fb = groupCount(leads, folderOf), fn = Object.keys(fb).sort(function (a, b) { return fb[b] - fb[a]; }).slice(0, 6);
-    $('folBars').innerHTML = fn.length ? bars(fn.map(function (c) { return [c, fb[c]]; }), '') + '<p class="sub" style="margin-top:10px"><a href="#saved">Open saved folders</a></p>' : '<div class="empty">Nothing saved yet. Press Save on the good leads in <a href="#leads">Leads</a>.</div>';
+    $('folBars').innerHTML = fn.length ? bars(fn.map(function (c) { return [c, fb[c]]; }), '') + '<p class="sub" style="margin-top:10px"><a href="#saved">Open saved folders</a></p>' : '<div class="empty">Nothing saved yet. Use Save to folder on the good leads in <a href="#leads">Leads</a>.</div>';
     var top = leads.filter(function (l) { return l.status === 'New'; }).sort(function (a, b) { return score(b) - score(a); }).slice(0, 5);
-    $('topLeads').innerHTML = top.length ? top.map(function (l) { return leadLi(l, ''); }).join('') : '<div class="empty">No new leads. <a href="#import">Import some</a> to see the best ones here.</div>';
-    var td = todayIso();
-    var due = leads.filter(function (l) { return (l.status === 'Messaged' || l.status === 'Replied') && l.followUp && l.followUp <= td; }).sort(function (a, b) { return a.followUp < b.followUp ? -1 : 1; }).slice(0, 5);
+    $('topLeads').innerHTML = top.length ? top.map(function (l) { return leadLi(l, [validSite(l.website) ? '' : 'no website', l.waStatus === 'yes' ? 'on WhatsApp' : (digits(l.phone).length >= 7 ? 'has phone' : '')].filter(Boolean).join(', ')); }).join('') : '<div class="empty">No new leads. <a href="#import">Import some</a> to see the best ones here.</div>';
+    var due = dueAll.slice().sort(function (a, b) { return a.followUp < b.followUp ? -1 : 1; }).slice(0, 5);
     $('dueList').innerHTML = due.length ? due.map(function (l) { return leadLi(l, (l.statusAt ? l.status + ' ' + fmtDate(isoOf(new Date(l.statusAt))) + ' \u00b7 ' : '') + 'follow up ' + (dayDiff(l.followUp) < 0 ? 'overdue by ' + Math.abs(dayDiff(l.followUp)) + ' d' : relDay(l.followUp))); }).join('') : '<div class="empty">Nothing due. When you set a lead to Messaged, a follow-up date is added 3 days later.</div>';
+    var rec = leads.slice().sort(function (a, b) { return (b.added || 0) - (a.added || 0); }).slice(0, 5);
+    $('recentList').innerHTML = rec.length ? rec.map(function (l) { return leadLi(l, (SRC_NAMES[l.source] || 'Other') + (l.added ? ', added ' + relDay(isoOf(new Date(l.added))) : '')); }).join('') : '<div class="empty">Leads you add show up here.</div>';
   }
 
   /* ---------- drafts (deleted leads) ---------- */
@@ -3429,7 +3545,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     if (l.owner) info.push('Owner: ' + l.owner);
     if (l.services) info.push(l.services);
     if (l.notes) info.push('Note: ' + l.notes);
-    var scanBtn = validSite(l.website) ? '<button class="btn small ghost" type="button" data-act="scan">' + (l.scanAt ? 'Recheck site' : 'Check site') + '</button>' : '';
+    var scanBtn = validSite(l.website) ? '<button class="btn small ghost" type="button" data-act="scan">' + ico('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>') + '<span>' + (l.scanAt ? 'Recheck site' : 'Check site') + '</span></button>' : '';
     $('dDetails').innerHTML =
       '<div class="dgrid">' +
         '<div><label for="d-city">City</label><input id="d-city" data-f="city" maxlength="80" value="' + esc(l.city || '') + '"></div>' +
@@ -3448,8 +3564,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
       '</div>' +
       '<div class="dinfo">' + info.map(function (b) { return '<div class="sub">' + esc(b) + '</div>'; }).join('') + '</div>' +
       '<div class="dinfo">' + contacts(l) + '</div>' +
-      waTools(l) +
-      '<div class="row"><a class="btn small ghost" href="' + esc(gmapsUrl(l)) + '" target="_blank" rel="noopener">Find phone &amp; website on Google Maps</a>' + scanBtn + '<button class="btn small ghost" type="button" data-act="del">Move to Drafts</button></div>';
+      (rowWa(l) ? '<div class="watest"><span class="dlab">WhatsApp</span>' + rowWa(l) + '<span class="sub">Open the chat to check the number, then mark &#10003; or &#10005;.</span></div>' : '') +
+      '<div class="dacts"><a class="btn small ghost" href="' + esc(gmapsUrl(l)) + '" target="_blank" rel="noopener">' + PIN + '<span>Find on Google Maps</span></a>' + scanBtn + '<button class="btn small ghost danger" type="button" data-act="del">' + IC_DEL + '<span>Move to Drafts</span></button></div>';
   }
   function renderDrawer() {
     var l = current();
@@ -3467,7 +3583,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
       $('siteOpen').href = url;
       if (dTab === 'website' && frameSrc !== url) { $('siteFrame').src = url; frameSrc = url; }
     }
-    if (!(document.activeElement && $('dDetails').contains(document.activeElement))) renderDetails(l);
+    var ae = document.activeElement;
+    if (!(ae && $('dDetails').contains(ae) && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName))) renderDetails(l);
   }
 
   function groupCount(arr, fn) { var by = {}; arr.forEach(function (l) { var k = fn(l); if (k) by[k] = (by[k] || 0) + 1; }); return by; }
@@ -3845,6 +3962,14 @@ window.HD_CONFIG = window.HD_CONFIG || {
     openDrawer(b.getAttribute('data-open'), 'message');
   }
   $('topLeads').addEventListener('click', openFromList);
+  $('recentList').addEventListener('click', openFromList);
+  $('ovToday').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-ovf]'); if (!b) return;
+    var v = b.getAttribute('data-ovf');
+    if (v === 'due') { $('dueList').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    $('filter').value = v; ledgerSrc = 'all'; curCat = 'all'; $('q').value = ''; picked = {};
+    render(); location.hash = '#leads';
+  });
   $('dueList').addEventListener('click', openFromList);
 
   $('draftList').addEventListener('click', function (e) {
