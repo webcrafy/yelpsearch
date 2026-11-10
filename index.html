@@ -6,6 +6,7 @@
 <title>Hunting Desk</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script>try { if (window.HD_CONFIG || 1) document.documentElement.className += ' booting'; } catch (e) {}</script>
 <style>
 /* Layout: sidebar + dashboard views (overview, import, leads, drafts) with a slide-over lead drawer.
    Two colors only: slate ink for structure, one orange accent for what needs attention. */
@@ -46,6 +47,12 @@ html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
 body.lock { overflow: hidden; }
 body.authlock { overflow: hidden; }
+html.booting .app, html.booting #drawer, html.booting #scrim { display: none !important; }
+#boot { display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center; flex-direction: column; gap: 14px; background: var(--bg); color: var(--muted, #6b7a80); font-size: 14px; }
+html.booting #boot { display: flex; }
+#boot i { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent, #E0A458); animation: bootspin .8s linear infinite; }
+@keyframes bootspin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { #boot i { animation: none; } }
 body.authlock .app, body.authlock #drawer, body.authlock #scrim { display: none !important; }
 h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.015em; }
 h1 { font-size: 30px; line-height: 1.1; }
@@ -543,6 +550,7 @@ td .chip { white-space: nowrap; }
 .listsave input { width: 100%; }
 </style>
 
+<div id="boot" role="status" aria-live="polite"><i></i><span id="bootMsg">Loading your desk...</span></div>
 <div class="home" id="home" hidden>
   <header class="home-nav">
     <div class="hw">
@@ -1360,7 +1368,9 @@ window.HD_CONFIG = window.HD_CONFIG || {
   }
 
   var authMode = 'in';
+  function endBoot() { document.documentElement.classList.remove('booting'); }
   function showAuth(mode, msg) {
+    endBoot();
     $('auth').hidden = false; $('home').hidden = true; document.body.classList.add('authlock');
     $('authForm').hidden = false; $('resetForm').hidden = true; $('codeForm').hidden = true; $('forgot').hidden = mode !== 'in';
     authMode = mode;
@@ -1371,7 +1381,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('authMsg').textContent = msg || '';
     $('aPass').value = '';
   }
-  function hideAuth() { $('auth').hidden = true; $('home').hidden = true; document.body.classList.remove('authlock'); }
+  function hideAuth() { endBoot(); $('auth').hidden = true; $('home').hidden = true; document.body.classList.remove('authlock'); }
   document.addEventListener('click', function (e) {
     var s = e.target.closest('[data-scroll]'); if (!s) return;
     var el = document.getElementById(s.getAttribute('data-scroll')); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1402,7 +1412,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       }, 22);
     }, 1300);
   }
-  function showHome() { $('auth').hidden = true; $('home').hidden = false; document.body.classList.add('authlock'); $('home').scrollTop = 0; playHome(); }
+  function showHome() { endBoot(); $('auth').hidden = true; $('home').hidden = false; document.body.classList.add('authlock'); $('home').scrollTop = 0; playHome(); }
   document.addEventListener('click', function (e) {
     var g = e.target.closest('[data-go]'); if (g) { showAuth(g.getAttribute('data-go'), ''); return; }
     if (e.target.closest('#toHome')) showHome();
@@ -1427,8 +1437,9 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function enter(u) {
     user = u; ckey = KEY + ':' + u.id;
     $('authMsg').textContent = 'Loading your leads...';
+    if ($('bootMsg')) $('bootMsg').textContent = 'Loading your leads...';
     sb.from('lead_desk_state').select('data').eq('user_id', u.id).maybeSingle().then(function (r) {
-      if (r.error) { $('authMsg').textContent = 'Could not load your leads: ' + r.error.message; setSync('error'); return; }
+      if (r.error) { setSync('error'); showAuth('in', 'Could not load your leads: ' + r.error.message + '. Press Sign in to try again.'); return; }
       var remote = r.data && r.data.data ? r.data.data : null;
       var local = readLocal(ckey);
       var legacy = null;
@@ -1443,7 +1454,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
         setSync('saving');
         push().then(function (r) { if (legacy && !(r && r.error)) { try { localStorage.removeItem(KEY); } catch (e) {} } });
       } else setSync('saved');
-    });
+    }, function () { setSync('error'); showAuth('in', 'Could not reach the server to load your leads. Check your internet and press Sign in.'); });
   }
 
   /* ---------- scoring ---------- */
@@ -3841,18 +3852,20 @@ window.HD_CONFIG = window.HD_CONFIG || {
     selected = v0 ? v0.id : null;
     render(); renderDraft(); showView(); renderAccount(); renderSettings();
   }
+  setTimeout(function () { if (document.documentElement.classList.contains('booting')) { if (user) endBoot(); else showAuth('in', 'This is taking long. Check your internet and sign in again.'); } }, 20000);
   $('toHome').hidden = !sb;
   var setupMode = /^#(setup|connect)$/.test(location.hash);
   if (setupMode) {
-    document.body.classList.add('authlock'); $('auth').hidden = false; $('authForm').hidden = true; $('setupForm').hidden = false;
+    endBoot(); document.body.classList.add('authlock'); $('auth').hidden = false; $('authForm').hidden = true; $('setupForm').hidden = false;
   } else if (libMissing) {
-    document.body.classList.add('authlock'); $('auth').hidden = false; $('authGo').disabled = true;
+    endBoot(); document.body.classList.add('authlock'); $('auth').hidden = false; $('authGo').disabled = true;
     $('authMsg').textContent = 'Login library could not load (blocked network or ad blocker). Reload the page, or turn off the blocker for this site.';
   } else if (sb) {
     renderAccount();
     sb.auth.getSession().then(function (r) {
       var s = r.data && r.data.session;
       if (recov) {
+        endBoot();
         if (s) { document.body.classList.add('authlock'); $('auth').hidden = false; $('authForm').hidden = true; $('resetForm').hidden = false; }
         else showAuth('in', 'This reset link is invalid or has expired. Click Forgot password to get a new one.');
         return;
@@ -3864,7 +3877,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       else showHome();
     }, function () { showAuth('in', 'Could not reach the server.'); });
   } else {
-    document.body.classList.add('authlock'); $('auth').hidden = false;
+    endBoot(); document.body.classList.add('authlock'); $('auth').hidden = false;
     $('authTitle').textContent = 'Private app';
     $('authSub').textContent = 'Sign in is not available on this site.';
     $('authTabs').hidden = true; $('authGo').hidden = true; $('authForm').querySelector('.fields').hidden = true;
