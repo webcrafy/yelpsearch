@@ -574,6 +574,50 @@ td .chip { white-space: nowrap; }
 .cathead span { color: var(--muted); font-weight: 400; font-size: 13px; }
 .li .btns { display: flex; gap: 6px; flex-wrap: wrap; }
 .listsave input { width: 100%; }
+
+/* ---- modern leads table ---- */
+.scroll table { font-size: 14px; }
+@media (min-width: 761px) { .scroll th { background: transparent; padding: 14px 14px 10px; font-size: 11px; letter-spacing: .09em; border-bottom: 1px solid var(--line); }
+.scroll td { padding: 16px 14px; border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); vertical-align: top; } }
+.scroll tbody tr { transition: background .15s; }
+.scroll tbody tr:hover td { background: color-mix(in srgb, var(--panel-2) 70%, transparent); }
+.scroll .rownum { min-width: 28px; height: 28px; line-height: 28px; border-radius: 50%; background: var(--panel-2); color: var(--muted); font-size: 12px; }
+.bz { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+.bzt { min-width: 0; flex: 1; }
+.bzt strong { display: block; font-size: 15px; font-weight: 600; line-height: 1.3; letter-spacing: -.005em; }
+.av { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 16px; }
+.sub.catl { display: inline-block; margin-top: 5px; padding: 1px 9px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); font-size: 11.5px; color: var(--muted); }
+.sub.loc { margin-top: 6px; font-size: 12.5px; }
+.sub.loc .pin { width: 13px; height: 13px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+.bzt .tag { margin: 0 0 0 6px; vertical-align: 2px; }
+.scroll .inl { margin: 6px 0 0; padding: 6px 9px 6px 30px; border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); background: color-mix(in srgb, var(--panel-2) 55%, transparent); border-radius: 9px; font-size: 13px; background-repeat: no-repeat; background-position: 9px 50%; background-size: 14px; }
+.scroll .inl:hover { border-color: var(--line); }
+.scroll .inl:focus { border-color: var(--accent); background-color: var(--panel); box-shadow: 0 0 0 3px var(--accent-soft); }
+.scroll .inl[data-f=owner] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238FA2A9' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c0-4 4-6 8-6s8 2 8 6'/%3E%3C/svg%3E"); }
+.scroll .inl[data-f=phone] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238FA2A9' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z'/%3E%3C/svg%3E"); }
+.scroll .inl[data-f=email] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238FA2A9' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E"); }
+.scroll .inl[data-f=website] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238FA2A9' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'/%3E%3C/svg%3E"); }
+.ctc .wab { margin-top: 8px; }
+.webact { gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.webact .linkbtn, .webact a { white-space: nowrap; }
+.webact .linkbtn, .webact a { display: inline-flex; align-items: center; padding: 3px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); font-size: 12px; text-decoration: none; color: var(--ink); }
+.webact a { color: var(--accent); }
+.webact .linkbtn:hover, .webact a:hover { border-color: var(--accent); }
+.scroll .chip.accent { margin-top: 8px; }
+.scroll select[data-f=status] { appearance: none; -webkit-appearance: none; padding: 7px 30px 7px 12px; border-radius: 999px; font-weight: 500; font-size: 13px; border: 1px solid var(--line); border-left: 4px solid var(--stc, #7A8C93); background-color: var(--panel-2); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238FA2A9' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 12px; cursor: pointer; }
+.scroll select[data-st="New"] { --stc: #6B8FD6; }
+.scroll select[data-st="Messaged"] { --stc: #D6A560; }
+.scroll select[data-st="Replied"] { --stc: #4FA3A5; }
+.scroll select[data-st="Won"] { --stc: #4A9E6B; }
+.scroll select[data-st="Not interested"] { --stc: #C0502F; }
+.scroll td .fu, .scroll td .stl { display: block; margin-top: 6px; font-size: 12px; }
+.scroll td:last-child .row { gap: 6px; align-items: center; }
+.scroll td:last-child .btn.small { border-radius: 10px; padding: 7px 13px; font-weight: 500; }
+.scroll td:last-child .btn[data-act=del]:hover { color: #C0502F; border-color: #C0502F; }
+@media (min-width: 761px) {
+  td:nth-child(3) { min-width: 270px; }
+  .scroll td:last-child { vertical-align: top; padding-top: 18px; }
+}
 </style>
 
 <div id="boot" role="status" aria-live="polite"><i></i><span id="bootMsg">Loading your desk...</span></div>
@@ -3175,10 +3219,10 @@ window.HD_CONFIG = window.HD_CONFIG || {
     return '<tr data-id="' + l.id + '"' + (picked[l.id] ? ' class="sel"' : '') + '>' +
       '<td><input type="checkbox" data-pick aria-label="Select ' + esc(l.name) + '"' + (picked[l.id] ? ' checked' : '') + '></td>' +
       '<td><span class="rownum" title="Lead score ' + sc + ' (' + t[1] + ' lead)">' + ((idx || 0) + 1) + '</span></td>' +
-      '<td><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + (place ? '<div class="sub">' + esc(place) + '</div>' : '') + '<div class="sub loc" title="Location of this business">' + PIN + (loc ? esc(loc) : '<span class="ph">No location</span>') + '</div><input class="inl" data-f="owner" maxlength="80" autocomplete="off" placeholder="+ Owner name" aria-label="Owner name of ' + esc(l.name) + '" value="' + esc(l.owner || '') + '"></td>' +
+      '<td class="bzc"><div class="bz"><span class="av" aria-hidden="true">' + esc((String(l.name || '?').replace(/[^A-Za-z0-9\u00C0-\u024F]/g, '').charAt(0) || '?').toUpperCase()) + '</span><div class="bzt"><strong>' + esc(l.name) + '</strong>' + (l.example ? '<span class="tag">Example</span>' : '') + (ledgerSrc === 'all' ? '<span class="tag">' + esc(SRC_NAMES[l.source] || 'Other') + '</span>' : '') + (place ? '<div class="sub catl">' + esc(place) + '</div>' : '') + '<div class="sub loc" title="Location of this business">' + PIN + (loc ? esc(loc) : '<span class="ph">No location</span>') + '</div><input class="inl" data-f="owner" maxlength="80" autocomplete="off" placeholder="+ Owner name" aria-label="Owner name of ' + esc(l.name) + '" value="' + esc(l.owner || '') + '"></div></div></td>' +
       '<td class="ctc"><input class="inl mono" data-f="phone" type="tel" inputmode="tel" maxlength="40" autocomplete="off" placeholder="+ Phone" aria-label="Phone of ' + esc(l.name) + '" value="' + esc(l.phone || '') + '"><input class="inl" data-f="email" type="email" maxlength="120" autocomplete="off" placeholder="+ Email" aria-label="Email of ' + esc(l.name) + '" value="' + esc(l.email || '') + '">' + rowWa(l) + '</td>' +
       '<td class="webc">' + web + '</td>' +
-      '<td><select data-f="status" aria-label="Status of ' + esc(l.name) + '">' + opts(STAT, l.status) + '</select>' + statusLine(l) + '</td>' +
+      '<td><select data-f="status" data-st="' + esc(l.status) + '" aria-label="Status of ' + esc(l.name) + '">' + opts(STAT, l.status) + '</select>' + statusLine(l) + '</td>' +
       '<td><div class="row"><button class="btn small" type="button" data-act="draft">Message</button>' + (folderOf(l) ? '<button class="btn small saved" type="button" data-act="save" title="Saved in ' + esc(folderOf(l)) + ' - click to remove">Saved &#10003;</button>' : '<button class="btn small ghost" type="button" data-act="save">Save</button>') + '<button class="btn small ghost" type="button" data-act="details">Details</button><button class="btn small ghost" type="button" data-act="del" aria-label="Move ' + esc(l.name) + ' to Drafts">Delete</button></div></td></tr>';
   }
 
