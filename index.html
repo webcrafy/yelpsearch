@@ -804,6 +804,13 @@ td .chip { white-space: nowrap; }
 
     <div id="src-yelp" class="srcpane">
       <p class="hint">Search Yelp for the businesses you want to sell websites to (plumbers, barbers, dentists), not for web designers. Paste the search link, open it, copy the results page text, and paste that text below. Each Yelp page lists about 10 businesses.</p>
+      <div class="grid2">
+        <div><label for="y-cat">Category (any business type)</label><input id="y-cat" list="osmCats" autocomplete="off" placeholder="Plumbers, Dentist, Barber..."></div>
+        <div><label for="y-country">Country</label><input id="y-country" list="countryOpts" autocomplete="off" placeholder="United States, UK, Canada..." value="United States"></div>
+        <div id="y-regionWrap" hidden><label for="y-region">State / region</label><select id="y-region"></select></div>
+        <div><label for="y-city">City or district</label><input id="y-city" autocomplete="off" placeholder="Pick one, or type any city"></div>
+      </div>
+      <p class="hint" style="margin-top:0">Pick the boxes above and the Yelp link below is made for you, or paste your own link.</p>
       <div>
         <label for="s-url">Yelp search link</label>
         <input id="s-url" autocomplete="off" placeholder="https://www.yelp.com/search?find_desc=Plumbers&find_loc=Houston%2C+TX">
@@ -2217,7 +2224,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       var count = 0, cut = [];
       out.forEach(function (it) { if (it.h) { cut.push(it); return; } if (count < 90) { cut.push(it); count++; } });
       var more = out.filter(function (it) { return !it.h; }).length > 90;
-      if (cfg.custom && raw && !seen[raw] && !list.some(function (it) { return !it.h && cbNorm(it.v) === qq; })) cut.push({ v: raw, l: 'Use "' + raw + '"', custom: true });
+      if (cfg.custom && raw && !seen[raw] && !list.some(function (it) { return !it.h && cbNorm(it.v) === qq; })) cut.unshift({ v: raw, l: 'Use "' + raw + '" (your own)', custom: true });
       st.items = cut; st.more = more;
     }
     function render() {
@@ -2232,7 +2239,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
       if (!st.items.some(function (it) { return !it.h; })) html += '<li class="cb-e">' + esc(cfg.empty || 'No matches') + '</li>';
       if (st.more) html += '<li class="cb-e">Type to narrow the list</li>';
       ul.innerHTML = html;
-      var first = -1; st.items.forEach(function (it, i) { if (first < 0 && !it.h) first = i; });
+      var first = -1; st.items.forEach(function (it, i) { if (first < 0 && !it.h && !it.custom) first = i; });
+      if (first < 0) st.items.forEach(function (it, i) { if (first < 0 && !it.h) first = i; });
       if (st.active < 0 || !st.items[st.active] || st.items[st.active].h) st.active = firstSel >= 0 ? firstSel : first;
       mark();
     }
@@ -2265,6 +2273,17 @@ window.HD_CONFIG = window.HD_CONFIG || {
     }
     function close() { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); if (comboOpen === st) comboOpen = null; }
     st.close = close;
+    st.commitClose = function () {
+      var raw = q.value.trim();
+      if (cfg.custom && raw && !pop.hidden) {
+        var hit = null; cfg.items(raw).forEach(function (it) { if (!hit && !it.h && cbNorm(it.v) === cbNorm(raw)) hit = it.v; });
+        var v = hit || raw;
+        if (cfg.multi) { var a = sel(); if (!a.some(function (t) { return t.toLowerCase() === v.toLowerCase(); })) { a.push(v); src.value = a.join(', '); fire(); } }
+        else if (src.value !== v) { src.value = v; fire(); }
+        st.sync();
+      }
+      close();
+    };
     btn.addEventListener('click', function (e) { if (e.target.closest('.cb-x')) return; if (pop.hidden) open(); else close(); });
     btn.addEventListener('keydown', function (e) { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (pop.hidden) open(); } });
     x.addEventListener('click', function (e) { e.stopPropagation(); src.value = ''; fire(); st.sync(); });
@@ -2283,14 +2302,14 @@ window.HD_CONFIG = window.HD_CONFIG || {
       else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
       else if (e.key === 'Enter') { e.preventDefault(); pick(st.items[st.active]); }
       else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); btn.focus(); }
-      else if (e.key === 'Tab') close();
+      else if (e.key === 'Tab') st.commitClose();
     });
     ul.addEventListener('mousedown', function (e) { e.preventDefault(); });
     ul.addEventListener('click', function (e) { var li = e.target.closest('.cb-o'); if (li) pick(st.items[+li.getAttribute('data-i')]); });
     ul.addEventListener('mousemove', function (e) { var li = e.target.closest('.cb-o'); if (li && +li.getAttribute('data-i') !== st.active) { st.active = +li.getAttribute('data-i'); mark(); } });
     st.sync();
   }
-  document.addEventListener('mousedown', function (e) { if (comboOpen && !comboOpen.wrap.contains(e.target)) comboOpen.close(); });
+  document.addEventListener('mousedown', function (e) { if (comboOpen && !comboOpen.wrap.contains(e.target)) comboOpen.commitClose(); });
   function comboInit() {
     function mk(n) { return { v: n, l: n }; }
     var pri = ['United States', 'United Kingdom', 'Spain', 'Mexico'];
@@ -2299,11 +2318,11 @@ window.HD_CONFIG = window.HD_CONFIG || {
       return [{ h: 'Popular' }].concat(pri.map(mk), [{ h: 'All countries' }], rest.map(mk));
     }
     comboMake({ id: 'sCat', items: function () { var seen = {}, out = []; Object.keys(groupCount(leads, catOf)).sort().concat(OSM_CATS.map(function (c) { return c.label; })).forEach(function (n) { if (n !== 'Uncategorized' && !seen[n]) { seen[n] = 1; out.push(mk(n)); } }); return out; }, custom: true, placeholder: 'Select or type a category', search: 'Search or type a category...' });
-    ['o', 'g'].forEach(function (pre) {
+    ['o', 'g', 'y'].forEach(function (pre) {
       comboMake({ id: pre + '-country', items: countryItems, custom: true, placeholder: 'Select country', search: 'Search countries...' });
       comboMake({ id: pre + '-region', items: function () { return [].map.call($(pre + '-region').options, function (o) { return { v: o.value, l: o.textContent || 'Any state / region' }; }); }, placeholder: 'Any state / region', search: 'Search states or regions...', empty: 'Pick a country first' });
       comboMake({ id: pre + '-city', items: function () { return geoCities(pre).map(mk); }, custom: true, remote: function (v) { return geoRemote(pre, v); }, placeholder: 'Select city or district', search: 'Search, or type any city...', empty: 'Pick a country first, or type any city name' });
-      comboMake({ id: pre + '-cat', items: function () { return [mk('Everything (any business)')].concat(OSM_CATS.map(function (c) { return mk(c.label); })); }, custom: true, multi: pre === 'o', placeholder: 'Select business type', search: 'Search business types...' });
+      comboMake({ id: pre + '-cat', items: function () { return [mk('Everything (any business)')].concat(OSM_CATS.map(function (c) { return mk(c.label); })); }, custom: true, multi: pre === 'o', placeholder: 'Select business type', search: 'Search, or type your own and press Enter...' });
     });
   }
   var ES_NAMES = {"Plumbing":"Fontanero","HVAC":"Aire acondicionado","Electrician":"Electricista","Roofing":"Tejados","Landscaping":"Jardinería","Cleaning Service":"Servicio de limpieza","Painter":"Pintor","Carpenter":"Carpintero","Builder":"Empresa de construcción","Locksmith":"Cerrajero","Pest Control":"Control de plagas","Moving Company":"Mudanzas","Auto Repair":"Taller mecánico","Car Dealer":"Concesionario de coches","Car Wash":"Lavado de coches","Restaurant":"Restaurante","Cafe":"Cafetería","Fast Food":"Comida rápida","Bar & Pub":"Bar","Bakery":"Panadería","Butcher":"Carnicería","Grocery":"Supermercado","Hair Salon":"Peluquería","Beauty":"Salón de belleza","Spa & Massage":"Spa","Tattoo":"Tatuajes","Gym & Fitness":"Gimnasio","Dentist":"Dentista","Doctor & Clinic":"Clínica","Hospital":"Hospital","Pharmacy":"Farmacia","Optician":"Óptica","Physiotherapy":"Fisioterapeuta","Veterinary":"Veterinario","Pet Shop":"Tienda de mascotas","Lawyer":"Abogado","Accountant":"Asesoría contable","Insurance":"Seguros","Real Estate":"Inmobiliaria","Architect":"Arquitecto","Marketing & Advertising":"Agencia de marketing","IT & Software":"Informática","Photography":"Fotógrafo","Printing":"Imprenta","Travel Agency":"Agencia de viajes","Hotel":"Hotel","Bank & Finance":"Banco","Clothing":"Tienda de ropa","Florist":"Floristería","Furniture":"Muebles","Electronics":"Electrónica","Hardware":"Ferretería","Laundry & Dry Cleaning":"Lavandería","School & Tutoring":"Academia","Daycare":"Guardería","Event & Wedding":"Bodas y eventos","Funeral":"Funeraria"};
@@ -2365,6 +2384,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       c.tags.forEach(function (t) { if (mode !== 'names') st.push('nwr["' + t[0] + '"="' + t[1] + '"]["name"]' + scope.f + ';'); if (keys.indexOf(t[0]) < 0) keys.push(t[0]); });
       if (mode !== 'tags' && c.kw && (!c.tags.length || cats.length < 3)) keys.forEach(function (k) { st.push('nwr["' + k + '"]["name"~"' + c.kw + '",i]' + scope.f + ';'); });
     });
+    if (!st.length) return '';
     return '[out:json][timeout:' + (mode === 'names' ? 15 : 12) + '];' + scope.pre + '(' + st.join('') + ');out center tags ' + lim + ';';
   }
   function pickGeo(g) {
@@ -2471,6 +2491,16 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('g-query').value = [term, loc && 'in ' + loc].filter(Boolean).join(' ');
     if (es && $('g-lang').checked) $('g-query').value = $('g-query').value.replace(/ in /, ' en ');
   }
+  function yBuild() {
+    var cat = $('y-cat').value.split(/[,;]/)[0].trim(), city = $('y-city').value.trim(), country = $('y-country').value.trim();
+    var rg = geoRegion('y'), us = /^(united states|usa|us)$/i.test(country) || /^(canada)$/i.test(country);
+    if (!cat && !city) return;
+    var term = /^everything/i.test(cat) ? '' : cat;
+    var loc = city ? [city, us ? (rg.code || rg.name) : rg.name, us ? '' : country].filter(Boolean).join(', ') : [rg.name, country].filter(Boolean).join(', ');
+    $('s-url').value = 'https://www.yelp.com/search?find_desc=' + encodeURIComponent(term).replace(/%20/g, '+') + '&find_loc=' + encodeURIComponent(loc).replace(/%20/g, '+');
+    $('s-url').dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  ['y-cat', 'y-country', 'y-region', 'y-city'].forEach(function (id) { $(id).addEventListener('input', yBuild); $(id).addEventListener('change', yBuild); });
   ['g-cat', 'g-country', 'g-region', 'g-city', 'g-lang'].forEach(function (id) { $(id).addEventListener('input', gBuild); $(id).addEventListener('change', gBuild); });
   $('g-open').addEventListener('click', function () {
     gBuild();
@@ -2716,12 +2746,15 @@ window.HD_CONFIG = window.HD_CONFIG || {
         function go(i) {
           say(i === 0 ? 'Searching OpenStreetMap...' : 'Only ' + order.length + ' found, searching a wider area...');
           var sc = stages[i].scope;
-          return overpassRun(osmQuery(cats, sc, outN, 'tags'), say, 13000).then(function (j) {
+          var tq = osmQuery(cats, sc, outN, 'tags');
+          var first = tq ? overpassRun(tq, say, 13000) : overpassRun(osmQuery(cats, sc, outN, 'names'), say, 15000);
+          return first.then(function (j) {
             if (tok !== osmTok) throw new Error('cancelled');
             add(j); used = i;
-            if (order.length >= minWant || !hasNames) return;
+            var nq = (!tq || order.length >= minWant || !hasNames) ? '' : osmQuery(cats, sc, outN, 'names');
+            if (!nq) return;
             say('Also checking business names...');
-            return overpassRun(osmQuery(cats, sc, outN, 'names'), function () {}, 15000).then(function (k) { if (tok === osmTok) add(k); }, function () {});
+            return overpassRun(nq, function () {}, 15000).then(function (k) { if (tok === osmTok) add(k); }, function () {});
           }).then(function () {
             if (tok !== osmTok) throw new Error('cancelled');
             if (order.length >= minWant || i === stages.length - 1) return;
@@ -2905,7 +2938,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   $('g-find').addEventListener('click', googleFind);
   $('g-sample').addEventListener('click', function () { $('g-cat').value = 'Plumbing'; $('g-country').value = 'United States'; geoRefresh('g'); $('g-region').value = 'Texas'; geoRefresh('g'); $('g-city').value = 'Houston'; comboSyncAll(); gBuild(); $('g-paste').value = G_SAMPLE; googleFind(); });
   initOsmLists();
-  geoInit('o'); geoInit('g'); comboInit();
+  geoInit('o'); geoInit('g'); geoInit('y'); comboInit();
   $('o-search').addEventListener('click', osmSearch);
   $('o-test').addEventListener('click', function () {
     var b = $('o-test'); b.disabled = true; b.textContent = 'Testing...';
