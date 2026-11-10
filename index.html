@@ -2533,7 +2533,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
     });
   }
   var osmErrs = [];
-  function hostOf(u) { return String(u).split('/')[2] || u; }
+  var PROXY = '/api/osm';
+  function hostOf(u) { return u === PROXY ? 'your Vercel server' : (String(u).split('/')[2] || u); }
   function errText() { var seen = {}, out = []; osmErrs.forEach(function (e) { if (!seen[e]) { seen[e] = 1; out.push(e); } }); return out.slice(0, 5).join('; '); }
   function srvStats() { try { return JSON.parse(localStorage.getItem('hd-srv') || '{}') || {}; } catch (e) { return {}; } }
   function srvNote(url, ok, ms) {
@@ -2564,9 +2565,11 @@ window.HD_CONFIG = window.HD_CONFIG || {
           var c = typeof AbortController === 'function' ? new AbortController() : null, t1 = Date.now();
           ctrls[i] = c;
           var timer = setTimeout(function () { if (c) c.abort(); }, ms || 14000);
-          fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q), signal: c ? c.signal : undefined })
-            .catch(function (e) { if (e && e.name === 'AbortError') throw e; return fetch(url + '?data=' + encodeURIComponent(q), { signal: c ? c.signal : undefined }); })
-            .then(function (r) { if (!r.ok) throw new Error('server busy (HTTP ' + r.status + ')'); return r.json(); })
+          (url === PROXY
+            ? fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: q }), signal: c ? c.signal : undefined })
+            : fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q), signal: c ? c.signal : undefined })
+              .catch(function (e) { if (e && e.name === 'AbortError') throw e; return fetch(url + '?data=' + encodeURIComponent(q), { signal: c ? c.signal : undefined }); }))
+            .then(function (r) { if (!r.ok) throw new Error(url === PROXY ? 'not available (HTTP ' + r.status + ')' : 'server busy (HTTP ' + r.status + ')'); return r.json(); })
             .then(function (j) {
               clearTimeout(timer);
               if (j && j.remark && /error|timed out|out of memory/i.test(j.remark) && !(j.elements && j.elements.length)) throw new Error('server overloaded');
@@ -2586,7 +2589,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     }
     function hasEl(j) { return j && j.elements && j.elements.length; }
     var ord = srvOrder();
-    return attempt(ord.slice(0, 3)).then(function (j) {
+    return attempt([PROXY].concat(ord.slice(0, 3))).then(function (j) {
       if (hasEl(j)) return j;
       say('Double-checking with more servers...');
       return attempt(ord.slice(3)).then(function (k) { return hasEl(k) ? k : j; }, function () { return j; });
@@ -2856,9 +2859,9 @@ window.HD_CONFIG = window.HD_CONFIG || {
   $('o-test').addEventListener('click', function () {
     var b = $('o-test'); b.disabled = true; b.textContent = 'Testing...';
     var q = '[out:json][timeout:10];node["amenity"="cafe"](27.94,-82.48,27.97,-82.44);out 2;', rows = [];
-    var jobs = OVERPASS.map(function (u) {
+    var jobs = [PROXY].concat(OVERPASS).map(function (u) {
       var t1 = Date.now();
-      return fetchT(u + '?data=' + encodeURIComponent(q), {}, 12000).then(function (r) {
+      return (u === PROXY ? fetchT(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: q }) }, 14000) : fetchT(u + '?data=' + encodeURIComponent(q), {}, 12000)).then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       }).then(function (j) { rows.push(hostOf(u) + ': OK ' + Math.round((Date.now() - t1) / 100) / 10 + 's, ' + ((j.elements || []).length) + ' results' + (j.remark ? ' (' + j.remark.slice(0, 40) + ')' : '')); },
