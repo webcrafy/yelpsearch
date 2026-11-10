@@ -297,11 +297,10 @@ td.webc { min-width: 150px; }
   tbody td { display: block; border: 0; padding: 0; min-width: 0; }
   tbody td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 3px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; }
   tbody td:nth-child(1) { position: absolute; top: 14px; right: 14px; }
-  tbody td:nth-child(2), tbody td:nth-child(3), tbody td:nth-child(8) { grid-column: 1 / -1; }
+  tbody td:nth-child(2), tbody td:nth-child(3), tbody td:last-child { grid-column: 1 / -1; }
   tbody td:nth-child(2)::before, tbody td:nth-child(3)::before { display: none; }
   td.mono { white-space: normal; }
   tbody td select { width: 100%; }
-  tbody td:nth-child(8) .row > .btn { flex: 1 1 0; }
   .empty { grid-column: 1 / -1; }
 }
 @media (max-width: 420px) {
@@ -580,7 +579,7 @@ td .chip { white-space: nowrap; }
 @media (min-width: 761px) { .scroll th { background: transparent; padding: 14px 14px 10px; font-size: 11px; letter-spacing: .09em; border-bottom: 1px solid var(--line); }
 .scroll td { padding: 16px 14px; border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); vertical-align: top; } }
 .scroll tbody tr { transition: background .15s; }
-.scroll tbody tr:hover td { background: color-mix(in srgb, var(--panel-2) 70%, transparent); }
+@media (min-width: 761px) { .scroll tbody tr:hover td { background: color-mix(in srgb, var(--panel-2) 70%, transparent); } }
 .scroll .rownum { min-width: 28px; height: 28px; line-height: 28px; border-radius: 50%; background: var(--panel-2); color: var(--muted); font-size: 12px; }
 .bz { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
 .bzt { min-width: 0; flex: 1; }
@@ -977,6 +976,10 @@ td.mo { z-index: 40 !important; }
           <label for="o-limit">Max results</label>
           <select id="o-limit"><option>50</option><option selected>100</option><option>200</option></select>
         </div>
+        <div>
+          <label for="o-want">Which businesses</label>
+          <select id="o-want"><option value="all">All businesses</option><option value="phone">Only with a phone number</option><option value="nosite">Phone but no website (best for selling websites)</option></select>
+        </div>
       </div>
       <div class="row"><button class="btn" id="o-search" type="button">Search OpenStreetMap</button> <button class="btn ghost" id="o-test" type="button">Test servers</button></div>
     </div>
@@ -1368,7 +1371,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
 (function () {
   var KEY = 'yelp-lead-desk-v1';
   var $ = function (id) { return document.getElementById(id); };
-  var profile = {}, leads = [], me = '', cc = '1', selected = null, kind = 'first', chan = 'dm', ledgerSrc = 'all', curSrc = 'yelp', trash = [], picked = {};
+  var gone = [], profile = {}, leads = [], me = '', cc = '1', selected = null, kind = 'first', chan = 'dm', ledgerSrc = 'all', curSrc = 'yelp', trash = [], picked = {};
   var SRC_NAMES = { yelp: 'Yelp', google: 'Google', osm: 'OpenStreetMap', file: 'CSV / other', manual: 'My own' };
 
   var WEB = [['unknown', 'Not checked'], ['none', 'No website'], ['old', 'Old or slow'], ['ok', 'Looks fine']];
@@ -1404,8 +1407,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
   var sb = null, user = null, ckey = KEY, savedAt = 0, pushT = null, syncState = 'local';
   try { if (CFG.supabaseUrl && CFG.supabaseKey && window.supabase) sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey); } catch (e) { sb = null; }
 
-  function blob() { return { leads: leads, me: me, cc: cc, trash: trash, savedAt: savedAt, prefs: prefs, profile: profile }; }
-  function apply(d) { profile = d.profile || profile || {}; leads = d.leads || []; me = d.me || ''; cc = d.cc || '1'; trash = d.trash || []; savedAt = d.savedAt || 0; }
+  function blob() { return { gone: gone.slice(-3000), leads: leads, me: me, cc: cc, trash: trash, savedAt: savedAt, prefs: prefs, profile: profile }; }
+  function apply(d) { gone = d.gone || []; profile = d.profile || profile || {}; leads = d.leads || []; me = d.me || ''; cc = d.cc || '1'; trash = d.trash || []; savedAt = d.savedAt || 0; }
   function readLocal(k) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
   function load() { var d = readLocal(ckey); if (d) { apply(d); return true; } return false; }
   function save() {
@@ -1445,6 +1448,11 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var seen = {};
     out.leads.concat(out.trash).forEach(function (l) { seen[l.id] = 1; });
     (other.leads || []).forEach(function (l) { if (!seen[l.id]) { seen[l.id] = 1; out.leads.push(l); } });
+    var dead = {};
+    (a.gone || []).concat(b.gone || []).forEach(function (id) { dead[id] = 1; });
+    out.gone = Object.keys(dead).slice(-3000);
+    out.leads = out.leads.filter(function (l) { return !dead[l.id]; });
+    out.trash = out.trash.filter(function (l) { return !dead[l.id]; });
     return out;
   }
   function dname() { var m = (user && user.user_metadata) || {}; return String(m.name || '').trim(); }
@@ -1475,7 +1483,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function signOut() {
     var go = function () {
       try { localStorage.removeItem(ckey); } catch (e) {}
-      sb.auth.signOut().then(function () { user = null; leads = []; trash = []; me = ''; selected = null; showHome(); });
+      sb.auth.signOut().then(function () { user = null; leads = []; trash = []; gone = []; me = ''; selected = null; showHome(); });
     };
     push().then(function (r) {
       if (r && r.error) { if (!confirm('Your latest changes could not be synced. Sign out anyway?')) return; }
@@ -1931,16 +1939,38 @@ window.HD_CONFIG = window.HD_CONFIG || {
       address: a.address, city: a.city, state: a.state, zip: a.zip
     };
   }
+  function osmPhones(t) {
+    var out = [], seen = {};
+    ['phone', 'contact:phone', 'contact:mobile', 'mobile', 'phone:mobile', 'contact:whatsapp', 'whatsapp'].forEach(function (k) {
+      String(t[k] || '').split(/\s*;\s*|\s*,\s+|\s+or\s+/i).forEach(function (p) {
+        p = p.trim(); var d = p.replace(/\D/g, '');
+        if (d.length >= 7 && d.length <= 15 && !seen[d.slice(-9)]) { seen[d.slice(-9)] = 1; out.push(p); }
+      });
+    });
+    return out;
+  }
+  var NOT_A_SITE = /(^|[\/.])(facebook\.com|fb\.com|fb\.me|instagram\.com|wa\.me|whatsapp\.com|linktr\.ee|yelp\.[a-z.]+|tripadvisor\.[a-z.]+|google\.[a-z.]+|goo\.gl|g\.page|twitter\.com|x\.com|tiktok\.com|youtube\.com)(\/|$)/i;
   function fromOsm(el) {
     var t = el.tags || {};
-    var site = t.website || t['contact:website'] || t.url || '';
+    var phones = osmPhones(t);
+    var waTag = String(t['contact:whatsapp'] || t.whatsapp || '').split(';')[0].trim();
+    var fb = t['contact:facebook'] || t.facebook || '', ig = t['contact:instagram'] || t.instagram || '';
+    var site = '', social = '';
+    [t.website, t['contact:website'], t.url].forEach(function (u) {
+      u = String(u || '').split(';')[0].trim(); if (!u) return;
+      if (NOT_A_SITE.test(u)) { social = social || u; if (/facebook\.com|fb\.com|fb\.me/i.test(u) && !fb) fb = u; if (/instagram\.com/i.test(u) && !ig) ig = u; }
+      else if (!site) site = u;
+    });
+    var notes = [];
+    if (!site) notes.push(social ? 'Only a social page is listed in OpenStreetMap, no real website' : 'No website in OpenStreetMap, check Google');
+    if (phones.length > 1) notes.push('Other phone: ' + phones.slice(1, 3).join(', '));
     return {
-      name: t.name || '', phone: t.phone || t['contact:phone'] || '', website: site, webStatus: 'unknown',
+      name: t.name || '', phone: phones[0] || '', website: site, webStatus: 'unknown',
       address: [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' '),
       zip: t['addr:postcode'] || '', city: t['addr:city'] || '', state: t['addr:state'] || '',
-      email: t.email || t['contact:email'] || '', fb: t['contact:facebook'] || t.facebook || '',
-      ig: t['contact:instagram'] || t.instagram || '', hours: t.opening_hours || '',
-      notes: site ? '' : 'No website in OpenStreetMap, check Google'
+      email: String(t.email || t['contact:email'] || '').split(';')[0].trim(), fb: fb, ig: ig,
+      wa: waTag.replace(/\D/g, '').length >= 7 ? waTag : '', hours: t.opening_hours || '',
+      notes: notes.join('. ')
     };
   }
   var OSM_CAT_RAW = [
@@ -1949,7 +1979,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     'Electrician|electrician,electrical|craft=electrician;shop=electrical|electric',
     'Roofing|roofing,roofer,roofers,roof|craft=roofer|roof',
     'Landscaping|landscaping,landscaper,gardener,gardening,lawn|craft=gardener;shop=garden_centre|landscap|lawn|garden',
-    'Cleaning Service|cleaning,cleaner,janitorial,maid|office=cleaning;shop=laundry;craft=cleaning|clean|maid|janitor',
+    'Cleaning Service|cleaning,cleaner,janitorial,maid,house cleaning|office=cleaning;craft=cleaning|clean|maid|janitor',
     'Painter|painter,painting,house painter|craft=painter|paint',
     'Carpenter|carpenter,carpentry,woodwork|craft=carpenter|carpent',
     'Builder|builder,construction,contractor,general contractor|craft=builder;office=construction_company|construction|builder|contractor',
@@ -2479,18 +2509,28 @@ window.HD_CONFIG = window.HD_CONFIG || {
     return out;
   }
   var NAME_KEYS_LIST = ['shop', 'craft', 'office'];
-  function osmQuery(cats, scope, lim, mode) {
+  function osmQuery(cats, scope, lim, mode, want) {
     var st = [];
+    var PH = cats.length > 2 ? ['["phone"]', '["contact:phone"]'] : ['["phone"]', '["contact:phone"]', '["contact:mobile"]'];
+    var NS = want === 'nosite' ? '[!"website"][!"contact:website"]' : '';
+    var filt = want === 'phone' || want === 'nosite';
     cats.forEach(function (c) {
       if (c.all) {
         if (mode === 'names') return;
         ['shop', 'craft', 'office', 'healthcare', 'tourism', 'amenity'].forEach(function (k) {
-          st.push('nwr["' + k + '"]["name"]["phone"]' + scope.f + ';', 'nwr["' + k + '"]["name"]["website"]' + scope.f + ';');
+          PH.slice(0, 2).forEach(function (p) { st.push('nwr["' + k + '"]["name"]' + p + NS + scope.f + ';'); });
+          if (!filt) st.push('nwr["' + k + '"]["name"]["website"]' + scope.f + ';');
         });
         return;
       }
       var keys = NAME_KEYS_LIST.slice();
-      c.tags.forEach(function (t) { if (mode !== 'names') st.push('nwr["' + t[0] + '"="' + t[1] + '"]["name"]' + scope.f + ';'); if (keys.indexOf(t[0]) < 0) keys.push(t[0]); });
+      c.tags.forEach(function (t) {
+        if (mode !== 'names') {
+          if (filt) PH.forEach(function (p) { st.push('nwr["' + t[0] + '"="' + t[1] + '"]["name"]' + p + NS + scope.f + ';'); });
+          else st.push('nwr["' + t[0] + '"="' + t[1] + '"]["name"]' + scope.f + ';');
+        }
+        if (keys.indexOf(t[0]) < 0) keys.push(t[0]);
+      });
       if (mode !== 'tags' && c.kw && (!c.tags.length || cats.length < 3)) keys.forEach(function (k) { st.push('nwr["' + k + '"]["name"~"' + c.kw + '",i]' + scope.f + ';'); });
     });
     if (!st.length) return '';
@@ -2709,7 +2749,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function ovBlocked() { try { return Date.now() - (+localStorage.getItem('hd-ovfail') || 0) < 1800000; } catch (e) { return false; } }
   function ovMark(bad) { try { if (bad) localStorage.setItem('hd-ovfail', String(Date.now())); else localStorage.removeItem('hd-ovfail'); } catch (e) {} }
   function overpassRun(q, say, ms) {
-    if (ovBlocked()) ms = 5000;
+    if (ovBlocked()) ms = 7000;
     function attempt(list) {
       return new Promise(function (resolve, reject) {
         var pending = list.length, done = false, ctrls = [], lastErr = null, hits = [], graceT = null, empties = 0;
@@ -2756,7 +2796,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       say('Double-checking with more servers...');
       return attempt(relays(q).slice(2).concat(ord.slice(3))).then(function (k) { return hasEl(k) ? k : j; }, function () { return j; });
     }, function (e) {
-      if (fast) { ovMark(true); throw e; }
+      if (fast) throw e;
       say('Trying more servers...');
       return attempt(relays(q).slice(2).concat(ord.slice(3))).then(function (r) { ovMark(false); return r; }, function (e2) { ovMark(true); throw e2; });
     });
@@ -2819,6 +2859,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
   }
   function osmSearch() {
     var catText = $('o-cat').value.trim(), cityIn = $('o-city').value.trim(), country = $('o-country').value.trim(), lim = parseInt($('o-limit').value, 10) || 100;
+    var want = $('o-want') ? $('o-want').value : 'all';
+    try { localStorage.setItem('hd-owant', want); } catch (e) {}
     var tok = ++osmTok, t0 = Date.now(), base = '';
     osmErrs = [];
     clearInterval(osmTick);
@@ -2851,16 +2893,24 @@ window.HD_CONFIG = window.HD_CONFIG || {
         if (!g.length) throw new Error('could not find that place. Check the spelling, or add the country');
         var best = pickGeo(g), lat = +best.lat, lon = +best.lon;
         var stages = [{ name: 'the city', scope: bboxOf(best, 0.16, 0.02, 0.9) }, { name: 'about 40 km around', scope: bboxOf(best, 0.7, 0.2, 1.2) }];
-        var sc0 = stages[0].scope.f, all = {}, order = [], used = 0, hasNames = cats.some(function (c) { return !c.all && c.kw; });
+        var sc0 = stages[0].scope.f, all = {}, order = [], used = 0, capped = false, hasNames = cats.some(function (c) { return !c.all && c.kw; });
         function add(j) { (j.elements || []).forEach(function (el) { if (!el.tags || !el.tags.name) return; var k = (el.type || '') + ':' + (el.id || el.tags.name); if (!all[k]) { all[k] = el; el._d = hav(lat, lon, el.lat != null ? el.lat : (el.center ? el.center.lat : lat), el.lon != null ? el.lon : (el.center ? el.center.lon : lon)); order.push(k); } }); }
         function go(i) {
           say(i === 0 ? 'Searching OpenStreetMap...' : 'Only ' + order.length + ' found, searching a wider area...');
           var sc = stages[i].scope;
-          var tq = osmQuery(cats, sc, outN, 'tags');
+          var tq = osmQuery(cats, sc, outN, 'tags', want);
           var first = tq ? overpassRun(tq, say, 13000) : overpassRun(osmQuery(cats, sc, outN, 'names'), say, 15000);
           return first.then(function (j) {
             if (tok !== osmTok) throw new Error('cancelled');
             add(j); used = i;
+            var full = (j.elements || []).length >= outN;
+            if (full) capped = true;
+            var bq = (tq && full && want === 'all') ? osmQuery(cats, sc, outN, 'tags', 'nosite') : '';
+            if (!bq) return;
+            say('This area has a lot. Getting the ones with a phone and no website first...');
+            return overpassRun(bq, function () {}, 13000).then(function (k) { if (tok === osmTok) add(k); }, function () {});
+          }).then(function () {
+            if (tok !== osmTok) throw new Error('cancelled');
             var nq = (!tq || order.length >= minWant || !hasNames) ? '' : osmQuery(cats, sc, outN, 'names');
             if (!nq) return;
             say('Also checking business names...');
@@ -2871,7 +2921,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
             return go(i + 1);
           });
         }
-        function result(extra) { var r = { area: sc0 + (best.display_name ? ' · ' + String(best.display_name).split(',').slice(0, 2).join(',') : ''), elements: order.map(function (k) { return all[k]; }), stage: stages[used].name, used: used }; for (var k in extra) r[k] = extra[k]; return r; }
+        function result(extra) { var r = { capped: capped, area: sc0 + (best.display_name ? ' · ' + String(best.display_name).split(',').slice(0, 2).join(',') : ''), elements: order.map(function (k) { return all[k]; }), stage: stages[used].name, used: used }; for (var k in extra) r[k] = extra[k]; return r; }
         return go(0).then(function () {
           if (order.length) return result({});
           say('Nothing tagged that way. Trying a text search...');
@@ -2885,7 +2935,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       })
       .then(function (j) {
         if (tok !== osmTok) return;
-        var ctry = String(country || '').trim(), seen = {}, inLedger = 0;
+        var ctry = String(country || '').trim(), seen = {}, inLedger = 0, chains = 0, cut = 0;
         function nn(x) { return String(x || '').toLowerCase().replace(/&/g, 'and').replace(/\b(llc|inc|ltd|co|corp|the)\b/g, '').replace(/[^a-z0-9]/g, ''); }
         var have = {}, havePh = {};
         leads.forEach(function (x) { if (x.example) return; have[nn(x.name) + '|' + String(x.city || '').toLowerCase()] = 1; if (digits(x.phone).length >= 7) havePh[digits(x.phone).slice(-10)] = 1; });
@@ -2896,8 +2946,14 @@ window.HD_CONFIG = window.HD_CONFIG || {
           if (ctry) o.country = ctry;
           if (dial) o.dial = dial;
           o.noContact = !(digits(o.phone).length >= 7 || o.email || o.website);
-          o._r = (osmStrong(el, cats) ? 3 : 0) + (digits(o.phone).length >= 7 ? 2 : 0) + (o.website ? 0 : 1) + (o.email ? 0.5 : 0) - Math.min(2, (el._d || 0) / 25);
+          var tg = el.tags || {};
+          if (tg['brand:wikidata'] || tg['operator:wikidata'] || tg['network:wikidata']) o.chain = true;
+          o._r = (o.chain ? -4 : 0) + (osmStrong(el, cats) ? 3 : 0) + (digits(o.phone).length >= 7 ? 2 : 0) + (o.website ? 0 : 1) + (o.email ? 0.5 : 0) - Math.min(2, (el._d || 0) / 25);
           return o;
+        }).filter(function (o) {
+          if (want !== 'all' && digits(o.phone).length < 7) { cut++; return false; }
+          if (want === 'nosite' && o.website) { cut++; return false; }
+          return true;
         }).filter(function (o) {
           var ph = digits(o.phone).length >= 7 ? digits(o.phone).slice(-10) : '';
           if ((ph && havePh[ph]) || have[nn(o.name) + '|' + String(o.city || cityName || '').toLowerCase()]) { inLedger++; o._known = true; }
@@ -2907,22 +2963,26 @@ window.HD_CONFIG = window.HD_CONFIG || {
         items.sort(function (a, b) { return (a._known ? 1 : 0) - (b._known ? 1 : 0) || b._r - a._r; });
         items.forEach(function (o) { delete o._r; delete o._known; });
         var shown = items.slice(0, lim);
+        chains = shown.filter(function (o) { return o.chain; }).length;
         showFound(shown, 'OpenStreetMap');
         var secs = Math.round((Date.now() - t0) / 1000);
         if (!sList.length) {
           say(j.failed
             ? 'OpenStreetMap did not answer (' + (errText() || 'servers busy') + '). Press "Test servers" below to see which one is blocked, or turn off ad blockers for this site.'
             : (j.quick && j.slow) ? 'The main OpenStreetMap servers failed (' + (errText() || 'no answer') + ') and the text search found nothing. Press "Test servers" below to see which one is blocked.'
-            : 'The OpenStreetMap servers answered but nothing matched around ' + (cityName || region) + ' (area searched: ' + (j.area || 'n/a') + '). Try the category "Everything", a related category, or the Google tab for this city.');
+            : 'The OpenStreetMap servers answered but nothing matched around ' + (cityName || region) + ' (area searched: ' + (j.area || 'n/a') + ').' + (want !== 'all' ? ' You asked only for businesses ' + (want === 'nosite' ? 'with a phone and no website' : 'with a phone') + (cut ? ' (' + cut + ' others were left out)' : '') + ', so try "All businesses".' : ' Try the category "Everything", a related category, or the Google tab for this city.'));
         } else {
           var withPhone = shown.filter(function (o) { return digits(o.phone).length >= 7; }).length, noSite = shown.filter(function (o) { return !o.website; }).length;
           var note = ' ' + withPhone + ' have a phone number, ' + noSite + ' have no website listed.';
           if (j.used > 0 && !j.quick) note += ' The city had few, so the search covered ' + j.stage + '.';
           if (j.quick) note += ' Found with the text search' + (j.slow ? ' because the main servers failed (' + (errText() || 'no answer') + ')' : '') + ', so many businesses may be missing.';
+          if (want !== 'all') note += ' Showing only businesses ' + (want === 'nosite' ? 'with a phone and no website in OpenStreetMap' : 'with a phone number') + '.';
+          if (chains) note += ' ' + chains + (chains === 1 ? ' is a chain or franchise' : ' are chains or franchises') + ' (unticked, they use a head-office website).';
+          if (j.capped) note += ' This area has more than one search can return, so try a smaller area or one category at a time for the rest.';
           if (inLedger) note += ' ' + inLedger + ' of these are already in your leads (shown greyed out, they will not be added again).';
           if (items.length > lim) note += ' Showing the best ' + lim + ' of ' + items.length + '.';
-          var left = shown.filter(function (o) { return o.noContact; }).length;
-          if (left) note += ' ' + left + ' with no contact info are unticked.';
+          var left = shown.filter(function (o) { return o.noContact && !o.chain; }).length;
+          if (left) note += ' ' + left + ' with no contact info ' + (left === 1 ? 'is' : 'are') + ' unticked.';
           $('sMsg').textContent += note + ' (' + secs + 's)';
           base = '';
         }
@@ -2985,11 +3045,11 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('sFoundWrap').hidden = !sList.length;
     $('sFound').innerHTML = sList.map(function (f, i) {
       var web = f.webStatus === 'none' ? 'No website listed' : f.website ? 'Has website' : '';
-      var meta = [f.niche || searchCtx.niche, web, f.noContact ? 'No phone, email or website' : ''].filter(Boolean).join(' · ');
+      var meta = [f.niche || searchCtx.niche, web, f.chain ? 'Chain or franchise' : '', f.noContact ? 'No phone, email or website' : ''].filter(Boolean).join(' · ');
       var line2 = [f.phone, f.address].filter(Boolean).join(' · ');
       var dupe = isKnown(f);
       if (dupe) meta = 'Already in your leads · ' + meta;
-      return '<label' + (dupe ? ' style="opacity:.55"' : '') + '><input type="checkbox" data-i="' + i + '"' + (f.noContact || dupe ? '' : ' checked') + (dupe ? ' disabled' : '') + '><span><strong>' + esc(f.name) + '</strong><div class="sub">' + esc(meta) + '</div>' +
+      return '<label' + (dupe ? ' style="opacity:.55"' : '') + '><input type="checkbox" data-i="' + i + '"' + (f.noContact || f.chain || dupe ? '' : ' checked') + (dupe ? ' disabled' : '') + '><span><strong>' + esc(f.name) + '</strong><div class="sub">' + esc(meta) + '</div>' +
         (line2 ? '<div class="sub">' + esc(line2) + '</div>' : '') +
         ((!f.phone || !f.website) ? '<div class="sub"><a href="' + esc(gmapsUrl({ name: f.name, address: f.address, city: f.city || searchCtx.city, state: f.state || searchCtx.state, country: f.country })) + '" target="_blank" rel="noopener">Find ' + (!f.phone ? 'phone' : 'website') + (!f.phone && !f.website ? ' &amp; website' : '') + ' on Google Maps</a></div>' : '') + '</span></label>';
     }).join('');
@@ -3007,7 +3067,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       var l = {};
       for (var k in base) l[k] = base[k];
       for (var k2 in f) { if (f[k2] !== '' && f[k2] != null) l[k2] = f[k2]; }
-      delete l.noContact;
+      delete l.noContact; delete l.chain;
       if (!l.niche) l.niche = searchCtx.niche;
       if (catIn) l.cat = catIn;
       if (!l.city) l.city = searchCtx.city;
@@ -3025,8 +3085,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
       leads.push(l); if (!first) first = l.id; added++;
     });
     if (first) selected = first;
-    save(); render(); renderDraft();
     if (added) { ledgerSrc = curSrc; curCat = 'all'; }
+    save(); render(); renderDraft();
     $('sMsg').textContent = 'Added ' + added + ' to ' + (SRC_NAMES[curSrc] || 'your leads') + (catIn ? ' \u203a ' + catIn : '') + (dup ? ', skipped ' + dup + ' already in your leads' : '') + '. Open a business page to fill in its website and contact details with Add a lead.';
     sList = []; renderFound();
   }
@@ -3052,6 +3112,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   initOsmLists();
   geoInit('o'); geoInit('g'); geoInit('y'); comboInit();
   $('o-search').addEventListener('click', osmSearch);
+  try { var ow = localStorage.getItem('hd-owant'); if (ow && /^(all|phone|nosite)$/.test(ow)) $('o-want').value = ow; } catch (e) {}
   $('o-test').addEventListener('click', function () {
     var b = $('o-test'); b.disabled = true; b.textContent = 'Testing...';
     var q = '[out:json][timeout:10];node["amenity"="cafe"](27.94,-82.48,27.97,-82.44);out 2;', rows = [];
@@ -3177,12 +3238,16 @@ window.HD_CONFIG = window.HD_CONFIG || {
       });
   }
   function waNumber(l) {
-    var n = digits(l.wa || l.phone);
+    var raw = String(l.wa || l.phone || ''), n = digits(raw);
     if (n.length < 7) return '';
-    if (l.dial && l.dial !== '1') {
-      if (/^\s*\+/.test(String(l.wa || l.phone)) || (n.indexOf(l.dial) === 0 && n.length >= l.dial.length + 7)) return n;
-      return l.dial + n.replace(/^0+/, '');
+    if (/^\s*\+/.test(raw)) return n;
+    if (/^\s*00\d/.test(raw)) return n.replace(/^00/, '');
+    var dial = l.dial || dialOf(countryOf(l)) || '';
+    if (dial && dial !== '1') {
+      if (n.indexOf(dial) === 0 && n.length >= dial.length + 7) return n;
+      return dial + n.replace(/^0+/, '');
     }
+    if (dial === '1') return n.length === 10 ? '1' + n : n;
     if (n.length === 10) n = (cc || '1') + n;
     return n;
   }
@@ -3248,15 +3313,18 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function locOf(l) { return [l.city, l.state, countryOf(l)].filter(Boolean).join(', '); }
   function ico(p) { return '<svg class="gi" viewBox="0 0 24 24" aria-hidden="true">' + p + '</svg>'; }
   var IC_MSG = ico('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'), IC_SAVE = ico('<path d="M6 4h12v17l-6-4-6 4z"/>'), IC_INFO = ico('<path d="M4 6h16M4 12h16M4 18h10"/>'), IC_DEL = ico('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'), IC_MORE = ico('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>'), IC_COPY = ico('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>');
-  function cpb(what) { return '<button class="cp" type="button" data-act="cp" title="Copy ' + what + '" aria-label="Copy ' + what + '">' + IC_COPY + '</button>'; }
+  function cpb(what) { return '<button class="cp" type="button" tabindex="-1" data-act="cp" title="Copy ' + what + '" aria-label="Copy ' + what + '">' + IC_COPY + '</button>'; }
   var PIN = '<svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
+  function webExtra(l) {
+    return validSite(l.website) ? '<div class="webact"><button class="linkbtn" type="button" data-act="view" title="Preview this website here">Preview</button><a href="' + esc(normUrl(l.website)) + '" target="_blank" rel="noopener">Open &#8599;</a></div>'
+      : (l.webStatus === 'none' ? '<span class="chip accent">No website</span>' : '');
+  }
   function row(l, idx) {
     var sc = score(l), t = tier(sc);
     var place = l.cat || l.niche || '', loc = locOf(l);
     var okSite = validSite(l.website);
     var web = '<div class="fld"><input class="inl" data-f="website" type="url" maxlength="200" autocomplete="off" placeholder="+ Website" aria-label="Website of ' + esc(l.name) + '" value="' + esc(l.website && okSite ? l.website : '') + '">' + cpb('website') + '</div>' +
-      (okSite ? '<div class="webact"><button class="linkbtn" type="button" data-act="view" title="Preview this website here">Preview</button><a href="' + esc(normUrl(l.website)) + '" target="_blank" rel="noopener">Open &#8599;</a></div>'
-        : (l.webStatus === 'none' ? '<span class="chip accent">No website</span>' : ''));
+      webExtra(l);
     return '<tr data-id="' + l.id + '"' + (picked[l.id] ? ' class="sel"' : '') + '>' +
       '<td><input type="checkbox" data-pick aria-label="Select ' + esc(l.name) + '"' + (picked[l.id] ? ' checked' : '') + '></td>' +
       '<td><span class="rownum" title="Lead score ' + sc + ' (' + t[1] + ' lead)">' + ((idx || 0) + 1) + '</span></td>' +
@@ -3674,25 +3742,61 @@ window.HD_CONFIG = window.HD_CONFIG || {
     else return;
     selected = id; save(); render(); renderDraft();
   }
-  function doChange(id, el) {
-    var l = leadById(id);
-    if (!l) return;
-    var f = el.getAttribute('data-f');
+  function applyChange(l, el) {
+    var f = el.getAttribute('data-f'), prev = l[f];
     l[f] = el.value;
     if (f === 'cat') l.cat = el.value.trim().slice(0, 60);
-    if (f === 'phone') { l.phone = el.value.trim().slice(0, 40); l.waStatus = ''; if (digits(l.phone).length >= 7 && !l.channel) l.channel = ''; }
+    if (f === 'phone') {
+      l.phone = el.value.trim().slice(0, 40); l.waStatus = '';
+      if (l.wa && digits(prev).length >= 7 && digits(l.wa).slice(-7) === digits(prev).slice(-7)) { l.wa = ''; if (l.channel === 'WhatsApp') l.channel = ''; }
+    }
     if (f === 'city' || f === 'state' || f === 'country') l[f] = el.value.trim().slice(0, 80);
+    if (f === 'country') { var dl = dialOf(l.country); if (dl) l.dial = dl; }
     if (f === 'owner') l.owner = el.value.trim().slice(0, 80);
     if (f === 'email') l.email = el.value.trim().slice(0, 120);
     if (f === 'folder') { l.folder = el.value.trim().slice(0, 60); if (l.folder) lastFolder = l.folder; }
     if (f === 'website') {
-      l.website = el.value.trim(); l.scanAt = 0; l.scanMsg = ''; l.scanFail = '';
+      l.website = el.value.trim().slice(0, 200); l.scanAt = 0; l.scanMsg = ''; l.scanFail = '';
       if (validSite(l.website) && l.webStatus === 'none') l.webStatus = 'unknown';
       frameSrc = '';
     }
     if (f === 'status') setStatus(l, el.value);
     if (f === 'followUp') l.followUp = /^\d{4}-\d{2}-\d{2}$/.test(el.value) ? el.value : '';
+  }
+  function doChange(id, el) {
+    var l = leadById(id);
+    if (!l) return;
+    applyChange(l, el);
     save(); render(); renderDraft();
+  }
+  /* typing in a row updates only that row, so the cursor and the next click are not lost */
+  function inlineChange(id, el, tr) {
+    var l = leadById(id);
+    if (!l) return;
+    var f = el.getAttribute('data-f');
+    applyChange(l, el); save();
+    if (f === 'phone') {
+      var td = tr.querySelector('td.ctc'), old = td && td.querySelector('.wab');
+      if (old) old.parentNode.removeChild(old);
+      var h = rowWa(l); if (td && h) td.insertAdjacentHTML('beforeend', h);
+    }
+    if (f === 'website') {
+      var tw = tr.querySelector('td.webc');
+      if (tw) { [].slice.call(tw.children).forEach(function (c) { if (!c.classList.contains('fld')) tw.removeChild(c); }); tw.insertAdjacentHTML('beforeend', webExtra(l)); }
+    }
+    renderOverview(); renderSaved();
+    if (!$('drawer').hidden) renderDrawer();
+    renderDraft();
+  }
+  function keepFocus(fn) {
+    var a = document.activeElement, tr = a && a.closest ? a.closest('#rows tr[data-id]') : null, sel = '';
+    if (tr) {
+      var ff = a.getAttribute('data-f'), act = a.getAttribute('data-act');
+      sel = ff ? '[data-f="' + ff + '"]' : act ? '[data-act="' + act + '"]' : a.hasAttribute('data-pick') ? '[data-pick]' : '';
+      if (sel) sel = 'tr[data-id="' + tr.getAttribute('data-id') + '"] ' + sel;
+    }
+    fn();
+    if (sel) { var n = $('rows').querySelector(sel); if (n) { try { n.focus({ preventScroll: true }); } catch (e) {} } }
   }
 
   $('rows').addEventListener('click', function (e) {
@@ -3705,10 +3809,12 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var id = tr.getAttribute('data-id');
     if (e.target.matches('input[data-pick]')) {
       if (e.target.checked) picked[id] = true; else delete picked[id];
-      render(); return;
+      keepFocus(render); return;
     }
     var el = e.target.closest('select[data-f], input[data-f]');
-    if (el) doChange(id, el);
+    if (!el) return;
+    if (el.tagName === 'INPUT' && /^(owner|phone|email|website)$/.test(el.getAttribute('data-f'))) { inlineChange(id, el, tr); return; }
+    keepFocus(function () { doChange(id, el); });
   });
   $('pickAll').addEventListener('change', function () {
     var on = this.checked;
@@ -3749,7 +3855,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     if (i < 0) return;
     var l = trash.splice(i, 1)[0];
     if (b.getAttribute('data-dact') === 'restore') { delete l.deletedAt; leads.push(l); toast('Restored ' + l.name); }
-    else toast('Deleted ' + l.name + ' for good');
+    else { gone.push(l.id); toast('Deleted ' + l.name + ' for good'); }
     save(); render();
   });
   $('restoreAll').addEventListener('click', function () {
@@ -3767,6 +3873,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       return;
     }
     clearTimeout(purgeTimer); b.removeAttribute('data-sure'); b.textContent = 'Delete all forever';
+    trash.forEach(function (l) { gone.push(l.id); });
     trash = []; save(); render(); toast('Drafts emptied');
   });
 
@@ -3805,7 +3912,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     if (!name) { $('ownMsg').textContent = 'Enter the business name first.'; $('own-name').focus(); return; }
     var site = $('own-site').value.trim(), fo = $('own-folder').value.trim().slice(0, 60);
     var l = {
-      id: uid(), added: Date.now(), name: name, niche: $('own-niche').value.trim(), city: $('own-city').value.trim(), state: $('own-state').value.trim().toUpperCase(),
+      id: uid(), added: Date.now(), name: name, niche: $('own-niche').value.trim(), city: $('own-city').value.trim(), state: (function (v) { return v.length <= 3 ? v.toUpperCase() : v; })($('own-state').value.trim()),
       rating: '', reviews: '', phone: $('own-phone').value.trim(), website: site, webStatus: site ? 'unknown' : 'none', problem: '',
       channel: '', status: 'New', followUp: '', example: false, source: 'manual', owner: $('own-owner').value.trim(),
       email: $('own-email').value.trim(), notes: $('own-notes').value.trim(), folder: fo, list: 'My own leads'
