@@ -823,6 +823,9 @@ td.mono { white-space: nowrap; }
     <p class="status" id="sMsg" role="status"></p>
     <div id="sFoundWrap" hidden>
       <div class="listsave">
+        <label for="sCat">Category for these leads</label>
+        <input id="sCat" list="catOpts" maxlength="60" autocomplete="off" placeholder="e.g. Plumbing">
+        <p class="hint" style="margin:6px 0 12px">Every lead you add below is saved under this category. Pick one you already use, or type your own.</p>
         <label for="sListName">Save into list</label>
         <input id="sListName" list="listOpts" maxlength="80" autocomplete="off">
         <p class="hint" style="margin:6px 0 0">Named by source, industry and city. Change it, or pick an existing list to add to it.</p>
@@ -977,10 +980,18 @@ td.mono { white-space: nowrap; }
           <button class="btn small ghost" id="listJson" type="button">Download backup</button>
           <button class="btn small ghost" id="listDel" type="button">Move list to Drafts</button>
         </div>
+        <div class="listbar" id="catBar" hidden>
+          <span class="lb-l">Category name</span>
+          <input id="catName" maxlength="60" aria-label="Rename this category" autocomplete="off">
+          <span class="sub">Rename it to change the category of all these leads.</span>
+        </div>
         <datalist id="listOpts"></datalist>
+        <datalist id="catOpts"></datalist>
         <datalist id="folderOpts"></datalist>
         <div class="bulkbar" id="bulkbar" hidden>
           <b id="bulkCount"></b>
+          <input id="bulkCat" list="catOpts" maxlength="60" placeholder="Category" aria-label="Category" autocomplete="off">
+          <button class="btn small" id="bulkSetCat" type="button">Set category</button>
           <input id="bulkFolder" list="folderOpts" maxlength="60" placeholder="Folder name" aria-label="Folder name" autocomplete="off">
           <button class="btn small" id="bulkSave" type="button">Save to folder</button>
           <button class="btn small ghost" id="bulkUnsave" type="button">Remove from folder</button>
@@ -1239,6 +1250,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
   var curList = 'all';
   /* industry categories + saved folders */
   function catOf(l) {
+    var own = String(l.cat || '').replace(/\s+/g, ' ').trim();
+    if (own) return own;
     var c = firstCat(l.niche).replace(/\s+/g, ' ');
     if (!c) return 'Uncategorized';
     return c.toLowerCase().replace(/(^|[\s\/-])([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); });
@@ -1791,8 +1804,19 @@ window.HD_CONFIG = window.HD_CONFIG || {
       if (n) { nc[n] = (nc[n] || 0) + 1; if (nc[n] > n1) { n1 = nc[n]; bn = n; } }
       if (c) { cc2[c] = (cc2[c] || 0) + 1; if (cc2[c] > n2) { n2 = cc2[c]; bc = c; } }
     });
-    $('sListName').value = sList.length ? autoListName(curSrc, bn, bc) : '';
+    var own = sList.length && sList.every(function (f) { return f.cat; });
+    var nice = String(searchCtx.niche || bn || '').trim();
+    $('sCat').value = own ? '' : (sList.length ? nice.replace(/\s+/g, ' ').replace(/(^|[\s\/-])([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); }) : '');
+    $('sCat').placeholder = own ? "Keep each lead's own category" : 'e.g. Plumbing';
+    lastCityGuess = bc;
+    $('sListName').value = sList.length ? autoListName(curSrc, $('sCat').value || bn, bc) : '';
+    autoName = $('sListName').value;
   }
+  var lastCityGuess = '', autoName = '';
+  $('sCat').addEventListener('input', function () {
+    var cur = $('sListName').value;
+    if (cur === autoName || !cur) { autoName = autoListName(curSrc, this.value || '', lastCityGuess); $('sListName').value = autoName; }
+  });
   function netFail(e, what) {
     if (e && e.name !== 'TypeError' && e.message) { $('sMsg').textContent = what + ' said: ' + e.message; return; }
     $('sMsg').textContent = 'Could not reach ' + what + '. This works on the deployed site (Vercel), not inside the Claude preview, because the preview blocks requests to other sites.';
@@ -1937,7 +1961,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     try {
       var d = JSON.parse(t);
       if (!d || d.app !== 'hunting-desk' || !Array.isArray(d.leads)) return null;
-      var keep = ['name','niche','city','state','rating','reviews','phone','website','webStatus','problem','channel','status','followUp','source','owner','address','zip','price','claimed','years','hours','email','wa','waStatus','fb','ig','social','services','notes','folder'];
+      var keep = ['name','niche','city','state','rating','reviews','phone','website','webStatus','problem','channel','status','followUp','source','owner','address','zip','price','claimed','years','hours','email','wa','waStatus','fb','ig','social','services','notes','folder','cat'];
       var items = d.leads.filter(function (x) { return x && x.name; }).map(function (x) { var o = {}; keep.forEach(function (k) { if (x[k] !== undefined && x[k] !== '') o[k] = x[k]; }); return o; });
       return { items: items, list: String(d.list || '').slice(0, 80) };
     } catch (e) { return null; }
@@ -1983,7 +2007,8 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var boxes = $('sFound').querySelectorAll('input[type=checkbox]');
     var base = { niche: '', city: '', state: '', rating: '', reviews: '', phone: '', website: '', webStatus: 'unknown', problem: '', channel: '', status: 'New', followUp: '', example: false, owner: '', address: '', zip: '', price: '', claimed: 'unknown', years: '', hours: '', email: '', wa: '', fb: '', ig: '', services: '', notes: '' };
     var added = 0, dup = 0, first = null;
-    var listName = ($('sListName').value || '').trim().slice(0, 80) || autoListName(curSrc, searchCtx.niche, searchCtx.city);
+    var catIn = ($('sCat').value || '').trim().slice(0, 60);
+    var listName = ($('sListName').value || '').trim().slice(0, 80) || autoListName(curSrc, catIn || searchCtx.niche, searchCtx.city);
     [].forEach.call(boxes, function (b) {
       if (!b.checked) return;
       var f = sList[+b.getAttribute('data-i')];
@@ -1991,6 +2016,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       for (var k in base) l[k] = base[k];
       for (var k2 in f) { if (f[k2] !== '' && f[k2] != null) l[k2] = f[k2]; }
       if (!l.niche) l.niche = searchCtx.niche;
+      if (catIn) l.cat = catIn;
       if (!l.city) l.city = searchCtx.city;
       if (!l.state) l.state = searchCtx.state;
       var exists = leads.some(function (x) {
@@ -2005,7 +2031,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     });
     if (first) selected = first;
     save(); render(); renderDraft();
-    if (added) { curList = listName; }
+    if (added) { curList = listName; curCat = 'all'; }
     $('sMsg').textContent = 'Added ' + added + ' to the list "' + listName + '"' + (dup ? ', skipped ' + dup + ' already in your leads' : '') + '. Open a business page to fill in its website and contact details with Add a lead.';
     sList = []; renderFound();
   }
@@ -2058,7 +2084,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       if (curList !== 'all' && listOf(l) !== curList) return false;
       if (curCat !== 'all' && catOf(l) !== curCat) return false;
       var q = ($('q').value || '').trim().toLowerCase();
-      if (q && [l.name, l.niche, l.city, l.state, l.phone, l.website].join(' ').toLowerCase().indexOf(q) === -1) return false;
+      if (q && [l.name, l.niche, l.cat, l.city, l.state, l.phone, l.website].join(' ').toLowerCase().indexOf(q) === -1) return false;
       if (f === 'all') return true;
       if (f === 'fo:saved') return !!folderOf(l);
       if (f === 'fo:none') return !folderOf(l);
@@ -2164,7 +2190,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function domain(u) { return String(u || '').replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/[\/?#].*$/, ''); }
   function row(l) {
     var sc = score(l), t = tier(sc);
-    var place = [l.niche, [l.city, l.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+    var place = [l.cat || l.niche, [l.city, l.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
     var web = validSite(l.website)
       ? '<button class="linkbtn" type="button" data-act="view" title="Preview this website">' + esc(domain(l.website).slice(0, 26)) + '</button>'
       : (l.webStatus === 'none' ? '<span class="chip accent">No website</span>' : '<span class="chip">Not added</span>');
@@ -2270,6 +2296,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
         '<div><label for="d-web">Website status</label><select id="d-web" data-f="webStatus">' + opts(WEB, l.webStatus) + '</select></div>' +
         '<div><label for="d-chan">Reach via</label><select id="d-chan" data-f="channel">' + opts(CHAN, l.channel) + '</select></div>' +
         '<div class="span"><label for="d-list">List</label><input id="d-list" data-f="list" list="listOpts" maxlength="80" value="' + esc(listOf(l) === 'Unsorted' ? '' : listOf(l)) + '" placeholder="Unsorted"></div>' +
+        '<div class="span"><label for="d-cat">Category</label><input id="d-cat" data-f="cat" list="catOpts" maxlength="60" value="' + esc(l.cat || firstCat(l.niche)) + '" placeholder="e.g. Plumbing"></div>' +
         '<div class="span"><label for="d-folder">Saved folder (empty = not saved)</label><input id="d-folder" data-f="folder" list="folderOpts" maxlength="60" value="' + esc(folderOf(l)) + '" placeholder="e.g. Shortlist"></div>' +
         '<div class="span"><label for="d-site">Website address</label><input id="d-site" data-f="website" placeholder="paste the website here" value="' + esc(validSite(l.website) ? l.website : '') + '"></div>' +
       '</div>' +
@@ -2317,6 +2344,10 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('catSel').innerHTML = '<option value="all">All industries (' + inList.length + ')</option>' + names.map(function (n) {
       return '<option value="' + esc(n) + '"' + (n === curCat ? ' selected' : '') + '>' + esc(n) + ' (' + by[n] + ')</option>';
     }).join('');
+    var allc = Object.keys(groupCount(leads, catOf)).filter(function (n) { return n !== 'Uncategorized'; }).sort();
+    $('catOpts').innerHTML = allc.map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('');
+    $('catBar').hidden = curCat === 'all';
+    if (curCat !== 'all' && document.activeElement !== $('catName')) $('catName').value = curCat;
     var fn = Object.keys(groupCount(leads, folderOf)).sort();
     $('folderOpts').innerHTML = fn.map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('');
   }
@@ -2477,7 +2508,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function rowsData(arr) {
     var wl = { none: 'No website', old: 'Old or slow', ok: 'Looks fine', unknown: 'Not checked' };
     return (arr || visible()).filter(function (l) { return !l.example; }).map(function (l) {
-      return [l.name, SRC_NAMES[l.source] || 'Other', l.owner, l.niche, l.address, l.city, l.state, l.zip, l.rating, l.reviews, l.price, l.claimed, l.years, l.hours, l.phone, l.wa, ({ yes: 'Has WhatsApp', no: 'No WhatsApp' })[l.waStatus] || 'Not tested', l.email, l.fb, l.ig, otherSocial(l), l.website, wl[l.webStatus] || '', l.problem, l.services, l.notes, l.channel, l.status, l.followUp, score(l), l.folder || ''];
+      return [l.name, SRC_NAMES[l.source] || 'Other', l.owner, (l.cat || l.niche), l.address, l.city, l.state, l.zip, l.rating, l.reviews, l.price, l.claimed, l.years, l.hours, l.phone, l.wa, ({ yes: 'Has WhatsApp', no: 'No WhatsApp' })[l.waStatus] || 'Not tested', l.email, l.fb, l.ig, otherSocial(l), l.website, wl[l.webStatus] || '', l.problem, l.services, l.notes, l.channel, l.status, l.followUp, score(l), l.folder || ''];
     });
   }
   function exportText(sep, arr) {
@@ -2543,6 +2574,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     if (!l) return;
     var f = el.getAttribute('data-f');
     l[f] = el.value;
+    if (f === 'cat') l.cat = el.value.trim().slice(0, 60);
     if (f === 'folder') { l.folder = el.value.trim().slice(0, 60); if (l.folder) lastFolder = l.folder; }
     if (f === 'website') {
       l.website = el.value.trim(); l.scanAt = 0; l.scanMsg = ''; l.scanFail = '';
@@ -2678,6 +2710,20 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('ownMsg').textContent = 'Added ' + name + (fo ? ' to folder ' + fo : '') + '. Add another, or press Cancel.';
     $('own-name').focus();
     render(); toast('Added ' + name);
+  });
+  $('bulkSetCat').addEventListener('click', function () {
+    var nm = $('bulkCat').value.trim().slice(0, 60), ids = Object.keys(picked);
+    if (!ids.length) return;
+    if (!nm) { toast('Type a category first'); $('bulkCat').focus(); return; }
+    ids.forEach(function (id) { var l = leadById(id); if (l) l.cat = nm; });
+    picked = {}; $('bulkCat').value = ''; save(); render();
+    toast('Category "' + nm + '" set on ' + ids.length + (ids.length === 1 ? ' lead' : ' leads'));
+  });
+  $('catName').addEventListener('change', function () {
+    var nn = this.value.trim().slice(0, 60), old = curCat;
+    if (!nn || nn === old || old === 'all') { this.value = old === 'all' ? '' : old; return; }
+    leads.forEach(function (l) { if (catOf(l) === old) l.cat = nn; });
+    curCat = nn; save(); render(); toast('Category renamed');
   });
   $('catSel').addEventListener('change', function () { curCat = this.value; picked = {}; render(); });
   function folderLeads() { return leads.filter(function (l) { return !l.example && folderOf(l) === curFolder; }); }
