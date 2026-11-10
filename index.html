@@ -2188,6 +2188,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       if (src.tagName === 'SELECT') { var o = src.selectedOptions && src.selectedOptions[0]; return src.value && o ? o.textContent : ''; }
       return cfg.multi ? sel().join(', ') : String(src.value || '');
     }
+    st.setPh = function (t) { cfg.placeholder = t; st.sync(); };
     st.sync = function () {
       var t = labelText();
       val.textContent = t || cfg.placeholder; val.classList.toggle('ph', !t);
@@ -2286,6 +2287,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       var rest = COUNTRIES.map(function (c) { return c.split('|')[0]; }).filter(function (n) { return pri.indexOf(n) < 0; }).sort();
       return [{ h: 'Popular' }].concat(pri.map(mk), [{ h: 'All countries' }], rest.map(mk));
     }
+    comboMake({ id: 'sCat', items: function () { var seen = {}, out = []; Object.keys(groupCount(leads, catOf)).sort().concat(OSM_CATS.map(function (c) { return c.label; })).forEach(function (n) { if (n !== 'Uncategorized' && !seen[n]) { seen[n] = 1; out.push(mk(n)); } }); return out; }, custom: true, placeholder: 'Select or type a category', search: 'Search or type a category...' });
     ['o', 'g'].forEach(function (pre) {
       comboMake({ id: pre + '-country', items: countryItems, custom: true, placeholder: 'Select country', search: 'Search countries...' });
       comboMake({ id: pre + '-region', items: function () { return [].map.call($(pre + '-region').options, function (o) { return { v: o.value, l: o.textContent || 'Any state / region' }; }); }, placeholder: 'Any state / region', search: 'Search states or regions...', empty: 'Pick a country first' });
@@ -2337,7 +2339,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     String(text || '').split(/[,;\n]+/).forEach(function (t) { var r = osmResolveOne(t); if (r && !seen[r.label]) { seen[r.label] = 1; out.push(r); } });
     return out;
   }
-  var NAME_KEYS_LIST = ['shop', 'craft', 'office', 'amenity', 'healthcare', 'tourism', 'leisure'];
+  var NAME_KEYS_LIST = ['shop', 'craft', 'office'];
   function osmQuery(cats, scope, lim) {
     var st = [];
     cats.forEach(function (c) {
@@ -2347,10 +2349,11 @@ window.HD_CONFIG = window.HD_CONFIG || {
         });
         return;
       }
-      c.tags.forEach(function (t) { st.push('nwr["' + t[0] + '"="' + t[1] + '"]["name"]' + scope.f + ';'); });
-      if (c.kw) NAME_KEYS_LIST.forEach(function (k) { st.push('nwr["' + k + '"]["name"~"' + c.kw + '",i]' + scope.f + ';'); });
+      var keys = NAME_KEYS_LIST.slice();
+      c.tags.forEach(function (t) { st.push('nwr["' + t[0] + '"="' + t[1] + '"]["name"]' + scope.f + ';'); if (keys.indexOf(t[0]) < 0) keys.push(t[0]); });
+      if (c.kw) keys.forEach(function (k) { st.push('nwr["' + k + '"]["name"~"' + c.kw + '",i]' + scope.f + ';'); });
     });
-    return '[out:json][timeout:55];' + scope.pre + '(' + st.join('') + ');out center tags ' + lim + ';';
+    return '[out:json][timeout:20];' + scope.pre + '(' + st.join('') + ');out center tags ' + lim + ';';
   }
   function pickGeo(g) {
     var best = null, bs = -99;
@@ -2411,6 +2414,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var nice = String(searchCtx.niche || bn || '').trim();
     $('sCat').value = own ? '' : (sList.length ? nice.replace(/\s+/g, ' ').replace(/(^|[\s\/-])([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); }) : '');
     $('sCat').placeholder = own ? "Keep each lead's own category" : 'e.g. Plumbing';
+    comboSync('sCat'); if (COMBOS.sCat) COMBOS.sCat.setPh(own ? "Keep each lead's own category" : 'Select or type a category');
   }
   function netFail(e, what) {
     if (e && e.name !== 'TypeError' && e.message) { $('sMsg').textContent = what + ' said: ' + e.message; return; }
@@ -2528,16 +2532,28 @@ window.HD_CONFIG = window.HD_CONFIG || {
     });
   }
   function overpassRun(q, say) {
-    var i = 0, lastErr = null;
-    function tryNext() {
-      if (i >= OVERPASS.length) return Promise.reject(lastErr || new Error('all OpenStreetMap servers are busy'));
-      var url = OVERPASS[i++];
-      say('Searching OpenStreetMap, server ' + i + ' of ' + OVERPASS.length + '. This can take up to 45 seconds...');
-      return fetchT(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q) }, 45000)
-        .then(function (r) { if (!r.ok) throw new Error('server busy (HTTP ' + r.status + ')'); return r.json(); })
-        .catch(function (e) { lastErr = e; return tryNext(); });
+    function attempt(list) {
+      return new Promise(function (resolve, reject) {
+        var pending = list.length, done = false, ctrls = [], lastErr = null;
+        list.forEach(function (url, i) {
+          var c = typeof AbortController === 'function' ? new AbortController() : null;
+          ctrls[i] = c;
+          var timer = setTimeout(function () { if (c) c.abort(); }, 22000);
+          fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q), signal: c ? c.signal : undefined })
+            .then(function (r) { if (!r.ok) throw new Error('server busy (HTTP ' + r.status + ')'); return r.json(); })
+            .then(function (j) {
+              clearTimeout(timer);
+              if (j && j.remark && /error|timed out|out of memory/i.test(j.remark) && !(j.elements && j.elements.length)) throw new Error('server overloaded');
+              if (done) return;
+              done = true;
+              ctrls.forEach(function (x, k) { if (x && k !== i) { try { x.abort(); } catch (e) {} } });
+              resolve(j);
+            })
+            .catch(function (e) { clearTimeout(timer); lastErr = e; if (done) return; if (--pending === 0) reject(lastErr || new Error('no answer')); });
+        });
+      });
     }
-    return tryNext();
+    return attempt(OVERPASS.slice(0, 3)).catch(function () { say('Trying more servers...'); return attempt(OVERPASS.slice(3)); });
   }
   function quickOsm(terms, place) {
     var out = [], seen = {}, i = 0;
@@ -2559,14 +2575,34 @@ window.HD_CONFIG = window.HD_CONFIG || {
             out.push({ type: x.osm_type, id: x.osm_id, tags: t });
           });
         })
-        .then(function () { return new Promise(function (ok) { setTimeout(ok, 1100); }); })
+        .then(function () { return new Promise(function (ok) { setTimeout(ok, i < terms.length ? 1000 : 0); }); })
         .then(next);
     }
     return next();
   }
+  var osmTok = 0, osmTick = 0;
+  function hav(a, b, c, d) { var R = 6371, r = Math.PI / 180, x = (c - a) * r, y = (d - b) * r, h = Math.sin(x / 2) * Math.sin(x / 2) + Math.cos(a * r) * Math.cos(c * r) * Math.sin(y / 2) * Math.sin(y / 2); return 2 * R * Math.asin(Math.sqrt(h)); }
+  function bboxOf(best, minSpan, pad, cap) {
+    var bb = best.boundingbox || [], lat = +best.lat, lon = +best.lon;
+    var s0 = +bb[0], n0 = +bb[1], w0 = +bb[2], e0 = +bb[3];
+    if (!(n0 > s0) || !(e0 > w0)) { s0 = lat; n0 = lat; w0 = lon; e0 = lon; }
+    var cy = (s0 + n0) / 2, cx = (w0 + e0) / 2;
+    var hy = Math.min(Math.max((n0 - s0) / 2 + pad, minSpan / 2), cap), hx = Math.min(Math.max((e0 - w0) / 2 + pad, minSpan / 2), cap * 1.3);
+    function r4(v) { return Math.round(v * 10000) / 10000; }
+    return { f: '(' + r4(cy - hy) + ',' + r4(cx - hx) + ',' + r4(cy + hy) + ',' + r4(cx + hx) + ')', pre: '' };
+  }
+  function osmStrong(el, cats) {
+    var t = el.tags || {};
+    for (var i = 0; i < cats.length; i++) { for (var j = 0; j < cats[i].tags.length; j++) if (t[cats[i].tags[j][0]] === cats[i].tags[j][1]) return true; }
+    return false;
+  }
   function osmSearch() {
     var catText = $('o-cat').value.trim(), cityIn = $('o-city').value.trim(), country = $('o-country').value.trim(), lim = parseInt($('o-limit').value, 10) || 100;
-    function say(t) { $('sMsg').textContent = t; }
+    var tok = ++osmTok, t0 = Date.now(), base = '';
+    clearInterval(osmTick);
+    function busy(on) { $('o-search').disabled = !!on; $('o-search').textContent = on ? 'Searching...' : 'Search OpenStreetMap'; }
+    function say(t) { if (tok !== osmTok) return; base = t; $('sMsg').textContent = t; }
+    function stop() { clearInterval(osmTick); if (tok === osmTok) busy(false); }
     var cats = osmResolve(catText);
     if (!cats.length) { say('Type a business type first, such as Roofing, Dentist, Hotel, or several separated by commas. Or type Everything.'); return; }
     var rgo = geoRegion('o'), region = rgo.name, regCode = rgo.code;
@@ -2577,47 +2613,47 @@ window.HD_CONFIG = window.HD_CONFIG || {
     var cityName = cityIn ? (lm ? lm[1].trim() : cityIn.split(',')[0].trim()) : '';
     searchCtx = { niche: single ? cats[0].label : '', city: cityName, state: regCode || (lm ? lm[2].toUpperCase() : region) };
     var q0 = [cityIn, region, country].filter(Boolean).join(', ');
-    var outN = Math.min(800, lim * 4), minWant = Math.min(10, lim);
+    var outN = Math.min(500, lim * 3), minWant = Math.min(12, lim);
     var terms = [];
-    cats.forEach(function (c) { if (c.all) { terms.push('shop'); return; } [c.label.toLowerCase()].concat((c.alias || []).slice(0, 2)).forEach(function (t) { if (terms.indexOf(t) < 0 && terms.length < 4) terms.push(t); }); });
-    say('Step 1 of 2: finding the place...');
-    fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=' + encodeURIComponent(q0), {}, 15000)
+    cats.forEach(function (c) { if (c.all) { terms.push('shop'); return; } [c.label.toLowerCase()].concat((c.alias || []).slice(0, 1)).forEach(function (t) { if (terms.indexOf(t) < 0 && terms.length < 2) terms.push(t); }); });
+    busy(true);
+    osmTick = setInterval(function () { if (tok === osmTok && base) $('sMsg').textContent = base + ' (' + Math.round((Date.now() - t0) / 1000) + 's)'; }, 1000);
+    say('Finding the place...');
+    var gkey = 'hd-geo:' + q0.toLowerCase(), cachedGeo = null;
+    try { cachedGeo = JSON.parse(sessionStorage.getItem(gkey) || 'null'); } catch (e) {}
+    (cachedGeo ? Promise.resolve(cachedGeo) : fetchT('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=' + encodeURIComponent(q0), {}, 12000)
       .then(function (r) { if (!r.ok) throw new Error('place lookup failed (HTTP ' + r.status + ')'); return r.json(); })
+      .then(function (g) { try { if (g.length) sessionStorage.setItem(gkey, JSON.stringify(g)); } catch (e) {} return g; }))
       .then(function (g) {
+        if (tok !== osmTok) throw new Error('cancelled');
         if (!g.length) throw new Error('could not find that place. Check the spelling, or add the country');
-        var best = pickGeo(g), lat = +best.lat, lon = +best.lon, stages = [];
-        if (best.osm_type === 'relation') stages.push({ name: 'the whole city', scope: { pre: 'area(' + (3600000000 + Number(best.osm_id)) + ')->.a;', f: '(area.a)' } });
-        else if (best.osm_type === 'way') stages.push({ name: 'the whole city', scope: { pre: 'area(' + (2400000000 + Number(best.osm_id)) + ')->.a;', f: '(area.a)' } });
-        if (cityIn || !stages.length) {
-          stages.push({ name: '15 km around', scope: { pre: '', f: '(around:15000,' + lat + ',' + lon + ')' } });
-          stages.push({ name: '40 km around', scope: { pre: '', f: '(around:40000,' + lat + ',' + lon + ')' } });
-        }
+        var best = pickGeo(g), lat = +best.lat, lon = +best.lon;
+        var stages = [{ name: 'the city', scope: bboxOf(best, 0.16, 0.02, 0.9) }, { name: 'about 40 km around', scope: bboxOf(best, 0.7, 0.2, 1.2) }];
         var all = {}, order = [], used = 0;
-        function add(j) { (j.elements || []).forEach(function (el) { if (!el.tags || !el.tags.name) return; var k = (el.type || '') + ':' + (el.id || el.tags.name); if (!all[k]) { all[k] = el; order.push(k); } }); }
+        function add(j) { (j.elements || []).forEach(function (el) { if (!el.tags || !el.tags.name) return; var k = (el.type || '') + ':' + (el.id || el.tags.name); if (!all[k]) { all[k] = el; el._d = hav(lat, lon, el.lat != null ? el.lat : (el.center ? el.center.lat : lat), el.lon != null ? el.lon : (el.center ? el.center.lon : lon)); order.push(k); } }); }
         function go(i) {
+          say(i === 0 ? 'Searching OpenStreetMap...' : 'Only ' + order.length + ' found, searching a wider area...');
           return overpassRun(osmQuery(cats, stages[i].scope, outN), say).then(function (j) {
+            if (tok !== osmTok) throw new Error('cancelled');
             add(j); used = i;
             if (order.length >= minWant || i === stages.length - 1) return;
-            say('Found ' + order.length + ' so far. Widening the search to ' + stages[i + 1].name + '...');
             return go(i + 1);
           });
         }
         function result(extra) { var r = { elements: order.map(function (k) { return all[k]; }), stage: stages[used].name, used: used }; for (var k in extra) r[k] = extra[k]; return r; }
-        return go(0).catch(function (e) {
-          if (stages.length < 2) throw e;
-          say('The whole-city search took too long. Trying a smaller area...');
-          return go(1);
-        }).then(function () {
+        return go(0).then(function () {
           if (order.length) return result({});
-          say('Nothing tagged that way. Trying the quick text search...');
+          say('Nothing tagged that way. Trying a text search...');
           return quickOsm(terms, q0).then(function (qj) { add(qj); return result({ quick: true }); });
-        }, function () {
+        }, function (e) {
+          if (e && e.message === 'cancelled') throw e;
           if (order.length) return result({});
-          say('The main OpenStreetMap servers are slow. Trying the quick search...');
+          say('OpenStreetMap servers are slow. Trying a text search...');
           return quickOsm(terms, q0).then(function (qj) { add(qj); return result({ quick: true, slow: true }); }).catch(function () { return result({ failed: true }); });
         });
       })
       .then(function (j) {
+        if (tok !== osmTok) return;
         var ctry = String(country || '').trim(), seen = {};
         var items = (j.elements || []).map(function (el) {
           var o = fromOsm(el), lab = osmLabelFor(el, cats);
@@ -2625,30 +2661,42 @@ window.HD_CONFIG = window.HD_CONFIG || {
           if (!single) o.cat = lab;
           if (ctry) o.country = ctry;
           if (dial) o.dial = dial;
+          o.noContact = !(digits(o.phone).length >= 7 || o.email || o.website);
+          o._r = (osmStrong(el, cats) ? 3 : 0) + (digits(o.phone).length >= 7 ? 2 : 0) + (o.website ? 0 : 1) + (o.email ? 0.5 : 0) - Math.min(2, (el._d || 0) / 25);
           return o;
         }).filter(function (o) {
-          var k = (o.name + '|' + o.address).toLowerCase();
+          var k = (o.name + '|' + digits(o.phone) + '|' + (o.address || '')).toLowerCase();
           if (seen[k]) return false; seen[k] = 1; return true;
         });
-        function rank(o) { return (digits(o.phone).length >= 7 ? 2 : 0) + (o.website ? 0 : 1); }
-        items.sort(function (a, b) { return rank(b) - rank(a); });
-        showFound(items.slice(0, lim), 'OpenStreetMap');
+        items.sort(function (a, b) { return b._r - a._r; });
+        items.forEach(function (o) { delete o._r; });
+        var shown = items.slice(0, lim);
+        showFound(shown, 'OpenStreetMap');
+        var secs = Math.round((Date.now() - t0) / 1000);
         if (!sList.length) {
           say(j.failed
             ? 'OpenStreetMap did not answer (its servers are busy, or an ad blocker is in the way). Wait a minute and press Search again.'
-            : 'Nothing is mapped on OpenStreetMap for this search within 40 km of ' + (cityName || region) + '. Try the category "Everything", a related category, or use the Google tab for this city.');
+            : 'Nothing is mapped on OpenStreetMap for this search around ' + (cityName || region) + '. Try the category "Everything", a related category, or the Google tab for this city.');
         } else {
-          var note = '';
-          if (j.used > 0 && !j.quick) note = ' The city itself had few, so the search was widened to ' + j.stage + '.';
-          if (j.quick) note = ' This came from the quick text search' + (j.slow ? ' because the main servers were slow' : '') + ', so it may be missing some businesses.';
-          if (items.length > lim) note += ' Showing the best ' + lim + ' of ' + items.length + ' (phone numbers and missing websites first).';
-          $('sMsg').textContent += note;
+          var withPhone = shown.filter(function (o) { return digits(o.phone).length >= 7; }).length, noSite = shown.filter(function (o) { return !o.website; }).length;
+          var note = ' ' + withPhone + ' have a phone number, ' + noSite + ' have no website listed.';
+          if (j.used > 0 && !j.quick) note += ' The city had few, so the search covered ' + j.stage + '.';
+          if (j.quick) note += ' Found with the text search' + (j.slow ? ' because the main servers were slow' : '') + ', so some businesses may be missing.';
+          if (items.length > lim) note += ' Showing the best ' + lim + ' of ' + items.length + '.';
+          var left = shown.filter(function (o) { return o.noContact; }).length;
+          if (left) note += ' ' + left + ' with no contact info are unticked.';
+          $('sMsg').textContent += note + ' (' + secs + 's)';
+          base = '';
         }
+        stop();
       })
       .catch(function (e) {
+        if (e && e.message === 'cancelled') return;
         var blocked = e && e.name === 'TypeError';
         say('OpenStreetMap search failed: ' + (blocked ? 'the browser could not reach the server' : e.message) +
           '. On the Claude preview page this is expected, so use your Vercel site. On Vercel, turn off ad blockers or privacy extensions for the site and try again.');
+        base = '';
+        stop();
       });
   }
   function parseBackup(raw) {
@@ -2690,9 +2738,9 @@ window.HD_CONFIG = window.HD_CONFIG || {
     $('sFoundWrap').hidden = !sList.length;
     $('sFound').innerHTML = sList.map(function (f, i) {
       var web = f.webStatus === 'none' ? 'No website listed' : f.website ? 'Has website' : '';
-      var meta = [f.rating ? f.rating + '★' : '', f.reviews ? f.reviews + ' reviews' : '', f.niche || searchCtx.niche, web].filter(Boolean).join(' · ');
+      var meta = [f.rating ? f.rating + '★' : '', f.reviews ? f.reviews + ' reviews' : '', f.niche || searchCtx.niche, web, f.noContact ? 'No phone, email or website' : ''].filter(Boolean).join(' · ');
       var line2 = [f.phone, f.address].filter(Boolean).join(' · ');
-      return '<label><input type="checkbox" data-i="' + i + '" checked><span><strong>' + esc(f.name) + '</strong><div class="sub">' + esc(meta) + '</div>' +
+      return '<label><input type="checkbox" data-i="' + i + '"' + (f.noContact ? '' : ' checked') + '><span><strong>' + esc(f.name) + '</strong><div class="sub">' + esc(meta) + '</div>' +
         (line2 ? '<div class="sub">' + esc(line2) + '</div>' : '') + '</span></label>';
     }).join('');
     updateAddCount();
@@ -2709,6 +2757,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
       var l = {};
       for (var k in base) l[k] = base[k];
       for (var k2 in f) { if (f[k2] !== '' && f[k2] != null) l[k2] = f[k2]; }
+      delete l.noContact;
       if (!l.niche) l.niche = searchCtx.niche;
       if (catIn) l.cat = catIn;
       if (!l.city) l.city = searchCtx.city;
