@@ -2351,9 +2351,9 @@ window.HD_CONFIG = window.HD_CONFIG || {
       }
       var keys = NAME_KEYS_LIST.slice();
       c.tags.forEach(function (t) { st.push('nwr["' + t[0] + '"="' + t[1] + '"]["name"]' + scope.f + ';'); if (keys.indexOf(t[0]) < 0) keys.push(t[0]); });
-      if (c.kw) keys.forEach(function (k) { st.push('nwr["' + k + '"]["name"~"' + c.kw + '",i]' + scope.f + ';'); });
+      if (c.kw && (!c.tags.length || cats.length < 3)) keys.forEach(function (k) { st.push('nwr["' + k + '"]["name"~"' + c.kw + '",i]' + scope.f + ';'); });
     });
-    return '[out:json][timeout:20];' + scope.pre + '(' + st.join('') + ');out center tags ' + lim + ';';
+    return '[out:json][timeout:25];' + scope.pre + '(' + st.join('') + ');out center tags ' + lim + ';';
   }
   function pickGeo(g) {
     var best = null, bs = -99;
@@ -2534,7 +2534,7 @@ window.HD_CONFIG = window.HD_CONFIG || {
   function overpassRun(q, say) {
     function attempt(list) {
       return new Promise(function (resolve, reject) {
-        var pending = list.length, done = false, ctrls = [], lastErr = null;
+        var pending = list.length, done = false, ctrls = [], lastErr = null, emptyRes = null;
         list.forEach(function (url, i) {
           var c = typeof AbortController === 'function' ? new AbortController() : null;
           ctrls[i] = c;
@@ -2545,15 +2545,25 @@ window.HD_CONFIG = window.HD_CONFIG || {
               clearTimeout(timer);
               if (j && j.remark && /error|timed out|out of memory/i.test(j.remark) && !(j.elements && j.elements.length)) throw new Error('server overloaded');
               if (done) return;
+              if (!(j && j.elements && j.elements.length)) {
+                emptyRes = j || { elements: [] };
+                if (--pending === 0) { done = true; resolve(emptyRes); }
+                return;
+              }
               done = true;
               ctrls.forEach(function (x, k) { if (x && k !== i) { try { x.abort(); } catch (e) {} } });
               resolve(j);
             })
-            .catch(function (e) { clearTimeout(timer); lastErr = e; if (done) return; if (--pending === 0) reject(lastErr || new Error('no answer')); });
+            .catch(function (e) { clearTimeout(timer); lastErr = e; if (done) return; if (--pending === 0) { done = true; if (emptyRes) resolve(emptyRes); else reject(lastErr || new Error('no answer')); } });
         });
       });
     }
-    return attempt(OVERPASS.slice(0, 3)).catch(function () { say('Trying more servers...'); return attempt(OVERPASS.slice(3)); });
+    function hasEl(j) { return j && j.elements && j.elements.length; }
+    return attempt(OVERPASS.slice(0, 3)).then(function (j) {
+      if (hasEl(j)) return j;
+      say('Double-checking with more servers...');
+      return attempt(OVERPASS.slice(3)).then(function (k) { return hasEl(k) ? k : j; }, function () { return j; });
+    }, function () { say('Trying more servers...'); return attempt(OVERPASS.slice(3)); });
   }
   function quickOsm(terms, place) {
     var out = [], seen = {}, i = 0;
